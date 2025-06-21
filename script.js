@@ -99,6 +99,8 @@ const darkTheme = Blockly.Theme.defineTheme("customLightTheme", {
   },
 });
 
+Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.9;
+
 const toolbox = document.getElementById("toolbox");
 const workspace = Blockly.inject("blocklyDiv", {
   toolbox: toolbox,
@@ -109,7 +111,7 @@ const workspace = Blockly.inject("blocklyDiv", {
   zoom: {
     controls: true, 
     wheel: true, 
-    startScale: 1,
+    startScale: 0.9,
     maxScale: 3, 
     minScale: 0.3, 
     scaleSpeed: 1.2, 
