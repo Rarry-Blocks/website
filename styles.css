@@ -1,0 +1,331 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+    --font: 'Inter', sans-serif;
+    --text-dark: #2b323b;
+    --primary: #3b82f6;
+    --primary-dark: #336ce7;
+    --danger: #f63b3b;
+    --danger-dark: #dd3434;
+    --color1: #f3f4f6;
+    --color2: #e4e5e7;
+    --color3: #cbcdcf;
+    --color4: #b9bbbd;
+}
+
+.dark {
+    --text-dark: #e2e8f0;
+    --primary: #3b82f6;
+    --primary-dark: #336ce7;
+    --danger: #f63b3b;
+    --danger-dark: #dd3434;
+    --color1: #262d36;
+    --color2: #2f3741;
+    --color3: #3d4552;
+    --color4: #464f5e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1, h2, h3, input {
+    color: var(--text-dark);
+}
+
+body {
+    font-family: var(--font);
+    background-color: var(--color1);
+    overscroll-behavior: none;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background-color: var(--primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
+    z-index: 10;
+}
+
+.dark header {
+    background-color: var(--color4);
+}
+
+header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color1);
+}
+
+header div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hidden {
+    display: none;
+}
+
+button {
+    font-family: var(--font);
+    font-size: medium;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: var(--text-dark);
+    color: var(--color1);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.save-button {
+    background-color: #f18f3f;
+}
+
+.save-button:hover {
+    background-color: #e28940;
+}
+
+.load-button {
+    background-color: #2acc66;
+    cursor: pointer;
+}
+
+.load-button:hover {
+    background-color: #28b85c;
+}
+
+#blocklyDiv {
+    height: 100%;
+    width: 100%;
+}
+
+.main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.left-panel {
+    width: 66.66%;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid var(--color3);
+}
+
+.tab-header {
+    display: flex;
+    border-bottom: 2px solid var(--color3);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 0.5rem 0;
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary);
+    background-color: var(--color2);
+    border-radius: 0;
+}
+
+.tab-button.inactive {
+    background-color: transparent;
+    color: var(--text-dark);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    flex: 1;
+}
+
+.tab-section {
+    padding: 1rem;
+    background-color: var(--color1);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.costume-container {
+    padding: 8px;
+    gap: 0.5rem;
+    background-color: var(--color2);
+    border-radius: 0.375rem;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+#stage-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+}
+
+#stage canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.right-panel {
+    width: 33.33%;
+    display: flex;
+    flex-direction: column;
+}
+
+#stage-controls {
+    background-color: var(--color1);
+    padding: 0.5rem;
+    border-bottom: 2px solid var(--color3);
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.icon-button {
+    padding: 0.5rem;
+    border-radius: 25%;
+    background-color: var(--color2);
+    transition: background-color 0.2s;
+}
+
+.icon-button:hover {
+    background-color: var(--color3);
+}
+
+#sprite-info {
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#sprite-info p {
+    color: var(--text-dark);
+}
+
+#sprites-section {
+    background-color: var(--color1);
+    padding: 0.5rem;
+    border-top: 2px solid var(--color3);
+    overflow-y: auto;
+}
+
+#sprites-section h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+#sprites-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    max-height: 10rem;
+    overflow-y: scroll;
+}
+
+#sprites-list div {
+    width: 4rem;
+    height: 4rem;
+    background-color: var(--color2);
+    border-radius: 0.375rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.875rem;
+    cursor: pointer
+}
+
+#sprites-list div.active {
+    background-color: var(--primary);
+    color: var(--color1);
+}
+
+#add-sprite-button,
+#delete-sprite-button {
+    margin-top: 0.5rem;
+    color: var(--color1);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+#add-sprite-button {
+    background-color: var(--primary);
+}
+
+#add-sprite-button:hover {
+    background-color: var(--primary-dark);
+}
+
+#delete-sprite-button {
+    background-color: var(--danger);
+}
+
+#delete-sprite-button:hover {
+    background-color: var(--danger-dark);
+}
+
+#costumes-list,
+#sounds-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.blocklyMainBackground {
+    stroke-width: 0;
+    stroke: none;
+}
+
+.dark .blocklyToolboxCategoryIcon {
+    filter: invert(1);
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color4);
+}
+
+:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}

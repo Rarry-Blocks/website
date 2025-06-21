@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rarry Editor</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.3/pixi.min.js"></script>
+    <link href="styles.css" rel="stylesheet" />
+</head>
+
+<body>
+    <header>
+        <div>
+            <img src="icons/Rarry.svg" alt="Rarry">
+            <button id="theme-toggle">Toggle Theme</button>
+        </div>
+        <div>
+            <button id="save-button" class="save-button">Save</button>
+            <button id="load-button" class="load-button">Load Project</button>
+            <input type="file" id="load-input" class="hidden" />
+        </div>
+    </header>
+
+    <div class="main">
+        <div class="left-panel">
+            <div class="tab-header">
+                <button class="tab-button" data-tab="code">Code</button>
+                <button class="tab-button inactive" data-tab="costumes">Costumes</button>
+                <button class="tab-button inactive" data-tab="sounds">Sounds</button>
+            </div>
+
+            <div id="code-tab" class="tab-content active">
+                <div id="blocklyDiv"></div>
+            </div>
+
+            <div id="costumes-tab" class="tab-content tab-section">
+                <h2>Costumes</h2>
+                <div id="costumes-list"></div>
+                <input type="file" id="costume-upload" accept="image/*" class="mt-4" />
+            </div>
+
+            <div id="sounds-tab" class="tab-content tab-section">
+                <h2>Sounds</h2>
+                <h3>This hasn't been made yet, come back soon!</p>
+                <!--<div id="sounds-list"></div>-->
+                <!--<input type="file" id="sound-upload" accept="audio/*" class="mt-4" />-->
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div id="stage-controls">
+                <button id="run-button" class="icon-button">🏁</button>
+                <button id="stop-button" class="icon-button">🛑</button>
+            </div>
+
+            <div id="stage-wrapper">
+                <div id="stage"></div>
+            </div>
+
+            <div id="sprite-info">
+                <p>x: 0</p>
+                <p>y: 0</p>
+                <p>angle: 0</p>
+            </div>
+
+            <div id="sprites-section">
+                <h3>Sprites</h3>
+                <div id="sprites-list"></div>
+                <button id="add-sprite-button">+ Add Sprite</button>
+                <button id="delete-sprite-button">× Delete Sprite</button>
+            </div>
+        </div>
+    </div>
+
+    <xml id="toolbox" style="display: none">
+        <category name="Motion" colour="#4C97FF">
+            <block type="move_steps">
+                <value name="STEPS">
+                    <shadow type="math_number">
+                        <field name="NUM">10</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="change_position">
+                <value name="AMOUNT">
+                    <shadow type="math_number">
+                        <field name="NUM">10</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="set_position">
+                <value name="AMOUNT">
+                    <shadow type="math_number">
+                        <field name="NUM">10</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="get_position"></block>
+        </category>
+
+        <category name="Looks" colour="#9966FF">
+            <block type="say_message">
+                <value name="MESSAGE">
+                    <shadow type="text">
+                        <field name="TEXT">Hello!</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="say_message_duration">
+                <value name="MESSAGE">
+                    <shadow type="text">
+                        <field name="TEXT">Hello!</field>
+                    </shadow>
+                </value>
+                <value name="DURATION">
+                    <shadow type="math_number">
+                        <field name="NUM">2</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="switch_costume">
+                <value name="COSTUME">
+                    <shadow type="text">
+                        <field name="TEXT">default</field>
+                    </shadow>
+                </value>
+            </block>
+        </category>
+
+        <category name="Events" colour="#ffc400">
+            <block type="when_flag_clicked"></block>
+            <block type="project_timer"></block>
+        </category>
+
+        <category name="Control" colour="#FFAB19">
+            <block type="controls_if"></block>
+            <block type="controls_repeat_ext">
+                <value name="TIMES">
+                    <shadow type="math_number">
+                        <field name="NUM">2</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="controls_whileUntil"></block>
+            <block type="controls_for">
+                <value name="FROM">
+                    <shadow type="math_number">
+                        <field name="NUM">1</field>
+                    </shadow>
+                </value>
+                <value name="TO">
+                    <shadow type="math_number">
+                        <field name="NUM">10</field>
+                    </shadow>
+                </value>
+                <value name="BY">
+                    <shadow type="math_number">
+                        <field name="NUM">1</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="controls_flow_statements"></block>
+            <block type="wait_one_frame"></block>
+            <block type="wait_block">
+                <value name="AMOUNT">
+                    <shadow type="math_number">
+                        <field name="NUM">2</field>
+                    </shadow>
+                </value>
+            </block>
+        </category>
+
+        <category name="Operators" colour="#59ba57">
+            <category name="Logic" colour="#59ba57">
+                <block type="logic_compare"></block>
+                <block type="logic_operation"></block>
+                <block type="logic_negate"></block>
+                <block type="logic_boolean"></block>
+                <block type="logic_null"></block>
+                <block type="logic_ternary">
+                </block>
+            </category>
+
+            <category name="Math" colour="#59ba57">
+                <block type="math_number">
+                    <field name="NUM">0</field>
+                </block>
+                <block type="math_arithmetic"></block>
+                <block type="math_single"></block>
+                <block type="math_trig"></block>
+                <block type="math_constant"></block>
+                <block type="math_number_property"></block>
+                <block type="math_round"></block>
+                <block type="math_on_list"></block>
+                <block type="math_modulo"></block>
+                <block type="math_constrain">
+                    <value name="LOW">
+                        <shadow type="math_number">
+                            <field name="NUM">1</field>
+                        </shadow>
+                    </value>
+                    <value name="HIGH">
+                        <shadow type="math_number">
+                            <field name="NUM">100</field>
+                        </shadow>
+                    </value>
+                </block>
+                <block type="math_random_int">
+                    <value name="FROM">
+                        <shadow type="math_number">
+                            <field name="NUM">1</field>
+                        </shadow>
+                    </value>
+                    <value name="TO">
+                        <shadow type="math_number">
+                            <field name="NUM">100</field>
+                        </shadow>
+                    </value>
+                </block>
+                <block type="math_random_float"></block>
+            </category>
+
+            <category name="Text" colour="#59ba57">
+                <block type="text"></block>
+                <block type="text_join"></block>
+                <block type="text_append">
+                    <value name="TEXT">
+                        <shadow type="text"></shadow>
+                    </value>
+                </block>
+                <block type="text_length"></block>
+                <block type="text_isEmpty"></block>
+                <block type="text_indexOf">
+                    <value name="VALUE">
+                        <block type="variables_get">
+                            <field name="VAR">text</field>
+                        </block>
+                    </value>
+                </block>
+                <block type="text_charAt">
+                    <value name="VALUE">
+                        <block type="variables_get">
+                            <field name="VAR">text</field>
+                        </block>
+                    </value>
+                </block>
+                <block type="text_getSubstring">
+                    <value name="STRING">
+                        <block type="variables_get">
+                            <field name="VAR">text</field>
+                        </block>
+                    </value>
+                </block>
+                <block type="text_changeCase"></block>
+                <block type="text_trim"></block>
+                <block type="text_print"></block>
+                <block type="text_prompt_ext"></block>
+            </category>
+        </category>      
+
+        <category name="System" colour="#5CB1D6">
+            <block type="key_pressed"></block>
+            <block type="get_mouse_position"></block>
+        </category>
+
+        <category name="Lists" colour="#e35340">
+            <block type="lists_create_with">
+                <mutation items="2"></mutation>
+            </block>
+            <block type="lists_repeat">
+                <value name="NUM">
+                    <shadow type="math_number">
+                        <field name="NUM">5</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="lists_length"></block>
+            <block type="lists_isEmpty"></block>
+            <block type="lists_indexOf">
+                <value name="VALUE">
+                    <block type="variables_get">
+                        <field name="VAR">list</field>
+                    </block>
+                </value>
+            </block>
+            <block type="lists_getIndex">
+                <value name="VALUE">
+                    <block type="variables_get">
+                        <field name="VAR">list</field>
+                    </block>
+                </value>
+            </block>
+            <block type="lists_setIndex">
+                <value name="LIST">
+                    <block type="variables_get">
+                        <field name="VAR">list</field>
+                    </block>
+                </value>
+            </block>
+            <block type="lists_getSublist">
+                <value name="LIST">
+                    <block type="variables_get">
+                        <field name="VAR">list</field>
+                    </block>
+                </value>
+            </block>
+            <block type="lists_split">
+                <value name="DELIM">
+                    <shadow type="text">
+                        <field name="TEXT">,</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="lists_sort"></block>
+            <block type="controls_forEach">
+                <value name="LIST">
+                    <block type="variables_get">
+                        <field name="VAR">list</field>
+                    </block>
+                </value>
+            </block>
+        </category>
+
+        <category name="Variables" colour="#FF8C1A" custom="VARIABLE"></category>
+
+        <category name="Functions" colour="#FF6680" custom="PROCEDURE"></category>
+    </xml>
+
+    <script src="blocks.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
