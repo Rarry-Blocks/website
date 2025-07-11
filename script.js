@@ -42,6 +42,38 @@
 
   stageContainer.appendChild(app.view);
 
+  const penGraphics = new PIXI.Graphics();
+  penGraphics.clear();
+  app.stage.addChildAt(penGraphics, 0);
+
+  app.ticker.add(() => {
+    sprites.forEach((spriteData) => {
+      if (!spriteData.lastPos) {
+        spriteData.lastPos = {
+          x: spriteData.pixiSprite.x,
+          y: spriteData.pixiSprite.y,
+        };
+        if (spriteData.penDown) return;
+      }
+      const { x: x0, y: y0 } = spriteData.lastPos;
+      const x1 = spriteData.pixiSprite.x;
+      const y1 = spriteData.pixiSprite.y;
+      if (spriteData.penDown) {
+        penGraphics.lineStyle(
+          spriteData.penSize || 1,
+          PIXI.utils.rgb2hex([
+            spriteData.penColor?.r / 255 || 0,
+            spriteData.penColor?.g / 255 || 0,
+            spriteData.penColor?.b / 255 || 0,
+          ])
+        );
+        penGraphics.moveTo(x0, y0);
+        penGraphics.lineTo(x1, y1);
+      }
+      spriteData.lastPos = { x: x1, y: y1 };
+    });
+  });
+
   const blockStyles = {
     logic_blocks: {
       colourPrimary: "#59ba57",
@@ -907,7 +939,23 @@
           const mouse = app.renderer.plugins.interaction.mouse.global;
           const bounds = spriteData.pixiSprite.getBounds();
           return bounds.contains(mouse.x, mouse.y);
-        }        
+        }
+
+        function setPenStatus(active) {
+          spriteData.penDown = !!active;
+        }
+
+        function setPenColor(r, g, b) {
+          spriteData.penColor = { r, g, b };
+        }
+        
+        function setPenSize(size) {
+          spriteData.penSize = size;
+        }
+        
+        function clearPen() {
+          penGraphics.clear();
+        }
 
         eval(code);
       } catch (e) {
@@ -1203,7 +1251,7 @@
     "Enter",
     "Escape",
     ..."abcdefghijklmnopqrstuvwxyz0123456789",
-    ..."abcdefghijklmnopqrstuvwxyz".toUpperCase()
+    ..."abcdefghijklmnopqrstuvwxyz".toUpperCase(),
   ]);
   window.addEventListener("keydown", (e) => {
     const key = e.key;
@@ -1264,37 +1312,54 @@
       id: "tween",
       name: "Tween",
       xml: `<category name="Tween" colour="#32a2c0">
-      <block type="tween_sprite_property">
-        <value name="TO">
-          <shadow type="math_number">
-            <field name="NUM">100</field>
-          </shadow>
-        </value>
-        <value name="DURATION">
-          <shadow type="math_number">
-            <field name="NUM">3</field>
-          </shadow>
-        </value>
-      </block>
-      <block type="tween_block">
-        <value name="FROM">
-          <shadow type="math_number">
-            <field name="NUM">0</field>
-          </shadow>
-        </value>
-        <value name="TO">
-          <shadow type="math_number">
-            <field name="NUM">100</field>
-          </shadow>
-        </value>
-        <value name="DURATION">
-          <shadow type="math_number">
-            <field name="NUM">3</field>
-          </shadow>
-        </value>
-      </block>
-      <block type="tween_block_value"></block>
-    </category>`,
+        <block type="tween_sprite_property">
+          <value name="TO">
+            <shadow type="math_number">
+              <field name="NUM">100</field>
+            </shadow>
+          </value>
+          <value name="DURATION">
+            <shadow type="math_number">
+              <field name="NUM">3</field>
+            </shadow>
+          </value>
+        </block>
+        <block type="tween_block">
+          <value name="FROM">
+            <shadow type="math_number">
+              <field name="NUM">0</field>
+            </shadow>
+          </value>
+          <value name="TO">
+            <shadow type="math_number">
+              <field name="NUM">100</field>
+            </shadow>
+          </value>
+          <value name="DURATION">
+            <shadow type="math_number">
+              <field name="NUM">3</field>
+            </shadow>
+          </value>
+        </block>
+        <block type="tween_block_value"></block>
+      </category>`,
+    },
+    {
+      id: "pen",
+      name: "Pen",
+      xml: `<category name="Pen" colour="#0fbd8c">
+        <block type="pen_down"></block>
+        <block type="pen_up"></block>
+        <block type="set_pen_color">
+          <value name="R"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+          <value name="G"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+          <value name="B"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+        </block>
+        <block type="set_pen_size">
+          <value name="SIZE"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+        </block>
+        <block type="clear_pen"></block>
+      </category>`,
     },
   ];
 

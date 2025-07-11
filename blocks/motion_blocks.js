@@ -17,7 +17,6 @@ Blockly.Blocks["change_position"] = {
         new Blockly.FieldDropdown([
           ["x", "x"],
           ["y", "y"],
-          ["angle", "angle"],
         ]),
         "MENU"
       )
