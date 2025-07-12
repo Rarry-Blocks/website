@@ -945,14 +945,29 @@
           spriteData.penDown = !!active;
         }
 
-        function setPenColor(r, g, b) {
-          spriteData.penColor = { r, g, b };
-        }
-        
+        const setPenColor = (r = 0, g = 0, b = 0) => {
+          if (typeof r === "string") {
+            const [r_, g_, b_] = r.split(",").map((s) => parseInt(s.trim()));
+            spriteData.penColor = { r: r_, g: g_, b: b_ };
+          } else {
+            spriteData.penColor = { r, g, b };
+          }
+        };
+        const setPenColorHex = (value) => {
+          var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(value);
+          spriteData.penColor = result
+            ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16),
+              }
+            : { r: 0, g: 0, b: 0 };
+        };
+
         function setPenSize(size) {
           spriteData.penSize = size;
         }
-        
+
         function clearPen() {
           penGraphics.clear();
         }
@@ -1061,8 +1076,8 @@
           x: sprite.pixiSprite.x,
           y: sprite.pixiSprite.y,
           scale: {
-            x: sprite.pixiSprite.scale.x,
-            y: sprite.pixiSprite.scale.y,
+            x: sprite.pixiSprite.scale.x ?? 1,
+            y: sprite.pixiSprite.scale.y ?? 1,
           },
           angle: sprite.pixiSprite.angle,
           currentCostume: sprite.costumes.findIndex(
@@ -1350,10 +1365,12 @@
       xml: `<category name="Pen" colour="#0fbd8c">
         <block type="pen_down"></block>
         <block type="pen_up"></block>
-        <block type="set_pen_color">
-          <value name="R"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
-          <value name="G"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
-          <value name="B"><shadow type="math_number"><field name="NUM">0</field></shadow></value>
+        <block type="set_pen_color_combined">
+          <value name="VALUE">
+            <shadow type="text">
+              <field name="TEXT">255,100,100</field>
+            </shadow>
+          </value>
         </block>
         <block type="set_pen_size">
           <value name="SIZE"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
