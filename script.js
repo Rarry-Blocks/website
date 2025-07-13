@@ -1060,8 +1060,10 @@
         code: sprite.code,
         costumes: sprite.costumes.map((c) => {
           let dataURL;
-          if (c.texture.baseTexture.resource.url.startsWith("data:")) {
-            dataURL = c.texture.baseTexture.resource.url;
+
+          const url = c?.texture?.baseTexture?.resource?.url;
+          if (typeof url === "string" && url.startsWith("data:")) {
+            dataURL = url;
           } else {
             dataURL = app.renderer.extract.base64(new PIXI.Sprite(c.texture));
           }
