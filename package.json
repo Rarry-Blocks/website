@@ -12,6 +12,7 @@
     "vite": "^7.0.4"
   },
   "dependencies": {
-    "blockly": "^12.2.0"
+    "blockly": "^12.2.0",
+    "pixi.js": "^5.3.3"
   }
 }

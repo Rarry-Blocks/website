@@ -1,8 +1,9 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import * as PIXI from "pixi.js";
+
 import CustomRenderer from "./render.js";
 import { SpriteChangeEvents } from "./patches.js";
-
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
 BlocklyJS.javascriptGenerator.addReservedWords(
