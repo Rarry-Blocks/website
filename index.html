@@ -5,9 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rarry Editor</title>
-    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.3/pixi.min.js"></script>
-    <link href="styles.css" rel="stylesheet" />
+    <link href="src/styles.css" rel="stylesheet" />
 
     <meta name="author" content="ddededodediamante">
     <meta name="description" content="Create and share games using visual block-coding, inspired by Scratch.">
@@ -429,22 +427,87 @@
             </block>
         </category>
 
+        <category name="Objects" colour="#ff8349">
+            <block type="json_create">
+                <mutation items="2"></mutation>
+            </block>
+            <block type="json_key_value">
+                <value name="KEY">
+                    <shadow type="text">
+                        <field name="TEXT"></field>
+                    </shadow>
+                </value>
+                <value name="VALUE">
+                    <shadow type="text">
+                        <field name="TEXT"></field>
+                    </shadow>
+                </value>
+            </block>
+            <sep gap="50"></sep>
+            <block type="json_has_key">
+                <value name="KEY">
+                    <shadow type="text">
+                        <field name="TEXT">key</field>
+                    </shadow>
+                </value>
+                <value name="OBJECT">
+                    <block type="variables_get">
+                        <field name="VAR">obj</field>
+                    </block>
+                </value>
+            </block>
+            <block type="json_get">
+                <value name="KEY">
+                    <shadow type="text">
+                        <field name="TEXT">key</field>
+                    </shadow>
+                </value>
+                <value name="OBJECT">
+                    <block type="variables_get">
+                        <field name="VAR">obj</field>
+                    </block>
+                </value>
+            </block>
+            <block type="json_set">
+                <value name="KEY">
+                    <shadow type="text">
+                        <field name="TEXT">key</field>
+                    </shadow>
+                </value>
+                <value name="OBJECT">
+                    <block type="variables_get">
+                        <field name="VAR">obj</field>
+                    </block>
+                </value>
+            </block>
+            <block type="json_delete">
+                <value name="KEY">
+                    <shadow type="text">
+                        <field name="TEXT">key</field>
+                    </shadow>
+                </value>
+                <value name="OBJECT">
+                    <block type="variables_get">
+                        <field name="VAR">obj</field>
+                    </block>
+                </value>
+            </block>
+            <block type="json_property_list">
+                <value name="OBJECT">
+                    <block type="variables_get">
+                        <field name="VAR">obj</field>
+                    </block>
+                </value>
+            </block>
+            <block type="json_parse"></block>
+        </category>
+
         <category name="Variables" colour="#FF8C1A" custom="VARIABLE"></category>
 
         <category name="Functions" colour="#FF6680" custom="PROCEDURE"></category>
     </xml>
 
-    <script src="patches.js"></script>
-    <script src="blocks/control_blocks.js"></script>
-    <script src="blocks/event_blocks.js"></script>
-    <script src="blocks/looks_blocks.js"></script>
-    <script src="blocks/motion_blocks.js"></script>
-    <script src="blocks/sound_blocks.js"></script>
-    <script src="blocks/system_blocks.js"></script>
-    <script src="blocks/tween_blocks.js"></script>
-    <script src="blocks/pen_blocks.js"></script>
-    <script src="render.js"></script>
-    <script src="script.js"></script>
+    <script type="module" src="src/scripts/main.js"></script>
 </body>
 
 </html>

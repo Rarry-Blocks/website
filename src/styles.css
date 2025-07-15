@@ -1,0 +1,459 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  --font: "Inter", sans-serif;
+  --dark: #2b323b;
+  --dark-light: #424c5a;
+  --primary: #3b82f6;
+  --primary-dark: #336ce7;
+  --danger: #f63b3b;
+  --danger-dark: #dd3434;
+  --color1: #f3f4f6;
+  --color2: #e4e5e7;
+  --color3: #cbcdcf;
+  --color4: #b9bbbd;
+}
+
+.dark {
+  --dark: #e2e8f0;
+  --dark-light: #c8cdd4;
+  --primary: #3b82f6;
+  --primary-dark: #336ce7;
+  --danger: #f63b3b;
+  --danger-dark: #dd3434;
+  --color1: #262d36;
+  --color2: #2f3741;
+  --color3: #3d4552;
+  --color4: #464f5e;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+input {
+  color: var(--dark);
+}
+
+body,
+div#app {
+  font-family: var(--font);
+  background-color: var(--color1);
+  overscroll-behavior: none;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: var(--primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.5rem;
+  z-index: 10;
+}
+
+header h2,
+header button:not(#theme-toggle) {
+  color: #f3f4f6;
+}
+
+.dark header {
+  background-color: var(--color4);
+}
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color1);
+}
+
+header div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+button {
+  font-family: var(--font);
+  font-size: medium;
+  font-weight: 700;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  border: none;
+  background-color: var(--dark);
+  color: var(--color1);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+img.button {
+  width: 2rem;
+  cursor: pointer;
+  transition: scale 0.2s;
+}
+
+img.button:active {
+  scale: 0.95;
+}
+
+button:hover {
+  background-color: var(--dark-light);
+}
+
+button.primary {
+  background-color: var(--primary);
+}
+
+button.primary:hover {
+  background-color: var(--primary-dark);
+}
+
+button.danger {
+  background-color: var(--danger);
+}
+
+button.danger:hover {
+  background-color: var(--danger-dark);
+}
+
+button.orange {
+  background-color: #f18f3f;
+}
+
+button.orange:hover {
+  background-color: #e28940;
+}
+
+button.green {
+  background-color: #2acc66;
+}
+
+button.green:hover {
+  background-color: #28b85c;
+}
+
+#blocklyDiv {
+  height: 100%;
+  width: 100%;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.left-panel {
+  width: 66.66%;
+  display: flex;
+  flex-direction: column;
+  border-right: 2px solid var(--color3);
+}
+
+.tab-header {
+  display: flex;
+  border-bottom: 2px solid var(--color3);
+}
+
+button.tab-button {
+  flex: 1;
+  padding: 0.5rem 0;
+  text-align: center;
+  font-weight: 600;
+  color: var(--primary);
+  background-color: var(--color2);
+  border-radius: 0;
+}
+
+button.tab-button.inactive {
+  background-color: transparent;
+  color: var(--dark);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  flex: 1;
+}
+
+.tab-section {
+  padding: 1rem;
+  background-color: var(--color1);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sound-container,
+.costume-container {
+  padding: 8px;
+  gap: 0.5rem;
+  background-color: var(--color2);
+  border-radius: 0.375rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  font-size: 1rem;
+  color: var(--dark);
+}
+
+#stage-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+}
+
+#stage canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.right-panel {
+  width: 33.33%;
+  display: flex;
+  flex-direction: column;
+}
+
+#stage-controls {
+  background-color: var(--color1);
+  padding: 0.5rem;
+  border-bottom: 2px solid var(--color3);
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+#stage-controls button {
+  padding: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 25%;
+  background-color: var(--color2);
+  transition: background-color 0.2s;
+}
+
+#stage-controls button:hover {
+  background-color: var(--color3);
+}
+
+#stage-controls button img {
+  width: 100%;
+  height: 100%;
+}
+
+#sprite-info {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+#sprite-info p {
+  color: var(--dark);
+}
+
+#sprite-info p:not(:last-child) {
+  padding-right: 5px;
+  border-right: 2px solid var(--color2);
+}
+
+#sprites-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--color1);
+  padding: 0.5rem;
+  border-top: 2px solid var(--color3);
+  overflow-y: auto;
+}
+
+#sprites-section div#sprite-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+#sprites-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+  max-height: 9rem;
+  overflow-y: scroll;
+}
+
+#sprites-list div {
+  width: 4rem;
+  height: 4rem;
+  background-color: var(--color2);
+  border-radius: 0.375rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+#sprites-list div.active {
+  background-color: var(--primary);
+  color: var(--color1);
+}
+
+#sprites-section-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+#costumes-list,
+#sounds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#extensionButton {
+  padding: 3px;
+  margin: 0 5px;
+  margin-top: auto;
+  background: var(--primary);
+  color: var(--dark);
+  order: 99;
+  cursor: pointer;
+}
+
+.extensions-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background-color: var(--color1);
+}
+
+.extensions-popup .extensions-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.7rem;
+}
+
+.extensions-list div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--color2);
+}
+
+.extensions-list div img {
+  border-radius: 0.5rem;
+}
+
+.extensions-list div h2 {
+  text-align: center;
+}
+
+.extensions-popup header {
+  padding: 0.7rem;
+}
+
+.blocklyMainBackground {
+  stroke-width: 0;
+  stroke: none;
+}
+
+.blocklyToolboxCategoryGroup {
+  height: 100%;
+}
+
+.dark .blocklyToolboxCategoryIcon {
+  filter: invert(1);
+}
+
+.blocklyToolboxCategory {
+  height: initial;
+  padding: 3px 0;
+  transition: background-color 0.2s ease;
+  border-left: none !important;
+}
+
+.blocklyToolboxCategory.blocklyToolboxSelected {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .blocklyToolboxCategory.blocklyToolboxSelected {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.blocklyToolboxCategoryLabel {
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.blocklyTreeRowContentContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 3px;
+}
+
+.categoryBubble {
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color4);
+}
+
+:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
