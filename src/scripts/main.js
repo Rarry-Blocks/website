@@ -24,6 +24,7 @@ const deleteSpriteButton = document.getElementById("delete-sprite-button");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabContents = document.querySelectorAll(".tab-content");
 const themeToggle = document.getElementById("theme-toggle");
+const fullscreenButton = document.getElementById("fullscreen-button");
 const root = document.documentElement;
 
 const savedTheme = localStorage.getItem("theme");
@@ -1487,4 +1488,14 @@ extensions.forEach((e) => {
     <img src="./icons/${e.id}.svg">`;
   extension.appendChild(addButton);
   extensionsList.appendChild(extension);
+});
+
+const stageDiv = document.getElementById("stage-div");
+
+fullscreenButton.addEventListener("click", () => {
+  const isFull = stageDiv.classList.toggle("fullscreen");
+  fullscreenButton.innerHTML = `<img src="icons/${
+    isFull ? "smallscreen.svg" : "fullscreen.svg"
+  }">`;
+  resizeCanvas();
 });

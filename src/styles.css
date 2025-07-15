@@ -219,6 +219,21 @@ button.tab-button.inactive {
   padding-top: 56.25%;
 }
 
+#stage-div.fullscreen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  z-index: 9999;           
+  background: var(--color1);
+}
+
 #stage canvas {
   position: absolute;
   top: 0;
@@ -258,6 +273,10 @@ button.tab-button.inactive {
 #stage-controls button img {
   width: 100%;
   height: 100%;
+}
+
+.dark #fullscreen-button img {
+  filter: invert(1);
 }
 
 #sprite-info {
