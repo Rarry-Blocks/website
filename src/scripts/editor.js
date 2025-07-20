@@ -816,7 +816,8 @@ function runCode() {
         const tweenPromise = new Promise((resolve, reject) => {
           const start = performance.now();
           const change = to - from;
-          const easeFn = TweenEasing[easing] || TweenEasing.linear;
+          const easeFn =
+            window.TweenEasing[easing] || window.TweenEasing.linear;
 
           function tick(now) {
             if (window.shouldStop || thisRun !== currentRunId) return resolve();

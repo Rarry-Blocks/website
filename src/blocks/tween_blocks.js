@@ -94,6 +94,7 @@ const TweenEasing = {
       ? (1 - TweenEasing.OutBounce(1 - 2 * t)) / 2
       : (1 + TweenEasing.OutBounce(2 * t - 1)) / 2,
 };
+window.TweenEasing = TweenEasing;
 
 Blockly.Blocks["tween_block"] = {
   init: function () {
