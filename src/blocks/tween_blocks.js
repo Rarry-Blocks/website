@@ -162,8 +162,8 @@ BlocklyJS.javascriptGenerator.forBlock["tween_block"] = function (block, generat
     "1";
   const waitMode = block.getFieldValue("WAIT_MODE");
 
-  let branch = BlocklyJS.statementToCode(block, "DO");
-  branch = BlocklyJS.addLoopTrap(branch, block);
+  let branch = BlocklyJS.javascriptGenerator.statementToCode(block, "DO");
+  branch = BlocklyJS.javascriptGenerator.addLoopTrap(branch, block);
 
   const code = `await startTween({
   from: ${from},
