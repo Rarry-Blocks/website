@@ -1,7 +1,7 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 
-const TweenEasing = {
+const TweenEasing = Object.freeze({
   InLinear: (t) => t,
   OutLinear: (t) => t,
   InOutLinear: (t) => t,
@@ -93,7 +93,7 @@ const TweenEasing = {
     t < 0.5
       ? (1 - TweenEasing.OutBounce(1 - 2 * t)) / 2
       : (1 + TweenEasing.OutBounce(2 * t - 1)) / 2,
-};
+});
 window.TweenEasing = TweenEasing;
 
 Blockly.Blocks["tween_block"] = {

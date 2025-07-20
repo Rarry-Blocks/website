@@ -112,3 +112,26 @@ BlocklyJS.javascriptGenerator.forBlock["mouse_over"] = () => [
   "isMouseTouchingSprite()",
   BlocklyJS.Order.NONE,
 ];
+
+Blockly.Blocks["window_size"] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("window")
+      .appendField(
+        new Blockly.FieldDropdown([
+          ["width", "width"],
+          ["height", "height"],
+        ]),
+        "MENU"
+      );
+    this.setOutput(true, "Number");
+    this.setColour("#5CB1D6");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["window_size"] = function (block) {
+  return [
+    `window.inner${block.getFieldValue("MENU") === "width" ? "Width" : "Height"}`,
+    BlocklyJS.Order.NONE,
+  ];
+};
