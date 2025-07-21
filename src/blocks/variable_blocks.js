@@ -1,0 +1,84 @@
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
+
+function getVariables() {
+  if (Object.keys(window.projectVariables).length === 0)
+    return [["unknown", "unknown"]];
+  else return Object.keys(window.projectVariables).map((name) => [name, name]);
+}
+
+Blockly.Blocks["get_global_var"] = {
+  init: function () {
+    this.appendDummyInput().appendField(
+      new Blockly.FieldDropdown(() => getVariables()),
+      "VAR"
+    );
+    this.setOutput(true);
+    this.setTooltip("Get a global variable");
+    this.setStyle("variable_blocks");
+    this.customContextMenu = function (options) {
+      const varName = this.getFieldValue("VAR");
+      options.push({
+        text: `Delete "${varName}" variable`,
+        enabled: true,
+        callback: () => {
+          delete window.projectVariables[varName];
+          this.workspace.refreshToolboxSelection();
+        },
+      });
+    };
+  },
+};
+
+Blockly.Blocks["set_global_var"] = {
+  init: function () {
+    this.appendValueInput("VALUE")
+      .setCheck(null)
+      .appendField("set")
+      .appendField(new Blockly.FieldDropdown(() => getVariables()), "VAR")
+      .appendField("to");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setStyle("variable_blocks");
+  },
+};
+
+Blockly.Blocks["change_global_var"] = {
+  init: function () {
+    this.appendValueInput("VALUE")
+      .setCheck("Number")
+      .appendField("change")
+      .appendField(new Blockly.FieldDropdown(() => getVariables()), "VAR")
+      .appendField("by");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setStyle("variable_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["get_global_var"] = function (block) {
+  const name = block.getFieldValue("VAR");
+  return [`projectVariables["${name}"]`, BlocklyJS.Order.ATOMIC];
+};
+
+BlocklyJS.javascriptGenerator.forBlock["set_global_var"] = function (block) {
+  const name = block.getFieldValue("VAR");
+  const value =
+    BlocklyJS.javascriptGenerator.valueToCode(
+      block,
+      "VALUE",
+      BlocklyJS.Order.ASSIGNMENT
+    ) || "0";
+  return `projectVariables["${name}"] = ${value};\n`;
+};
+
+BlocklyJS.javascriptGenerator.forBlock["chabge_global_var"] = function (block) {
+  const name = block.getFieldValue("VAR");
+  const value =
+    BlocklyJS.javascriptGenerator.valueToCode(
+      block,
+      "VALUE",
+      BlocklyJS.Order.ATOMIC
+    ) || "0";
+  return `projectVariables["${name}"] += ${value};\n`;
+};

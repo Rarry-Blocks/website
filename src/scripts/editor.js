@@ -63,6 +63,8 @@ const penGraphics = new PIXI.Graphics();
 penGraphics.clear();
 app.stage.addChildAt(penGraphics, 0);
 
+window.projectVariables = {};
+
 let sprites = [];
 let activeSprite = null;
 
@@ -176,6 +178,63 @@ const workspace = Blockly.inject("blocklyDiv", {
 });
 window.toolbox = toolbox;
 window.workspace = workspace;
+
+workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (ws) {
+  const xmlList = [];
+
+  const button = Blockly.utils.xml.createElement("button");
+  button.setAttribute("text", "Create variable");
+  button.setAttribute("callbackKey", "ADD_GLOBAL_VARIABLE");
+  xmlList.push(button);
+
+  if (Object.keys(window.projectVariables).length === 0) return xmlList;
+
+  const valueShadow = Blockly.utils.xml.createElement("value");
+  valueShadow.setAttribute("name", "VALUE");
+  const shadow = Blockly.utils.xml.createElement("shadow");
+  shadow.setAttribute("type", "math_number");
+  const field = Blockly.utils.xml.createElement("field");
+  field.setAttribute("name", "NUM");
+  field.textContent = "0";
+  shadow.appendChild(field);
+  valueShadow.appendChild(shadow);
+
+  const set = Blockly.utils.xml.createElement("block");
+  set.setAttribute("type", "set_global_var");
+  set.appendChild(valueShadow.cloneNode(true));
+  xmlList.push(set);
+
+  const change = Blockly.utils.xml.createElement("block");
+  change.setAttribute("type", "change_global_var");
+  change.appendChild(valueShadow);
+  xmlList.push(change);
+
+  for (const name in window.projectVariables) {
+    const get = Blockly.utils.xml.createElement("block");
+    get.setAttribute("type", "get_global_var");
+    const varField = Blockly.utils.xml.createElement("field");
+    varField.setAttribute("name", "VAR");
+    varField.textContent = name;
+    get.appendChild(varField);
+    xmlList.push(get);
+  }
+
+  return xmlList;
+});
+
+workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", (button) => {
+  const name = prompt("New variable name:");
+  if (name) {
+    let newName = name,
+      count = 0;
+    while (newName in window.projectVariables) {
+      count++;
+      newName = name + count;
+    }
+
+    window.projectVariables[newName] = 0;
+  }
+});
 
 themeToggle.innerText = savedTheme === "dark" ? "Light Theme" : "Dark Theme";
 themeToggle.addEventListener("click", () => {
