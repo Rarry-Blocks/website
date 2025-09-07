@@ -1235,13 +1235,11 @@ import { minify } from "terser";
 async function minifyScript(code) {
   const result = await minify(code, {
     compress: true,
-    mangle: true,
+    mangle: false,
     format: {
       comments: false,
       beautify: false,
       semicolons: true,
-      quote_style: 1,
-      inline_script: true,
     },
   });
   return result.code;
