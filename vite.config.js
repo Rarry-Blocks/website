@@ -5,6 +5,7 @@ export default {
         main: "index.html",
         editor: "editor.html",
       },
+      external: ['./src/runCodeWithFunctions.js']
     },
   },
 };
