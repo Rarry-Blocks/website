@@ -13,7 +13,8 @@ export function runCodeWithFunctions({
   playingSounds,
   promiseWithAbort,
   signal,
-  PIXI
+  PIXI,
+  runningScripts
 }) {
   function whenFlagClicked(callback) {
     if (

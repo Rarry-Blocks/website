@@ -80,8 +80,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   let returnCode = "";
   if (block.getInput("RETURN")) {
     returnCode =
-      generator.valueToCode(block, "RETURN", BlocklyJS.Order.NONE) ||
-      "";
+      generator.valueToCode(block, "RETURN", BlocklyJS.Order.NONE) || "";
   }
 
   let returnWrapper = "";
@@ -154,8 +153,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defreturn"] = function (
   let returnCode = "";
   if (block.getInput("RETURN")) {
     returnCode =
-      generator.valueToCode(block, "RETURN", BlocklyJS.Order.NONE) ||
-      "";
+      generator.valueToCode(block, "RETURN", BlocklyJS.Order.NONE) || "";
   }
 
   let returnWrapper = "";
@@ -202,8 +200,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_callreturn"] = function (
   const vars = block.getVars();
   for (let i = 0; i < vars.length; i++) {
     args[i] =
-      generator.valueToCode(block, "ARG" + i, BlocklyJS.Order.NONE) ||
-      "null";
+      generator.valueToCode(block, "ARG" + i, BlocklyJS.Order.NONE) || "null";
   }
 
   return [
@@ -279,9 +276,11 @@ Object.defineProperty(PIXI.Sprite.prototype, "texture", {
     return originalTexture.get.call(this);
   },
   set(value) {
-    if (this.texture !== value) {
+    if (this.constructor === PIXI.Sprite && this.texture !== value) {
       originalTexture.set.call(this, value);
       SpriteChangeEvents.emit("textureChanged", this);
+    } else {
+      originalTexture.set.call(this, value);
     }
   },
 });

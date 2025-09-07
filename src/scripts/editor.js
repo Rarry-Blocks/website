@@ -678,7 +678,8 @@ async function runCode() {
         runningScripts,
         signal,
         promiseWithAbort,
-        PIXI
+        PIXI,
+        runningScripts
       });
     } catch (e) {
       console.error(`Error processing code for sprite ${spriteData.id}:`, e);
@@ -1074,7 +1075,7 @@ SpriteChangeEvents.on("positionChanged", (sprite) => {
   }
 });
 
-SpriteChangeEvents.on("textureChanged", () => {
+SpriteChangeEvents.on("textureChanged", (event) => {
   renderSpritesList(false);
 });
 
@@ -1234,15 +1235,38 @@ Sortable.create(document.querySelector("div.blocklyToolboxCategoryGroup"), {
 
 import { minify } from "terser";
 async function minifyScript(code) {
+  const RESERVED_GLOBALS = [
+    "PIXI", "PIXIJS", "Blockly", "BlocklyJS", "PROJECT",
+    "window", "document", "fetch", "btoa", "atob",
+    "JSON", "Promise", "Array", "Map", "Set", "Audio",
+    "Image", "console", "XMLHttpRequest"
+  ];
+
   const result = await minify(code, {
-    compress: true,
-    mangle: false,
+    ecma: 2018,
+    compress: {
+      passes: 3,               
+      drop_console: true,      
+      drop_debugger: true,
+      reduce_funcs: true,
+      dead_code: true,
+      unused: true,
+      unsafe: false,
+    },
+    mangle: {
+      toplevel: false,         
+      properties: false,      
+      reserved: RESERVED_GLOBALS,
+    },
     format: {
       comments: false,
       beautify: false,
       inline_script: true
     },
+    keep_fnames: false,
+    keep_classnames: false,
   });
+
   return result.code;
 }
 
@@ -1506,7 +1530,8 @@ async function generateStandaloneHTML() {
             runningScripts,
             promiseWithAbort,
             signal,
-            PIXI
+            PIXI,
+            runningScripts
           });
         } catch (e) {
           console.error(\`Error processing code for sprite \${spriteData.id}:\`, e);
@@ -1632,7 +1657,7 @@ async function generateStandaloneHTML() {
       </button>
     </div>
     <div id="stage-wrapper">
-        <div id="stage"></div>
+      <div id="stage"></div>
     </div>
   </div>
 
