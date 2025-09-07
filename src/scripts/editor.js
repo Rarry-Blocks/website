@@ -1432,7 +1432,52 @@ async function generateStandaloneHTML() {
     });
     ${calculateBubblePosition.toString()}
     ${promiseWithAbort.toString()}
-    ${stopAllScripts.toString()}
+    function stopAllScripts() {
+      window.shouldStop = true;
+    
+      if (currentRunController) {
+        try {
+          currentRunController.abort();
+        } catch (e) {}
+        currentRunController = null;
+      }
+      currentRunId++;
+    
+      runningScripts.forEach((i) => {
+        if (i.type === "timeout") clearTimeout(i.id);
+        else if (i.type === "interval") clearInterval(i.id);
+        else if (i.type === "raf") cancelAnimationFrame(i.id);
+      });
+      runningScripts.length = 0;
+    
+      flagEvents.length = 0;
+    
+      Object.keys(keysPressed).forEach((k) => delete keysPressed[k]);
+      Object.keys(mouseButtonsPressed).forEach(
+        (k) => delete mouseButtonsPressed[k]
+      );
+    
+      sprites.forEach((spriteData) => {
+        if (spriteData.currentBubble) {
+          try {
+            app.stage.removeChild(spriteData.currentBubble);
+          } catch (e) {}
+          spriteData.currentBubble = null;
+        }
+        if (spriteData.sayTimeout != null) {
+          clearTimeout(spriteData.sayTimeout);
+          spriteData.sayTimeout = null;
+        }
+      });
+    
+      for (const spriteSounds of playingSounds.values()) {
+        for (const audio of spriteSounds.values()) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      }
+      playingSounds.clear();
+    }
     ${runCodeWithFunctions.toString()}
     async function runCode() {
       stopAllScripts();

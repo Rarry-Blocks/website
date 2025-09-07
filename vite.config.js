@@ -1,6 +1,5 @@
 export default {
   build: {
-    minify: false, 
     rollupOptions: {
       input: {
         main: "index.html",
