@@ -5,7 +5,7 @@ import pako from "pako";
 
 import CustomRenderer from "./render.js";
 import { SpriteChangeEvents } from "./patches.js";
-import { runCodeWithFunctions } from "./functions.js";
+import { runCodeWithFunctions } from "./functions.js?no-treeshake";
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
 BlocklyJS.javascriptGenerator.addReservedWords(
