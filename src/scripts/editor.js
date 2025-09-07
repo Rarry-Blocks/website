@@ -13,7 +13,7 @@ BlocklyJS.javascriptGenerator.addReservedWords(
   getMousePosition,sayMessage,waitOneFrame,wait,switchCostume,setSize,setAngle,
   projectTime,isKeyPressed,isMouseButtonPressed,getCostumeSize,getSpriteScale,
   _startTween,startTween,soundProperties,getSoundProperty,setSoundProperty,
-  playSOund,stopSound,stopAllSounds,isMouseTouchingSprite,setPenStatus,
+  playSound,stopSound,stopAllSounds,isMouseTouchingSprite,setPenStatus,
   setPenColor,setPenColorHex,setPenSize,clearPen`.replaceAll("\n", "")
 );
 
@@ -1234,21 +1234,7 @@ Sortable.create(document.querySelector("div.blocklyToolboxCategoryGroup"), {
 import { minify } from "terser";
 async function minifyScript(code) {
   const result = await minify(code, {
-    ecma: 2020,
-    module: true,
-    compress: {
-      passes: 3,
-      drop_console: true,
-      drop_debugger: true,
-      unused: true,
-      collapse_vars: true,
-      reduce_vars: true,
-      booleans: true,
-      if_return: true,
-      sequences: true,
-      conditionals: true,
-      join_vars: true,
-    },
+    compress: true,
     mangle: true,
     format: {
       comments: false,
