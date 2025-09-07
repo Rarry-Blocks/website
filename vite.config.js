@@ -4,8 +4,7 @@ export default {
       input: {
         main: "index.html",
         editor: "editor.html",
-      },
-      external: ['./src/runCodeWithFunctions.js']
+      }
     },
   },
 };

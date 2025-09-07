@@ -444,5 +444,39 @@ export function runCodeWithFunctions({
     penGraphics.clear();
   }
 
+  const API = {
+    whenFlagClicked,
+    moveSteps,
+    changePosition,
+    setPosition,
+    getPosition,
+    getAngle,
+    getMousePosition,
+    sayMessage,
+    waitOneFrame,
+    wait,
+    switchCostume,
+    setSize,
+    setAngle,
+    projectTime,
+    isKeyPressed,
+    isMouseButtonPressed,
+    getCostumeSize,
+    getSpriteScale,
+    startTween,
+    playSound,
+    stopSound,
+    stopAllSounds,
+    isMouseTouchingSprite,
+    setPenStatus,
+    setPenColor,
+    setPenColorHex,
+    setPenSize,
+    clearPen,
+    getSoundProperty,
+    setSoundProperty
+  };
+  API;
+
   eval(code);
 }
