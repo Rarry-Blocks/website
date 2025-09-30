@@ -2,10 +2,12 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js";
 import pako from "pako";
+import { minify } from "terser";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 import CustomRenderer from "./render.js";
 import { SpriteChangeEvents } from "./patches.js";
-import { runCodeWithFunctions } from "./functions.js";
+import { runCodeWithFunctions, showPopup } from "./functions.js";
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
 BlocklyJS.javascriptGenerator.addReservedWords(
@@ -25,12 +27,8 @@ const loadButton = document.getElementById("load-button");
 const deleteSpriteButton = document.getElementById("delete-sprite-button");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabContents = document.querySelectorAll(".tab-content");
-const themeToggle = document.getElementById("theme-toggle");
 const fullscreenButton = document.getElementById("fullscreen-button");
 const root = document.documentElement;
-
-const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark") root.classList.add("dark");
 
 const BASE_WIDTH = 480;
 const BASE_HEIGHT = 360;
@@ -146,10 +144,10 @@ const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
   base: Blockly.Themes.Classic,
   blockStyles: blockStyles,
   componentStyles: {
-    workspaceBackgroundColour: "#1e1e1e",
-    toolboxBackgroundColour: "#333",
+    workspaceBackgroundColour: "#1a1e25",
+    toolboxBackgroundColour: "#303236",
     toolboxForegroundColour: "#fff",
-    flyoutBackgroundColour: "#252526",
+    flyoutBackgroundColour: "#212327",
     flyoutForegroundColour: "#ccc",
     flyoutOpacity: 1,
     scrollbarColour: "#797979",
@@ -168,7 +166,6 @@ export const workspace = Blockly.inject("blocklyDiv", {
   scrollbars: true,
   trashcan: true,
   renderer: "custom_zelos",
-  theme: savedTheme === "dark" ? darkTheme : lightTheme,
   zoom: {
     controls: true,
     wheel: true,
@@ -180,6 +177,22 @@ export const workspace = Blockly.inject("blocklyDiv", {
 });
 window.toolbox = toolbox;
 window.workspace = workspace;
+
+function toggleTheme(dark = false) {
+  if (dark) root.classList.add("dark");
+  else root.classList.remove("dark");
+  localStorage.setItem("theme", dark ? "dark" : "light");
+  workspace.setTheme(dark ? darkTheme : lightTheme, workspace);
+}
+
+function toggleIcons(removeIcons = false) {
+  if (removeIcons) root.classList.add("removeIcons");
+  else root.classList.remove("removeIcons");
+  localStorage.setItem("removeIcons", String(removeIcons));
+}
+
+toggleTheme(localStorage.getItem("theme") === "dark")
+toggleIcons(localStorage.getItem("removeIcons") === "true")
 
 workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (ws) {
   const xmlList = [];
@@ -236,15 +249,6 @@ workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", (button) => {
 
     window.projectVariables[newName] = 0;
   }
-});
-
-themeToggle.innerText = savedTheme === "dark" ? "Light Theme" : "Dark Theme";
-themeToggle.addEventListener("click", () => {
-  root.classList.toggle("dark");
-  const isDark = root.classList.contains("dark");
-  localStorage.setItem("theme", isDark ? "dark" : "light");
-  workspace.setTheme(isDark ? darkTheme : lightTheme, workspace);
-  themeToggle.innerText = isDark ? "Light Theme" : "Dark Theme";
 });
 
 export function addSprite() {
@@ -679,7 +683,7 @@ async function runCode() {
         signal,
         promiseWithAbort,
         PIXI,
-        runningScripts
+        runningScripts,
       });
     } catch (e) {
       console.error(`Error processing code for sprite ${spriteData.id}:`, e);
@@ -815,6 +819,8 @@ function loadProject(e) {
   const file = e.target.files[0];
   if (!file) return;
 
+  stopAllScripts();
+
   const reader = new FileReader();
   reader.onload = () => {
     const buffer = reader.result;
@@ -851,7 +857,9 @@ function loadProject(e) {
         if (typeof extId === "string") addExtension(extId);
       });
 
-      sprites.forEach((s) => app.stage.removeChild(s.pixiSprite));
+      app.stage.removeChildren().forEach((child) => {
+        if (child.destroy) child.destroy();
+      });
       sprites = [];
 
       if (!Array.isArray(data.sprites)) {
@@ -1168,7 +1176,7 @@ function addExtensionButton() {
   toolboxDiv.appendChild(button);
 }
 
-export function addExtension(id) {
+function addExtension(id) {
   if (activeExtensions.includes(id)) return;
 
   const extension = extensions.find((e) => e?.id === id);
@@ -1217,36 +1225,34 @@ fullscreenButton.addEventListener("click", () => {
   resizeCanvas();
 });
 
-import Sortable from "sortablejs";
-
-Sortable.create(document.querySelector("div.tab-header"), { animation: 150 });
-Sortable.create(document.querySelector("div#stage-controls"), {
-  animation: 150,
-});
-Sortable.create(document.querySelector("div.blocklyToolboxCategoryGroup"), {
-  animation: 150,
-  onStart: () => {
-    document.body.classList.add("draggingBlocklyToolboxCategory");
-  },
-  onEnd: () => {
-    document.body.classList.remove("draggingBlocklyToolboxCategory");
-  },
-});
-
-import { minify } from "terser";
 async function minifyScript(code) {
   const RESERVED_GLOBALS = [
-    "PIXI", "PIXIJS", "Blockly", "BlocklyJS", "PROJECT",
-    "window", "document", "fetch", "btoa", "atob",
-    "JSON", "Promise", "Array", "Map", "Set", "Audio",
-    "Image", "console", "XMLHttpRequest"
+    "PIXI",
+    "PIXIJS",
+    "Blockly",
+    "BlocklyJS",
+    "PROJECT",
+    "window",
+    "document",
+    "fetch",
+    "btoa",
+    "atob",
+    "JSON",
+    "Promise",
+    "Array",
+    "Map",
+    "Set",
+    "Audio",
+    "Image",
+    "console",
+    "XMLHttpRequest",
   ];
 
   const result = await minify(code, {
     ecma: 2018,
     compress: {
-      passes: 3,               
-      drop_console: true,      
+      passes: 3,
+      drop_console: true,
       drop_debugger: true,
       reduce_funcs: true,
       dead_code: true,
@@ -1254,14 +1260,14 @@ async function minifyScript(code) {
       unsafe: false,
     },
     mangle: {
-      toplevel: false,         
-      properties: false,      
+      toplevel: false,
+      properties: false,
       reserved: RESERVED_GLOBALS,
     },
     format: {
       comments: false,
       beautify: false,
-      inline_script: true
+      inline_script: true,
     },
     keep_fnames: false,
     keep_classnames: false,
@@ -1688,3 +1694,34 @@ async function downloadStandaloneHTML(filename = "rarryProject") {
 document
   .getElementById("export-button")
   .addEventListener("click", () => downloadStandaloneHTML());
+
+document.getElementById("theme-button").addEventListener("click", () =>
+  showPopup({
+    title: "Appearance",
+    rows: [
+      [
+        "Theme:",
+        {
+          type: "button",
+          label: '<i class="fa-solid fa-sun"></i> Light',
+          onClick: () => toggleTheme(false),
+        },
+        {
+          type: "button",
+          label: '<i class="fa-solid fa-moon"></i> Dark',
+          onClick: () => toggleTheme(true),
+        },
+      ],
+      [
+        "Show icon on buttons:",
+        {
+        type: "checkbox",
+        checked: !root.classList.contains("removeIcons"),
+        onChange: (checked, _popup) => {
+          toggleIcons(!checked);
+        },
+      },
+      ]
+    ],
+  })
+);

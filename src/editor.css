@@ -14,7 +14,7 @@
   --color4: #b9bbbd;
 }
 
-.dark {
+html.dark {
   --dark: #e2e8f0;
   --dark-light: #c8cdd4;
   --primary: #3b82f6;
@@ -64,7 +64,7 @@ header {
   z-index: 10;
 }
 
-.dark header {
+html.dark header {
   background-color: var(--color4);
 }
 
@@ -90,22 +90,51 @@ header div {
   display: none !important;
 }
 
-button {
+button, input[type="file"] {
   font-family: var(--font);
   font-size: medium;
   font-weight: 700;
   padding: 0.5rem 0.9rem;
   border-radius: 0.5rem;
   border: none;
-  background-color: var(--dark);
   color: var(--color1);
   cursor: pointer;
-  transition: background-color 0.2s;
+  will-change: background-color, scale;
+  transition: background-color 0.2s, scale 0.2s;
+}
+
+button {
+  background-color: var(--dark);
+}
+
+button:not(.tab-button):active {
+  scale: 0.95;
+}
+
+html:not(.removeIcons) button:has(i) {
+  padding-left: 0.7rem;
+}
+
+html.removeIcons button i:not(.stay) {
+  display: none;
+}
+
+input[type="file"] {
+  background-color: var(--primary);
+}
+
+input[type="file"]::file-selector-button {
+  font-family: var(--font);
+  background-color: white;
+  color: #2b323b;
+  border: none;
+  border-radius: 0.2rem;
 }
 
 img.button {
   width: 2rem;
   cursor: pointer;
+  will-change: scale;
   transition: scale 0.2s;
 }
 
@@ -149,7 +178,7 @@ button.green:hover {
   background-color: #28b85c;
 }
 
-.dark header button:not(.primary,.danger, .orange, .green) {
+html.dark header button {
   color: var(--color1);
 }
 
@@ -270,7 +299,6 @@ button.tab-button.inactive {
   height: 2.5rem;
   border-radius: 25%;
   background-color: var(--color2);
-  transition: background-color 0.2s;
 }
 
 #stage-controls button:hover {
@@ -282,7 +310,7 @@ button.tab-button.inactive {
   height: 100%;
 }
 
-.dark #fullscreen-button img {
+html.dark #fullscreen-button img {
   filter: invert(1);
 }
 
@@ -420,7 +448,7 @@ button.tab-button.inactive {
   height: 100%;
 }
 
-.dark .blocklyToolboxCategoryIcon {
+html.dark .blocklyToolboxCategoryIcon {
   filter: invert(1);
 }
 
@@ -435,7 +463,7 @@ button.tab-button.inactive {
   background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
-.dark .blocklyToolboxCategory.blocklyToolboxSelected {
+html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   background-color: rgba(255, 255, 255, 0.3) !important;
 }
 
@@ -463,6 +491,99 @@ button.tab-button.inactive {
   border: 1px solid;
   width: 1.25rem;
   height: 1.25rem;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    scale: 0;
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.popup {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+}
+
+.popup-content {
+  position: relative;
+  border-radius: 0.5rem;
+  width: max(300px, 50%);
+  height: max(300px, 50%);
+  background: var(--color2);
+  color: var(--dark);
+  animation: scaleIn 0.3s ease;
+}
+
+.popup-content header {
+  padding: 0.5rem;
+  padding-left: 0.7rem;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  width: 100%;
+  height: fit-content;
+}
+
+.popup-body,
+.popup-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.popup-body {
+  padding: 0.5rem;
+  flex-direction: column;
+}
+
+.popup-row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.popup-close {
+  margin-left: auto;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  appearance: none; 
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--color3);
+  cursor: pointer;
+  width: fit-content;
+  height: fit-content;
+  margin: 0;
+  padding: 0.7rem;
+  border-radius: 0.4rem;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary); 
+  position: relative;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 9px;
+  border: solid #f3f4f6;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 ::-webkit-scrollbar {

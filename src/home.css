@@ -14,7 +14,7 @@
   --color4: #b9bbbd;
 }
 
-.dark {
+html.dark {
   --dark: #e2e8f0;
   --dark-light: #c8cdd4;
   --primary: #3b82f6;
@@ -61,7 +61,7 @@ header {
   z-index: 10;
 }
 
-.dark header {
+html.dark header {
   background-color: var(--color4);
 }
 
@@ -172,6 +172,14 @@ footer {
   color: var(--dark-light);
   font-size: 0.9rem;
   margin-top: auto;
+}
+
+html:not(.removeIcons) button:has(i) {
+  padding-left: 0.7rem;
+}
+
+html.removeIcons button i {
+  display: none;
 }
 
 ::-webkit-scrollbar {

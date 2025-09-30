@@ -25,13 +25,25 @@
     <header>
         <div>
             <img src="icons/Rarry.svg" alt="Rarry" onclick="location.href='/'" style="cursor: pointer;">
-            <button id="theme-toggle">Dark Theme</button>
+            <button id="theme-button">
+                <i class="fa-solid fa-paintbrush"></i>
+                Appearance
+            </button>
         </div>
         <div>
-            <button id="save-button" class="green">Save</button>
-            <button id="load-button" class="orange">Load</button>
+            <button id="save-button" class="green">
+                <i class="fa-solid fa-file-arrow-up"></i>
+                Save
+            </button>
+            <button id="load-button" class="orange">
+                <i class="fa-solid fa-file-arrow-down"></i>
+                Load
+            </button>
             <input type="file" id="load-input" class="hidden" accept=".rarry" />
-            <button id="export-button">Export</button>
+            <button id="export-button">
+                <i class="fa-solid fa-share-from-square"></i>
+                Export
+            </button>
         </div>
     </header>
 
@@ -89,8 +101,14 @@
                 <h3>Sprites</h3>
                 <div id="sprites-list"></div>
                 <div id="sprites-section-buttons">
-                    <button id="add-sprite-button" class="primary">+ Add Sprite</button>
-                    <button id="delete-sprite-button" class="danger">× Delete Sprite</button>
+                    <button id="add-sprite-button" class="primary">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Sprite
+                    </button>
+                    <button id="delete-sprite-button" class="danger">
+                        <i class="fa-solid fa-xmark"></i>
+                        Delete Sprite
+                    </button>
                 </div>
             </div>
         </div>
@@ -100,6 +118,7 @@
         <header>
             <h2>Extensions List</h2>
             <button class="danger" onclick="document.getElementById('extensions-popup').classList.add('hidden')">
+                <i class="fa-solid fa-xmark"></i>
                 Close
             </button>
         </header>
