@@ -103,6 +103,16 @@ button, input[type="file"] {
   transition: background-color 0.2s, scale 0.2s;
 }
 
+input[type="text"], textarea {
+  font-family: var(--font);
+  font-size: medium;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  color: #2b323b;
+  max-width: 100%;
+}
+
 button {
   background-color: var(--dark);
 }
@@ -523,6 +533,7 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   background: var(--color2);
   color: var(--dark);
   animation: scaleIn 0.3s ease;
+  overflow: auto;
 }
 
 .popup-content header {

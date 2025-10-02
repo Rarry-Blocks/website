@@ -1,4 +1,5 @@
 import { calculateBubblePosition } from "./editor";
+import { Thread } from "./threads";
 
 export function runCodeWithFunctions({
   code,
@@ -16,6 +17,10 @@ export function runCodeWithFunctions({
   PIXI,
   runningScripts,
 }) {
+  Thread.resetAll();
+
+  code = '"use strict";\n' + code;
+
   function whenFlagClicked(callback) {
     if (
       thisRun !== currentRunId ||
@@ -36,8 +41,15 @@ export function runCodeWithFunctions({
         )
           return;
 
+        const threadId = Thread.create(); // new thread for this run
+        Thread.enter(threadId);
+
         try {
-          await promiseWithAbort(() => callback(), signal);
+          await promiseWithAbort(
+            () => callback(Thread.getCurrentContext()), // pass ctx into callback
+            signal
+          );
+
           if (
             runId !== currentRunId ||
             window.shouldStop ||
@@ -47,6 +59,8 @@ export function runCodeWithFunctions({
         } catch (e) {
           if (e?.message === "shouldStop") return;
           console.error(e);
+        } finally {
+          Thread.exit();
         }
       },
     });
@@ -445,6 +459,8 @@ export function runCodeWithFunctions({
     penGraphics.clear();
   }
 
+  console.log(code);
+
   eval(code);
 }
 
@@ -482,6 +498,14 @@ export function showPopup({ innerHTML = "", title = "", rows = [] }) {
                 data-row="${rowIndex}" data-col="${colIndex}"
                 ${item.checked ? "checked" : ""}
               />`;
+            case "textarea":
+              return `<textarea
+                placeholder="${item.placeholder || ""}"
+                rows="${item.rows || 3}"
+                cols="${item.cols || 30}"
+                class="${item.className || ""}"
+                data-row="${rowIndex}" data-col="${colIndex}"
+              >${item.value || ""}</textarea>`;
             case "label":
               return `<span class="popup-label">${item.text}</span>`;
             default:
@@ -530,6 +554,13 @@ export function showPopup({ innerHTML = "", title = "", rows = [] }) {
           .querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`)
           .addEventListener("change", (e) =>
             item.onChange(e.target.checked, popup)
+          );
+      }
+      if (item.type === "textarea" && item.onInput) {
+        popup
+          .querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`)
+          .addEventListener("input", (e) =>
+            item.onInput(e.target.value, popup)
           );
       }
     });

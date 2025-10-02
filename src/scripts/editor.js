@@ -8,6 +8,8 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import CustomRenderer from "./render.js";
 import { SpriteChangeEvents } from "./patches.js";
 import { runCodeWithFunctions, showPopup } from "./functions.js";
+import { registerExtension } from "./extensionManager.js";
+import { Thread } from "./threads.js";
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
 BlocklyJS.javascriptGenerator.addReservedWords(
@@ -191,8 +193,8 @@ function toggleIcons(removeIcons = false) {
   localStorage.setItem("removeIcons", String(removeIcons));
 }
 
-toggleTheme(localStorage.getItem("theme") === "dark")
-toggleIcons(localStorage.getItem("removeIcons") === "true")
+toggleTheme(localStorage.getItem("theme") === "dark");
+toggleIcons(localStorage.getItem("removeIcons") === "true");
 
 workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (ws) {
   const xmlList = [];
@@ -1089,7 +1091,7 @@ SpriteChangeEvents.on("textureChanged", (event) => {
 
 /* setup extensions stuff */
 
-const activeExtensions = [];
+export const activeExtensions = [];
 
 const extensions = [
   {
@@ -1715,13 +1717,64 @@ document.getElementById("theme-button").addEventListener("click", () =>
       [
         "Show icon on buttons:",
         {
-        type: "checkbox",
-        checked: !root.classList.contains("removeIcons"),
-        onChange: (checked, _popup) => {
-          toggleIcons(!checked);
+          type: "checkbox",
+          checked: !root.classList.contains("removeIcons"),
+          onChange: (checked, _popup) => {
+            toggleIcons(!checked);
+          },
         },
-      },
-      ]
+      ],
     ],
   })
 );
+
+document
+  .getElementById("extensions-custom-button")
+  .addEventListener("click", () =>
+    showPopup({
+      title: "Custom Extensions",
+      rows: [
+        [
+          "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about.",
+        ],
+        [
+          "Insert extension code:",
+          {
+            type: "textarea",
+            placeholder: "class Extension { ... }",
+          },
+        ],
+        [
+          {
+            type: "button",
+            label: '<i class="fa-solid fa-plus"></i> Add',
+            className: "primary",
+            onClick: (popup) => {
+              const input = popup.querySelector('[data-row="1"][data-col="1"]');
+              const value = input ? input.value : "";
+
+              try {
+                const sandbox = new Function(
+                  "registerExtension",
+                  `"use strict";\n${value}`
+                );
+
+                sandbox(function registerExtension(def) {
+                  console.log("Extension registered:", def);
+                });
+              } catch (err) {
+                console.error("Error in extension code:", err);
+              }
+
+              setTimeout(() => {
+                document
+                  .getElementById("extensions-popup")
+                  ?.classList.add("hidden");
+                popup.remove();
+              });
+            },
+          },
+        ],
+      ],
+    })
+  );

@@ -30,10 +30,128 @@ BlocklyJS.javascriptGenerator.forBlock["wait_one_frame"] = function (block) {
   return `await waitOneFrame();\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["wait_block"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["wait_block"] = function (
+  block,
+  generator
+) {
   const duration =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) ||
-    0;
+    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU") || 0;
   return `await wait(${duration * Number(menu)});\n`;
+};
+
+Blockly.Blocks["controls_thread_create"] = {
+  init: function () {
+    this.appendDummyInput().appendField("create thread");
+    this.appendStatementInput("code").setCheck(null);
+    this.setTooltip("Create and run the code specified in a new thread");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour("#FFAB19");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_thread_create"] = function (
+  block,
+  generator
+) {
+  const code = generator.statementToCode(block, "code");
+  return `Thread.getCurrentContext().spawn(async () => {\n${code}});`;
+};
+
+Blockly.Blocks["controls_thread_current"] = {
+  init: function () {
+    this.appendDummyInput().appendField("current thread");
+    this.setOutput(true, "ThreadID");
+    this.setColour("#FFAB19");
+    this.setTooltip("Return the ID of the currently running thread");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_thread_current"] = () => [
+  `Thread.getCurrentContext().id`,
+  BlocklyJS.Order.MEMBER,
+];
+
+Blockly.Blocks["controls_thread_set_var"] = {
+  init: function () {
+    this.appendValueInput("NAME")
+      .setCheck("String")
+      .appendField("set variable");
+    this.appendValueInput("VALUE").appendField("to");
+    this.appendValueInput("THREAD")
+      .setCheck("ThreadID")
+      .appendField("in thread");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setInputsInline(true);
+    this.setColour("#FFAB19");
+    this.setTooltip("Set a variable inside the given thread");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_thread_set_var"] = function (
+  block,
+  generator
+) {
+  const threadId =
+    generator.valueToCode(block, "THREAD", BlocklyJS.Order.NONE) || "null";
+  const name =
+    generator.valueToCode(block, "NAME", BlocklyJS.Order.NONE) || '""';
+  const value =
+    generator.valueToCode(block, "VALUE", BlocklyJS.Order.NONE) || "undefined";
+  return `Thread.set(${threadId}, ${name}, ${value});\n`;
+};
+
+Blockly.Blocks["controls_thread_get_var"] = {
+  init: function () {
+    this.appendValueInput("NAME")
+      .setCheck("String")
+      .appendField("get variable");
+    this.appendValueInput("THREAD")
+      .setCheck("ThreadID")
+      .appendField("from thread");
+    this.setInputsInline(true);
+    this.setOutput(true, null);
+    this.setColour("#FFAB19");
+    this.setTooltip("Get a variable from the given thread");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_thread_get_var"] = function (
+  block,
+  generator
+) {
+  const threadId =
+    generator.valueToCode(block, "THREAD", BlocklyJS.Order.NONE) || "null";
+  const name =
+    generator.valueToCode(block, "NAME", BlocklyJS.Order.NONE) || '""';
+  const code = `Thread.get(${threadId}, ${name})`;
+  return [code, BlocklyJS.Order.FUNCTION_CALL];
+};
+
+Blockly.Blocks["controls_thread_has_var"] = {
+  init: function () {
+    this.appendValueInput("NAME").setCheck("String").appendField("variable");
+    this.appendValueInput("THREAD")
+      .setCheck("ThreadID")
+      .appendField("exists in thread");
+    this.appendDummyInput().appendField("?");
+    this.setInputsInline(true);
+    this.setOutput(true, null);
+    this.setColour("#FFAB19");
+    this.setTooltip("Checks if a variable exists in the given thread");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_thread_has_var"] = function (
+  block,
+  generator
+) {
+  const threadId =
+    generator.valueToCode(block, "THREAD", BlocklyJS.Order.NONE) || "null";
+  const name =
+    generator.valueToCode(block, "NAME", BlocklyJS.Order.NONE) || '""';
+  const code = `Thread.has(${threadId}, ${name})`;
+  return [code, BlocklyJS.Order.FUNCTION_CALL];
 };
