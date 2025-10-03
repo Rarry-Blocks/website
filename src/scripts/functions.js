@@ -1,6 +1,12 @@
 import { calculateBubblePosition } from "./editor";
 import { Thread } from "./threads";
 
+const BUBBLE_PADDING = 10;
+const BUBBLE_TAIL_HEIGHT = 15;
+const BUBBLE_TAIL_WIDTH = 15;
+const BUBBLE_COLOR = 0xffffff;
+const LINE_COLOR = 0xbdc1c7;
+
 export function runCodeWithFunctions({
   code,
   thisRun,
@@ -16,49 +22,52 @@ export function runCodeWithFunctions({
   signal,
   PIXI,
   runningScripts,
+  penGraphics,
 }) {
   Thread.resetAll();
+  var fastExecution = false;
+
+  const BUBBLE_TEXTSTYLE = new PIXI.TextStyle({ fill: 0x000000, fontSize: 24 });
+  const sprite = spriteData.pixiSprite;
+  const renderer = app.renderer;
+  const stage = app.stage;
+  const costumeMap = new Map(
+    (spriteData.costumes || []).map((c) => [c.name, c])
+  );
+  const soundMap = new Map((spriteData.sounds || []).map((s) => [s.name, s]));
+
+  function stopped() {
+    return (
+      thisRun !== currentRunId ||
+      window.shouldStop ||
+      (signal && signal.aborted)
+    );
+  }
 
   code = '"use strict";\n' + code;
 
   function whenFlagClicked(callback) {
-    if (
-      thisRun !== currentRunId ||
-      window.shouldStop ||
-      (signal && signal.aborted)
-    )
-      return;
+    if (stopped()) return;
 
     const runId = thisRun;
 
     flagEvents.push({
       runId,
       cb: async () => {
-        if (
-          runId !== currentRunId ||
-          window.shouldStop ||
-          (signal && signal.aborted)
-        )
-          return;
+        if (stopped()) return;
 
-        const threadId = Thread.create(); // new thread for this run
+        const threadId = Thread.create();
         Thread.enter(threadId);
 
         try {
-          await promiseWithAbort(
-            () => callback(Thread.getCurrentContext()), // pass ctx into callback
+          const result = await promiseWithAbort(
+            () => callback(Thread.getCurrentContext()),
             signal
           );
 
-          if (
-            runId !== currentRunId ||
-            window.shouldStop ||
-            (signal && signal.aborted)
-          )
-            return;
-        } catch (e) {
-          if (e?.message === "shouldStop") return;
-          console.error(e);
+          if (result === "shouldStop" || stopped()) return;
+        } catch (err) {
+          if (err.message !== "shouldStop") console.error(err);
         } finally {
           Thread.exit();
         }
@@ -67,128 +76,115 @@ export function runCodeWithFunctions({
   }
 
   function moveSteps(steps) {
-    if (thisRun !== currentRunId || window.shouldStop) return;
-    const sprite = spriteData.pixiSprite;
+    if (stopped()) return;
     const angle = sprite.rotation;
-    sprite.x += Math.cos(angle) * Number(steps);
-    sprite.y += Math.sin(angle) * Number(steps);
+    sprite.x += Math.cos(angle) * +steps;
+    sprite.y += Math.sin(angle) * +steps;
   }
 
   function changePosition(menu, amount) {
-    if (thisRun !== currentRunId || window.shouldStop) return;
-    const sprite = spriteData.pixiSprite;
-    if (menu === "x") sprite.x += Number(amount);
-    else if (menu === "y") sprite.y -= Number(amount);
+    if (stopped()) return;
+    if (menu === "x") sprite.x += +amount;
+    else if (menu === "y") sprite.y -= +amount;
   }
 
-  function setPosition(menu, amount) {
-    if (thisRun !== currentRunId || window.shouldStop) return;
-    const sprite = spriteData.pixiSprite;
-    if (menu === "x") sprite.x = Number(amount);
-    else if (menu === "y") sprite.y = -Number(amount);
+  function setPosition(menu, x, y) {
+    if (stopped()) return;
+
+    if (menu === "x") {
+      sprite.x = +x;
+    } else if (menu === "y") {
+      sprite.y = -+y;
+    } else if (menu === "xy") {
+      sprite.setPosition({ x: +x, y: -+y });
+    }
   }
 
   function getPosition(menu) {
-    const sprite = spriteData.pixiSprite;
     if (menu === "x") return sprite.x;
     else if (menu === "y") return -sprite.y;
   }
 
-  const getAngle = () => spriteData.pixiSprite.angle;
+  const getAngle = () => sprite.angle;
 
   function getMousePosition(menu) {
-    const mouse = app.renderer.plugins.interaction.mouse.global;
+    const mouse = renderer.plugins.interaction.mouse.global;
     if (menu === "x")
-      return Math.round((mouse.x - app.renderer.width / 2) / app.stage.scale.x);
+      return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
     else if (menu === "y")
-      return -Math.round(
-        (mouse.y - app.renderer.height / 2) / app.stage.scale.y
-      );
+      return -Math.round((mouse.y - renderer.height / 2) / stage.scale.y);
   }
 
   function sayMessage(message, seconds) {
-    if (thisRun !== currentRunId) return;
+    if (stopped()) return;
 
-    if (spriteData.currentBubble) {
-      app.stage.removeChild(spriteData.currentBubble);
-      spriteData.currentBubble = null;
+    message = String(message || "");
+    if (!message) return;
+
+    if (!spriteData.currentBubble) {
+      const bubble = new PIXI.Graphics();
+      const text = new PIXI.Text("", BUBBLE_TEXTSTYLE);
+      text.x = BUBBLE_PADDING;
+      text.y = BUBBLE_PADDING;
+
+      const container = new PIXI.Container();
+      container.addChild(bubble);
+      container.addChild(text);
+
+      spriteData.currentBubble = { container, bubble, text };
+      stage.addChild(container);
     }
+
+    const { container, bubble, text } = spriteData.currentBubble;
+
     if (spriteData.sayTimeout != null) {
       clearTimeout(spriteData.sayTimeout);
       spriteData.sayTimeout = null;
     }
 
-    if (window.shouldStop) return;
+    if (text.text !== message) {
+      text.text = message;
 
-    message = String(message);
-    if (!message || message === "") return;
+      const bubbleWidth = text.width + BUBBLE_PADDING * 2;
+      const bubbleHeight = text.height + BUBBLE_PADDING * 2;
 
-    const padding = 10;
-    const tailHeight = 15;
-    const tailWidth = 15;
-    const bubbleColor = 0xffffff;
-    const lineColor = 0xbdc1c7;
-    const textColor = 0x000000;
+      bubble.clear();
+      bubble.beginFill(BUBBLE_COLOR);
+      bubble.lineStyle(2, LINE_COLOR);
+      bubble.drawRoundedRect(0, 0, bubbleWidth, bubbleHeight, 10);
 
-    const bubble = new PIXI.Graphics();
-
-    const style = new PIXI.TextStyle({
-      fill: textColor,
-      fontSize: 24,
-    });
-    const text = new PIXI.Text(message, style);
-
-    const bubbleWidth = text.width + padding * 2;
-    const bubbleHeight = text.height + padding * 2;
-
-    bubble.beginFill(bubbleColor);
-    bubble.lineStyle(2, lineColor);
-    bubble.drawRoundedRect(0, 0, bubbleWidth, bubbleHeight, 10);
-
-    bubble.moveTo(bubbleWidth / 2 - tailWidth / 2, bubbleHeight);
-    bubble.lineTo(bubbleWidth / 2, bubbleHeight + tailHeight);
-    bubble.lineTo(bubbleWidth / 2 + tailWidth / 2, bubbleHeight);
-    bubble.closePath();
-    bubble.endFill();
-
-    text.x = padding;
-    text.y = padding;
-
-    const container = new PIXI.Container();
-    container.addChild(bubble);
-    container.addChild(text);
+      bubble.moveTo(bubbleWidth / 2 - BUBBLE_TAIL_WIDTH / 2, bubbleHeight);
+      bubble.lineTo(bubbleWidth / 2, bubbleHeight + BUBBLE_TAIL_HEIGHT);
+      bubble.lineTo(bubbleWidth / 2 + BUBBLE_TAIL_WIDTH / 2, bubbleHeight);
+      bubble.closePath();
+      bubble.endFill();
+    }
 
     const pos = calculateBubblePosition(
-      spriteData.pixiSprite,
-      bubbleWidth,
-      bubbleHeight,
-      tailHeight
+      sprite,
+      bubble.width,
+      bubble.height,
+      BUBBLE_TAIL_HEIGHT
     );
     container.x = pos.x;
     container.y = pos.y;
 
-    app.stage.addChild(container);
-    spriteData.currentBubble = container;
+    container.visible = true;
 
-    if (typeof seconds !== "number" || seconds <= 0 || seconds > 2147483647)
-      return;
-
-    spriteData.sayTimeout = setTimeout(() => {
-      if (spriteData.currentBubble === container) {
-        app.stage.removeChild(container);
-        spriteData.currentBubble = null;
-      }
-      spriteData.sayTimeout = null;
-    }, seconds * 1000);
+    if (typeof seconds === "number" && seconds > 0) {
+      spriteData.sayTimeout = setTimeout(() => {
+        container.visible = false;
+        spriteData.sayTimeout = null;
+      }, Math.min(seconds * 1000, 2147483647));
+    }
   }
 
   function waitOneFrame() {
     return new Promise((res, rej) => {
-      if (window.shouldStop || thisRun !== currentRunId) return rej("stopped");
+      if (stopped()) return rej("stopped");
 
       const id = requestAnimationFrame(() => {
-        if (window.shouldStop || thisRun !== currentRunId)
-          return rej("stopped");
+        if (stopped()) return rej("stopped");
         runningScripts.splice(
           runningScripts.findIndex((t) => t.id === id),
           1
@@ -201,11 +197,10 @@ export function runCodeWithFunctions({
 
   function wait(ms) {
     return new Promise((res, rej) => {
-      if (window.shouldStop || thisRun !== currentRunId) return rej("stopped");
+      if (stopped()) return rej("stopped");
 
       const id = setTimeout(() => {
-        if (window.shouldStop || thisRun !== currentRunId)
-          return rej("stopped");
+        if (stopped()) return rej("stopped");
         runningScripts.splice(
           runningScripts.findIndex((t) => t.id === id),
           1
@@ -217,39 +212,38 @@ export function runCodeWithFunctions({
   }
 
   function switchCostume(name) {
-    if (thisRun !== currentRunId || window.shouldStop) return;
+    if (stopped()) return;
 
-    const found = spriteData.costumes.find((c) => c.name === name);
+    const found = costumeMap.get(name);
     if (found) {
-      spriteData.pixiSprite.texture = found.texture;
+      sprite.texture = found.texture;
     }
   }
 
   function setSize(amount, additive) {
-    if (thisRun !== currentRunId || window.shouldStop) return;
+    if (stopped()) return;
 
     if (additive) {
-      const scaleX = spriteData.pixiSprite.scale.x + amount / 100;
-      const scaleY = spriteData.pixiSprite.scale.y + amount / 100;
-      spriteData.pixiSprite.scale.set(scaleX, scaleY);
+      const scaleX = sprite.scale.x + amount / 100;
+      const scaleY = sprite.scale.y + amount / 100;
+      sprite.scale.set(scaleX, scaleY);
     } else {
       const scale = amount / 100;
-      spriteData.pixiSprite.scale.set(scale, scale);
+      sprite.scale.set(scale, scale);
     }
   }
 
   function setAngle(amount, additive) {
-    if (thisRun !== currentRunId || window.shouldStop) return;
+    if (stopped()) return;
 
     if (additive) {
-      spriteData.pixiSprite.angle =
-        (spriteData.pixiSprite.angle + amount) % 360;
+      sprite.angle = (sprite.angle + amount) % 360;
     } else {
-      spriteData.pixiSprite.angle = amount % 360;
+      sprite.angle = amount % 360;
     }
 
-    if (spriteData.pixiSprite.angle < 0) {
-      spriteData.pixiSprite.angle += 360;
+    if (sprite.angle < 0) {
+      sprite.angle += 360;
     }
   }
 
@@ -270,46 +264,41 @@ export function runCodeWithFunctions({
       return Object.values(mouseButtonsPressed).some((pressed) => pressed);
     }
 
-    return !!mouseButtonsPressed[Number(button)];
+    return !!mouseButtonsPressed[+button];
   }
 
   function getCostumeSize(type) {
-    const frame = spriteData?.pixiSprite?.texture?.frame;
+    const frame = sprite?.texture?.frame;
     if (!frame) return 0;
 
-    if (type === "width") {
-      return frame.width;
-    } else if (type === "height") {
-      return frame.height;
-    } else {
-      return 0;
-    }
+    if (type === "width") return frame.width;
+    else if (type === "height") return frame.height;
+    else return 0;
   }
 
   function getSpriteScale() {
-    const scaleX = spriteData.pixiSprite.scale.x;
-    const scaleY = spriteData.pixiSprite.scale.y;
+    const scaleX = sprite.scale.x;
+    const scaleY = sprite.scale.y;
     return ((scaleX + scaleY) / 2) * 100;
   }
 
   function _startTween({ from, to, duration, easing, onUpdate, wait = true }) {
-    if (thisRun !== currentRunId) return;
+    if (stopped()) return "shouldStop";
+
     const tweenPromise = new Promise((resolve, reject) => {
       const start = performance.now();
       const change = to - from;
       const easeFn = window.TweenEasing[easing] || window.TweenEasing.linear;
 
       function tick(now) {
-        if (window.shouldStop || thisRun !== currentRunId) return resolve();
+        if (stopped()) return resolve("shouldStop");
 
         const t = Math.min((now - start) / (duration * 1000), 1);
         const value = from + change * easeFn(t);
 
-        try {
-          onUpdate && onUpdate(value);
-        } catch (err) {
-          if (err.message === "shouldStop") return resolve();
-          return reject(err);
+        if (onUpdate) {
+          const result = onUpdate(value);
+          if (result === "shouldStop") return resolve("shouldStop");
         }
 
         if (t < 1) {
@@ -327,16 +316,9 @@ export function runCodeWithFunctions({
   }
 
   async function startTween(options) {
-    try {
-      if (thisRun !== currentRunId) return;
-      await _startTween(options);
-    } catch (err) {
-      if (err.message === "shouldStop") {
-        return;
-      } else {
-        console.error(err);
-      }
-    }
+    if (stopped()) return;
+    const result = await _startTween(options);
+    if (result === "shouldStop") return;
   }
 
   let soundProperties = {
@@ -353,7 +335,7 @@ export function runCodeWithFunctions({
   }
 
   async function playSound(name, wait = false) {
-    const sound = spriteData.sounds.find((s) => s.name === name);
+    const sound = soundMap.get(name);
     if (!sound) return;
 
     if (!playingSounds.has(spriteData.id))
@@ -423,8 +405,8 @@ export function runCodeWithFunctions({
   }
 
   function isMouseTouchingSprite() {
-    const mouse = app.renderer.plugins.interaction.mouse.global;
-    const bounds = spriteData.pixiSprite.getBounds();
+    const mouse = renderer.plugins.interaction.mouse.global;
+    const bounds = sprite.getBounds();
     return bounds.contains(mouse.x, mouse.y);
   }
 
@@ -432,27 +414,27 @@ export function runCodeWithFunctions({
     spriteData.penDown = !!active;
   }
 
-  const setPenColor = (r = 0, g = 0, b = 0) => {
+  function setPenColor(r, g, b) {
     if (typeof r === "string") {
-      const [r_, g_, b_] = r.split(",").map((s) => parseInt(s.trim()));
-      spriteData.penColor = { r: r_, g: g_, b: b_ };
-    } else {
-      spriteData.penColor = { r, g, b };
+      const [r_, g_, b_] = r.split(",");
+      r = +r_;
+      g = +g_;
+      b = +b_;
     }
-  };
-  const setPenColorHex = (value) => {
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(value);
+    spriteData.penColor = (r << 16) | (g << 8) | b;
+  }
+
+  function setPenColorHex(value) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(value);
     spriteData.penColor = result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : { r: 0, g: 0, b: 0 };
-  };
+      ? (parseInt(result[1], 16) << 16) |
+        (parseInt(result[2], 16) << 8) |
+        parseInt(result[3], 16)
+      : 0x000000;
+  }
 
   function setPenSize(size) {
-    spriteData.penSize = size;
+    spriteData.penSize = Math.max(1, +size);
   }
 
   function clearPen() {

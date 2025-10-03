@@ -61,52 +61,30 @@ resizeCanvas();
 
 stageContainer.appendChild(app.view);
 
-const penGraphics = new PIXI.Graphics();
-penGraphics.clear();
-app.stage.addChildAt(penGraphics, 0);
+let penGraphics;
+function createPenGraphics() {
+  if (penGraphics && !penGraphics._destroyed) return;
+  penGraphics = new PIXI.Graphics();
+  penGraphics.clear();
+  app.stage.addChildAt(penGraphics, 0);
+  window.penGraphics = penGraphics;
+}
+createPenGraphics();
 
 window.projectVariables = {};
 
 export let sprites = [];
 export let activeSprite = null;
 
-app.ticker.add(() => {
-  sprites.forEach((spriteData) => {
-    if (!spriteData.lastPos) {
-      spriteData.lastPos = {
-        x: spriteData.pixiSprite.x,
-        y: spriteData.pixiSprite.y,
-      };
-      if (spriteData.penDown) return;
-    }
-    const { x: x0, y: y0 } = spriteData.lastPos;
-    const x1 = spriteData.pixiSprite.x;
-    const y1 = spriteData.pixiSprite.y;
-    if (spriteData.penDown) {
-      penGraphics.lineStyle(
-        spriteData.penSize || 1,
-        PIXI.utils.rgb2hex([
-          spriteData.penColor?.r / 255 || 0,
-          spriteData.penColor?.g / 255 || 0,
-          spriteData.penColor?.b / 255 || 0,
-        ])
-      );
-      penGraphics.moveTo(x0, y0);
-      penGraphics.lineTo(x1, y1);
-    }
-    spriteData.lastPos = { x: x1, y: y1 };
-  });
-});
-
 const blockStyles = {
   logic_blocks: {
-    colourPrimary: "#59ba57",
+    colourPrimary: "#59BA57",
   },
   math_blocks: {
-    colourPrimary: "#59ba57",
+    colourPrimary: "#59BA57",
   },
   text_blocks: {
-    colourPrimary: "#59ba57",
+    colourPrimary: "#59BA57",
   },
   loop_blocks: {
     colourPrimary: "#FFAB19",
@@ -115,7 +93,7 @@ const blockStyles = {
     colourPrimary: "#FF8C1A",
   },
   list_blocks: {
-    colourPrimary: "#e35340",
+    colourPrimary: "#E35340",
   },
   procedure_blocks: {
     colourPrimary: "#FF6680",
@@ -133,7 +111,7 @@ const blockStyles = {
     colourPrimary: "#FFAB19",
   },
   json_category: {
-    colourPrimary: "#ff8349",
+    colourPrimary: "#FF8349",
   },
 };
 
@@ -686,6 +664,7 @@ async function runCode() {
         promiseWithAbort,
         PIXI,
         runningScripts,
+        penGraphics,
       });
     } catch (e) {
       console.error(`Error processing code for sprite ${spriteData.id}:`, e);
@@ -861,7 +840,6 @@ async function loadProject(e) {
         );
 
         for (const ext of extensionsToLoad) {
-          console.log(ext);
           if (typeof ext === "string") {
             addExtension(ext);
           } else if (ext?.id) {
@@ -882,6 +860,8 @@ async function loadProject(e) {
       }
 
       if (data.variables) window.projectVariables = data.variables;
+
+      createPenGraphics();
 
       data?.sprites?.forEach((entry, i) => {
         if (!entry || typeof entry !== "object") return;
@@ -1087,14 +1067,21 @@ SpriteChangeEvents.on("positionChanged", (sprite) => {
   if (!spriteData) return;
 
   if (spriteData.currentBubble) {
-    const pos = calculateBubblePosition(
-      spriteData.pixiSprite,
-      spriteData.currentBubble.width,
-      spriteData.currentBubble.height
-    );
-    spriteData.currentBubble.x = pos.x;
-    spriteData.currentBubble.y = pos.y;
+    const { width, height } = spriteData.currentBubble;
+    const pos = calculateBubblePosition(sprite, width, height);
+    Object.assign(spriteData.currentBubble, pos);
   }
+
+  const { x, y } = sprite;
+  const [x0, y0] = spriteData.lastPos || [x, y];
+
+  if (spriteData.penDown) {
+    penGraphics.lineStyle(spriteData.penSize || 1, spriteData.penColor);
+    penGraphics.moveTo(x0, y0);
+    penGraphics.lineTo(x, y);
+  }
+
+  spriteData.lastPos = [x, y];
 });
 
 SpriteChangeEvents.on("textureChanged", (event) => {
@@ -1551,7 +1538,8 @@ async function generateStandaloneHTML() {
             promiseWithAbort,
             signal,
             PIXI,
-            runningScripts
+            runningScripts,
+            penGraphics
           });
         } catch (e) {
           console.error(\`Error processing code for sprite \${spriteData.id}:\`, e);

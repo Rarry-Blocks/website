@@ -6,7 +6,7 @@ Blockly.Blocks["wait_one_frame"] = {
     this.appendDummyInput().appendField("wait one frame");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#FFAB19");
+    this.setStyle("control_blocks");
   },
 };
 
@@ -22,7 +22,7 @@ Blockly.Blocks["wait_block"] = {
     );
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#FFAB19");
+    this.setStyle("control_blocks");
   },
 };
 
@@ -47,7 +47,7 @@ Blockly.Blocks["controls_thread_create"] = {
     this.setTooltip("Create and run the code specified in a new thread");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#FFAB19");
+    this.setStyle("control_blocks");
   },
 };
 
@@ -63,7 +63,7 @@ Blockly.Blocks["controls_thread_current"] = {
   init: function () {
     this.appendDummyInput().appendField("current thread");
     this.setOutput(true, "ThreadID");
-    this.setColour("#FFAB19");
+    this.setStyle("control_blocks");
     this.setTooltip("Return the ID of the currently running thread");
   },
 };
@@ -85,7 +85,7 @@ Blockly.Blocks["controls_thread_set_var"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setInputsInline(true);
-    this.setColour("#FFAB19");
+    this.setStyle("control_blocks");
     this.setTooltip("Set a variable inside the given thread");
   },
 };
@@ -113,7 +113,7 @@ Blockly.Blocks["controls_thread_get_var"] = {
       .appendField("from thread");
     this.setInputsInline(true);
     this.setOutput(true, null);
-    this.setColour("#FFAB19");
+    this.setStyle("control_blocks");
     this.setTooltip("Get a variable from the given thread");
   },
 };
@@ -139,7 +139,7 @@ Blockly.Blocks["controls_thread_has_var"] = {
     this.appendDummyInput().appendField("?");
     this.setInputsInline(true);
     this.setOutput(true, null);
-    this.setColour("#FFAB19");
+    this.setStyle("control_blocks");
     this.setTooltip("Checks if a variable exists in the given thread");
   },
 };
@@ -154,4 +154,27 @@ BlocklyJS.javascriptGenerator.forBlock["controls_thread_has_var"] = function (
     generator.valueToCode(block, "NAME", BlocklyJS.Order.NONE) || '""';
   const code = `Thread.has(${threadId}, ${name})`;
   return [code, BlocklyJS.Order.FUNCTION_CALL];
+};
+
+Blockly.Blocks['controls_run_instantly'] = {
+  init: function () {
+    this.appendDummyInput().appendField("run instantly");
+    this.appendStatementInput("do");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setStyle("control_blocks");
+    this.setTooltip("Run inside code without frame delay");
+  }
+};
+
+BlocklyJS.javascriptGenerator.forBlock['controls_run_instantly'] = function (block) {
+  const branch = BlocklyJS.javascriptGenerator.statementToCode(block, 'do');
+  return `
+  {
+    let _prevFast = fastExecution;
+    fastExecution = true;
+    ${branch}
+    fastExecution = _prevFast;
+  }
+  `;
 };

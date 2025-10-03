@@ -2,9 +2,8 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js";
 
-BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP = `if (signal.aborted || thisRun !== currentRunId || window.shouldStop) throw new Error("shouldStop");
-await new Promise(r => setTimeout(r, 16));
-`;
+BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP =
+  'if (stopped()) throw new Error("shouldStop");\nif (!fastExecution) await new Promise(r => setTimeout(r, 16));\n';
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
@@ -42,7 +41,7 @@ Blockly.Blocks["text"] = {
       if (!this.isShadow()) {
         Blockly.Extensions.apply("text_quotes", this, false);
       }
-    }, 0);
+    });
   },
 };
 
@@ -272,6 +271,22 @@ Object.defineProperty(PIXI.Sprite.prototype, "y", {
     }
   },
 });
+
+PIXI.Sprite.prototype.setPosition = function({ x = null, y = null, add = false, silent = false } = {}) {
+  const newX = x !== null ? (add ? this.x + x : x) : this.x;
+  const newY = y !== null ? (add ? this.y + y : y) : this.y;
+
+  if (silent) {
+    originalX.set.call(this, newX);
+    originalY.set.call(this, newY);
+  } else {
+    const changed = (this.x !== newX) || (this.y !== newY);
+    originalX.set.call(this, newX);
+    originalY.set.call(this, newY);
+    if (changed) SpriteChangeEvents.emit("positionChanged", this);
+  }
+};
+
 Object.defineProperty(PIXI.Sprite.prototype, "angle", {
   get() {
     return originalAngle.get.call(this);

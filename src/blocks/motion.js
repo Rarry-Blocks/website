@@ -130,34 +130,42 @@ Blockly.Blocks["get_angle"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["move_steps"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["move_steps"] = function (
+  block,
+  generator
+) {
   const steps =
     generator.valueToCode(block, "STEPS", BlocklyJS.Order.ATOMIC) || 0;
   return `moveSteps(${steps});\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["change_position"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["change_position"] = function (
+  block,
+  generator
+) {
   const amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) ||
-    0;
+    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
   return `changePosition("${menu}", ${amount});\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["set_position"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["set_position"] = function (
+  block,
+  generator
+) {
   const amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) ||
-    0;
+    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
   return `setPosition("${menu}", ${amount});\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["goto_position"] = function (block, generator) {
-  const x =
-    generator.valueToCode(block, "x", BlocklyJS.Order.ATOMIC) || 0;
-  const y =
-    generator.valueToCode(block, "y", BlocklyJS.Order.ATOMIC) || 0;
-  return `setPosition("x", ${x});\nsetPosition("y", ${y});\n`;
+BlocklyJS.javascriptGenerator.forBlock["goto_position"] = function (
+  block,
+  generator
+) {
+  const x = generator.valueToCode(block, "x", BlocklyJS.Order.ATOMIC) || 0;
+  const y = generator.valueToCode(block, "y", BlocklyJS.Order.ATOMIC) || 0;
+  return `setPosition("xy", ${x}, ${y});\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["get_position"] = function (block) {
@@ -165,19 +173,23 @@ BlocklyJS.javascriptGenerator.forBlock["get_position"] = function (block) {
   return [`getPosition("${menu}")`, BlocklyJS.Order.NONE];
 };
 
-BlocklyJS.javascriptGenerator.forBlock["angle_turn"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["angle_turn"] = function (
+  block,
+  generator
+) {
   const direction = block.getFieldValue("DIRECTION");
   let amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) ||
-    0;
+    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   if (direction === "left") amount = `-(${amount})`;
   return `setAngle(${amount}, true);\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["angle_set"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["angle_set"] = function (
+  block,
+  generator
+) {
   const amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) ||
-    0;
+    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   return `setAngle(${amount}, false);\n`;
 };
 
