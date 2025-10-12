@@ -4,6 +4,8 @@ import { activeExtensions } from "./editor";
 import { Thread } from "./threads";
 import { minify } from "terser";
 
+Thread.resetAll();
+
 function textToBlock(block, text, fields) {
   const regex = /\[([^\]]+)\]/g;
   let lastIndex = 0;
@@ -43,46 +45,48 @@ function textToBlock(block, text, fields) {
   }
 }
 
-if (!window.extensions) {
-  const backing = {};
+export function setupExtensions() {
+  if (!window.extensions) {
+    const backing = {};
 
-  const proxy = new Proxy(backing, {
-    defineProperty(target, prop, descriptor) {
-      if (prop in target)
-        throw new Error(`Extension "${prop}" already defined`);
-      return Reflect.defineProperty(target, prop, {
-        ...descriptor,
-        writable: false,
-        configurable: false,
-      });
-    },
-    set(target, prop, value) {
-      if (prop in target)
-        throw new Error(`Extension "${prop}" is already defined and locked`);
-      return Reflect.defineProperty(target, prop, {
-        value,
-        writable: false,
-        configurable: false,
-        enumerable: true,
-      });
-    },
-    deleteProperty() {
-      throw new Error("Extensions cannot be removed");
-    },
-    get(target, prop, receiver) {
-      return Reflect.get(target, prop, receiver);
-    },
-    ownKeys(target) {
-      return Reflect.ownKeys(target);
-    },
-  });
+    const proxy = new Proxy(backing, {
+      defineProperty(target, prop, descriptor) {
+        if (prop in target)
+          throw new Error(`Extension "${prop}" already defined`);
+        return Reflect.defineProperty(target, prop, {
+          ...descriptor,
+          writable: false,
+          configurable: false,
+        });
+      },
+      set(target, prop, value) {
+        if (prop in target)
+          throw new Error(`Extension "${prop}" is already defined and locked`);
+        return Reflect.defineProperty(target, prop, {
+          value,
+          writable: false,
+          configurable: false,
+          enumerable: true,
+        });
+      },
+      deleteProperty() {
+        throw new Error("Extensions cannot be removed");
+      },
+      get(target, prop, receiver) {
+        return Reflect.get(target, prop, receiver);
+      },
+      ownKeys(target) {
+        return Reflect.ownKeys(target);
+      },
+    });
 
-  Object.defineProperty(window, "extensions", {
-    value: proxy,
-    writable: false,
-    configurable: false,
-    enumerable: true,
-  });
+    Object.defineProperty(window, "extensions", {
+      value: proxy,
+      writable: false,
+      configurable: false,
+      enumerable: true,
+    });
+  }
 }
 
 export async function registerExtension(extClass) {

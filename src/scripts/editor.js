@@ -8,9 +8,11 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import CustomRenderer from "./render.js";
 import { SpriteChangeEvents } from "./patches.js";
 import { runCodeWithFunctions, showPopup } from "./functions.js";
-import { registerExtension } from "./extensionManager.js";
+import { registerExtension, setupExtensions } from "./extensionManager.js";
 import { Thread } from "./threads.js";
 import.meta.glob("../blocks/**/*.js", { eager: true });
+
+Thread.resetAll();
 
 BlocklyJS.javascriptGenerator.addReservedWords(
   "whenFlagClicked,moveSteps,changePosition,setPosition,getPosition,getAngle,getMousePosition,sayMessage,waitOneFrame,wait,switchCostume,setSize,setAngle,projectTime,isKeyPressed,isMouseButtonPressed,getCostumeSize,getSpriteScale,_startTween,startTween,soundProperties,getSoundProperty,setSoundProperty,playSound,stopSound,stopAllSounds,isMouseTouchingSprite,setPenStatus,setPenColor,setPenColorHex,setPenSize,clearPen,Thread,fastExecution,BUBBLE_TEXTSTYLE,sprite,renderer,stage,costumeMap,soundMap,stopped,code,penGraphics,runningScripts,findOrFilterItem"
@@ -1258,6 +1260,7 @@ function addExtension(id) {
   });
 }
 
+setupExtensions();
 addExtensionButton();
 
 extensions.forEach((e) => {
