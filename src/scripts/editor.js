@@ -1,23 +1,28 @@
+import "@fortawesome/fontawesome-free/css/all.min.css";
+
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js";
 import pako from "pako";
 import { minify } from "terser";
-import "@fortawesome/fontawesome-free/css/all.min.css";
 
 import CustomRenderer from "./render.js";
+import { toggleTheme, toggleIcons } from "./theme.js";
+import { showPopup } from "./utils.js";
+
 import { SpriteChangeEvents } from "./patches.js";
-import { runCodeWithFunctions, showPopup } from "./functions.js";
-import.meta.glob("../blocks/**/*.js", { eager: true });
+import { registerExtension, setupExtensions } from "./extensionManager.js";
+import { Thread } from "./threads.js";
+import { runCodeWithFunctions } from "./runCode.js";
 
 BlocklyJS.javascriptGenerator.addReservedWords(
-  `whenFlagClicked,moveSteps,changePosition,setPosition,getPosition,getAngle,
-  getMousePosition,sayMessage,waitOneFrame,wait,switchCostume,setSize,setAngle,
-  projectTime,isKeyPressed,isMouseButtonPressed,getCostumeSize,getSpriteScale,
-  _startTween,startTween,soundProperties,getSoundProperty,setSoundProperty,
-  playSound,stopSound,stopAllSounds,isMouseTouchingSprite,setPenStatus,
-  setPenColor,setPenColorHex,setPenSize,clearPen`.replaceAll("\n", "")
+  "whenFlagClicked,moveSteps,changePosition,setPosition,getPosition,getAngle,getMousePosition,sayMessage,waitOneFrame,wait,switchCostume,setSize,setAngle,projectTime,isKeyPressed,isMouseButtonPressed,getCostumeSize,getSpriteScale,_startTween,startTween,soundProperties,getSoundProperty,setSoundProperty,playSound,stopSound,stopAllSounds,isMouseTouchingSprite,setPenStatus,setPenColor,setPenColorHex,setPenSize,clearPen,Thread,fastExecution,BUBBLE_TEXTSTYLE,sprite,renderer,stage,costumeMap,soundMap,stopped,code,penGraphics,runningScripts,findOrFilterItem"
 );
+
+import.meta.glob("../blocks/**/*.js", { eager: true });
+
+const root = document.documentElement;
+Thread.resetAll();
 
 const wrapper = document.getElementById("stage-wrapper");
 const stageContainer = document.getElementById("stage");
@@ -28,7 +33,6 @@ const deleteSpriteButton = document.getElementById("delete-sprite-button");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabContents = document.querySelectorAll(".tab-content");
 const fullscreenButton = document.getElementById("fullscreen-button");
-const root = document.documentElement;
 
 const BASE_WIDTH = 480;
 const BASE_HEIGHT = 360;
@@ -43,6 +47,8 @@ app.stageWidth = BASE_WIDTH;
 app.stageHeight = BASE_HEIGHT;
 
 export function resizeCanvas() {
+  if (!wrapper) return;
+
   const w = wrapper.clientWidth;
   const h = wrapper.clientHeight;
 
@@ -59,104 +65,20 @@ resizeCanvas();
 
 stageContainer.appendChild(app.view);
 
-const penGraphics = new PIXI.Graphics();
-penGraphics.clear();
-app.stage.addChildAt(penGraphics, 0);
+let penGraphics;
+function createPenGraphics() {
+  if (penGraphics && !penGraphics._destroyed) return;
+  penGraphics = new PIXI.Graphics();
+  penGraphics.clear();
+  app.stage.addChildAt(penGraphics, 0);
+  window.penGraphics = penGraphics;
+}
+createPenGraphics();
 
 window.projectVariables = {};
 
 export let sprites = [];
 export let activeSprite = null;
-
-app.ticker.add(() => {
-  sprites.forEach((spriteData) => {
-    if (!spriteData.lastPos) {
-      spriteData.lastPos = {
-        x: spriteData.pixiSprite.x,
-        y: spriteData.pixiSprite.y,
-      };
-      if (spriteData.penDown) return;
-    }
-    const { x: x0, y: y0 } = spriteData.lastPos;
-    const x1 = spriteData.pixiSprite.x;
-    const y1 = spriteData.pixiSprite.y;
-    if (spriteData.penDown) {
-      penGraphics.lineStyle(
-        spriteData.penSize || 1,
-        PIXI.utils.rgb2hex([
-          spriteData.penColor?.r / 255 || 0,
-          spriteData.penColor?.g / 255 || 0,
-          spriteData.penColor?.b / 255 || 0,
-        ])
-      );
-      penGraphics.moveTo(x0, y0);
-      penGraphics.lineTo(x1, y1);
-    }
-    spriteData.lastPos = { x: x1, y: y1 };
-  });
-});
-
-const blockStyles = {
-  logic_blocks: {
-    colourPrimary: "#59ba57",
-  },
-  math_blocks: {
-    colourPrimary: "#59ba57",
-  },
-  text_blocks: {
-    colourPrimary: "#59ba57",
-  },
-  loop_blocks: {
-    colourPrimary: "#FFAB19",
-  },
-  variable_blocks: {
-    colourPrimary: "#FF8C1A",
-  },
-  list_blocks: {
-    colourPrimary: "#e35340",
-  },
-  procedure_blocks: {
-    colourPrimary: "#FF6680",
-  },
-  motion_blocks: {
-    colourPrimary: "#4C97FF",
-  },
-  looks_blocks: {
-    colourPrimary: "#9966FF",
-  },
-  events_blocks: {
-    colourPrimary: "#FFC400",
-  },
-  control_blocks: {
-    colourPrimary: "#FFAB19",
-  },
-  json_category: {
-    colourPrimary: "#ff8349",
-  },
-};
-
-const lightTheme = Blockly.Theme.defineTheme("customLightTheme", {
-  base: Blockly.Themes.Classic,
-  blockStyles: blockStyles,
-});
-
-const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
-  base: Blockly.Themes.Classic,
-  blockStyles: blockStyles,
-  componentStyles: {
-    workspaceBackgroundColour: "#1a1e25",
-    toolboxBackgroundColour: "#303236",
-    toolboxForegroundColour: "#fff",
-    flyoutBackgroundColour: "#212327",
-    flyoutForegroundColour: "#ccc",
-    flyoutOpacity: 1,
-    scrollbarColour: "#797979",
-    insertionMarkerColour: "#fff",
-    insertionMarkerOpacity: 0.3,
-    scrollbarOpacity: 0.4,
-    cursorColour: "#d0d0d0",
-  },
-});
 
 Blockly.blockRendering.register("custom_zelos", CustomRenderer);
 
@@ -178,21 +100,8 @@ export const workspace = Blockly.inject("blocklyDiv", {
 window.toolbox = toolbox;
 window.workspace = workspace;
 
-function toggleTheme(dark = false) {
-  if (dark) root.classList.add("dark");
-  else root.classList.remove("dark");
-  localStorage.setItem("theme", dark ? "dark" : "light");
-  workspace.setTheme(dark ? darkTheme : lightTheme, workspace);
-}
-
-function toggleIcons(removeIcons = false) {
-  if (removeIcons) root.classList.add("removeIcons");
-  else root.classList.remove("removeIcons");
-  localStorage.setItem("removeIcons", String(removeIcons));
-}
-
-toggleTheme(localStorage.getItem("theme") === "dark")
-toggleIcons(localStorage.getItem("removeIcons") === "true")
+toggleTheme(undefined, workspace);
+toggleIcons();
 
 workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (ws) {
   const xmlList = [];
@@ -237,8 +146,8 @@ workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (ws) {
   return xmlList;
 });
 
-workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", (button) => {
-  const name = prompt("New variable name:");
+export function addGlobalVariable(name = "") {
+  if (!name || name === "") name = prompt("New variable name:");
   if (name) {
     let newName = name,
       count = 0;
@@ -249,7 +158,9 @@ workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", (button) => {
 
     window.projectVariables[newName] = 0;
   }
-});
+}
+
+workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", () => addGlobalVariable());
 
 export function addSprite() {
   const texture = PIXI.Texture.from("./icons/ddededodediamante.png", {
@@ -278,10 +189,16 @@ export function setActiveSprite(spriteData) {
   renderSpritesList(true);
   workspace.clear();
 
-  if (spriteData == null) {
+  const workspaceContainer = workspace.getParentSvg().parentNode;
+
+  if (!spriteData) {
     deleteSpriteButton.disabled = true;
+    workspaceContainer.style.display = "none";
     return;
-  } else deleteSpriteButton.disabled = false;
+  } else {
+    deleteSpriteButton.disabled = false;
+    workspaceContainer.style.display = "";
+  }
 
   const xmlText =
     activeSprite.code ||
@@ -377,7 +294,7 @@ function createRenameableLabel(initialName, onRename) {
   nameLabel.style.margin = "0";
 
   const renameBtn = document.createElement("button");
-  renameBtn.textContent = "Rename";
+  renameBtn.innerHTML = '<i class="fa-solid fa-pencil"></i> Rename';
 
   renameBtn.onclick = () => {
     let willRename = true;
@@ -620,13 +537,12 @@ function stopAllScripts() {
   );
 
   sprites.forEach((spriteData) => {
-    if (spriteData.currentBubble) {
-      try {
-        app.stage.removeChild(spriteData.currentBubble);
-      } catch (e) {}
+    let bubble = spriteData.currentBubble;
+    if (bubble) {
+      if (bubble.destroy) bubble.destroy({ children: true });
       spriteData.currentBubble = null;
     }
-    if (spriteData.sayTimeout != null) {
+    if (spriteData.sayTimeout) {
       clearTimeout(spriteData.sayTimeout);
       spriteData.sayTimeout = null;
     }
@@ -684,6 +600,7 @@ async function runCode() {
         promiseWithAbort,
         PIXI,
         runningScripts,
+        penGraphics,
       });
     } catch (e) {
       console.error(`Error processing code for sprite ${spriteData.id}:`, e);
@@ -815,30 +732,29 @@ function saveProject() {
   URL.revokeObjectURL(url);
 }
 
-function loadProject(e) {
+async function loadProject(e) {
   const file = e.target.files[0];
   if (!file) return;
 
   stopAllScripts();
 
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
+    e.target.value = "";
+
     const buffer = reader.result;
 
     let data;
-
     try {
-      const text =
-        typeof buffer === "string" ? buffer : new TextDecoder().decode(buffer);
+      const text = new TextDecoder().decode(buffer);
       data = JSON.parse(text);
-    } catch (e1) {
+    } catch {
       try {
-        const compressed = new Uint8Array(buffer);
-        const inflated = pako.inflate(compressed);
+        const inflated = pako.inflate(new Uint8Array(buffer));
         const json = new TextDecoder().decode(inflated);
         data = JSON.parse(json);
-      } catch (e2) {
-        console.error("Failed to parse file", e2);
+      } catch (err) {
+        console.error("Failed to parse file", err);
         return window.alert("Invalid or corrupted project file.");
       }
     }
@@ -853,13 +769,28 @@ function loadProject(e) {
     }
 
     try {
-      data?.extensions?.forEach((extId) => {
-        if (typeof extId === "string") addExtension(extId);
-      });
+      if (data?.extensions) {
+        const extensionsToLoad = data.extensions.filter(
+          (i) => !activeExtensions.some((z) => (z?.id || z) === (i?.id || i))
+        );
 
-      app.stage.removeChildren().forEach((child) => {
-        if (child.destroy) child.destroy();
-      });
+        for (const ext of extensionsToLoad) {
+          try {
+            if (typeof ext === "string") {
+              addExtension(ext);
+            } else if (ext?.id) {
+              const ExtensionClass = await eval("(" + ext.code + ")");
+              if (ExtensionClass) await registerExtension(ExtensionClass);
+            }
+          } catch (err) {
+            console.error("Failed to load extension", ext?.id || ext, err);
+          }
+        }
+      }
+
+      for (const child of app.stage.removeChildren()) {
+        if (child.destroy) child.destroy({ children: true });
+      }
       sprites = [];
 
       if (!Array.isArray(data.sprites)) {
@@ -867,7 +798,11 @@ function loadProject(e) {
         return;
       }
 
-      data.sprites.forEach((entry, i) => {
+      if (data.variables) window.projectVariables = data.variables;
+
+      createPenGraphics();
+
+      data?.sprites?.forEach((entry, i) => {
         if (!entry || typeof entry !== "object") return;
 
         const spriteData = {
@@ -896,7 +831,12 @@ function loadProject(e) {
               const texture = PIXI.Texture.from(c.data);
               spriteData.costumes.push({ name: c.name, texture });
             } catch (err) {
-              console.warn(`Failed to load costume: ${c.name}`, err);
+              console.warn(
+                `Failed to load costume: ${c.name}, using placeholder`,
+                err
+              );
+              const texture = PIXI.Texture.WHITE;
+              spriteData.costumes.push({ name: c.name, texture });
             }
           });
         }
@@ -935,8 +875,6 @@ function loadProject(e) {
         app.stage.addChild(sprite);
         sprites.push(spriteData);
       });
-
-      if (data.variables) window.projectVariables = data.variables;
 
       setActiveSprite(sprites[0] || null);
     } catch (err) {
@@ -1021,9 +959,21 @@ window.addEventListener("resize", () => {
   resizeCanvas();
 });
 
+function isXmlEmpty(input = "") {
+  return (
+    input === '<xml xmlns="https://developers.google.com/blockly/xml"></xml>' ||
+    input.trim() === ""
+  );
+}
+
 window.addEventListener("beforeunload", (e) => {
-  e.preventDefault();
-  e.returnValue = "";
+  if (
+    sprites.length <= 1 &&
+    sprites.some((sprite) => !isXmlEmpty(sprite.code))
+  ) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
 });
 
 const allowedKeys = new Set([
@@ -1034,8 +984,7 @@ const allowedKeys = new Set([
   " ",
   "Enter",
   "Escape",
-  ..."abcdefghijklmnopqrstuvwxyz0123456789",
-  ..."abcdefghijklmnopqrstuvwxyz".toUpperCase(),
+  ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
 ]);
 window.addEventListener("keydown", (e) => {
   const key = e.key;
@@ -1063,24 +1012,31 @@ window.addEventListener("mouseup", (e) => {
 });
 
 SpriteChangeEvents.on("scaleChanged", (sprite) => {
-  if (activeSprite.pixiSprite === sprite) renderSpriteInfo();
+  if (activeSprite?.pixiSprite === sprite) renderSpriteInfo();
 });
 
 SpriteChangeEvents.on("positionChanged", (sprite) => {
-  if (activeSprite.pixiSprite === sprite) renderSpriteInfo();
+  if (activeSprite?.pixiSprite === sprite) renderSpriteInfo();
 
   const spriteData = sprites.find((s) => s?.pixiSprite === sprite);
   if (!spriteData) return;
 
   if (spriteData.currentBubble) {
-    const pos = calculateBubblePosition(
-      spriteData.pixiSprite,
-      spriteData.currentBubble.width,
-      spriteData.currentBubble.height
-    );
-    spriteData.currentBubble.x = pos.x;
-    spriteData.currentBubble.y = pos.y;
+    const { width, height } = spriteData.currentBubble;
+    const pos = calculateBubblePosition(sprite, width, height);
+    Object.assign(spriteData.currentBubble, pos);
   }
+
+  const { x, y } = sprite;
+  const [x0, y0] = spriteData.lastPos || [x, y];
+
+  if (spriteData.penDown) {
+    penGraphics.lineStyle(spriteData.penSize || 1, spriteData.penColor);
+    penGraphics.moveTo(x0, y0);
+    penGraphics.lineTo(x, y);
+  }
+
+  spriteData.lastPos = [x, y];
 });
 
 SpriteChangeEvents.on("textureChanged", (event) => {
@@ -1089,7 +1045,7 @@ SpriteChangeEvents.on("textureChanged", (event) => {
 
 /* setup extensions stuff */
 
-const activeExtensions = [];
+export const activeExtensions = [];
 
 const extensions = [
   {
@@ -1147,6 +1103,40 @@ const extensions = [
         <block type="clear_pen"></block>
       </category>`,
   },
+  {
+    id: "sets",
+    name: "Sets",
+    xml: `<category name="Sets" colour="#2cc2a9">
+        <block type="sets_create_with">
+          <mutation items="2"></mutation>
+        </block>
+        <sep gap="50"></sep>
+        <block type="sets_has">
+          <value name="VALUE">
+              <shadow type="text">
+                  <field name="TEXT"></field>
+              </shadow>
+          </value>
+        </block>
+        <block type="sets_add">
+          <value name="VALUE">
+              <shadow type="text">
+                  <field name="TEXT"></field>
+              </shadow>
+          </value>
+        </block>
+        <block type="sets_delete">
+          <value name="VALUE">
+              <shadow type="text">
+                  <field name="TEXT"></field>
+              </shadow>
+          </value>
+        </block>
+        <block type="sets_size"></block>
+        <block type="sets_convert"></block>
+        <block type="sets_merge"></block>
+      </category>`,
+  },
 ];
 
 const extensionsPopup = document.querySelector(".extensions-popup");
@@ -1199,6 +1189,7 @@ function addExtension(id) {
   });
 }
 
+setupExtensions();
 addExtensionButton();
 
 extensions.forEach((e) => {
@@ -1537,7 +1528,8 @@ async function generateStandaloneHTML() {
             promiseWithAbort,
             signal,
             PIXI,
-            runningScripts
+            runningScripts,
+            penGraphics
           });
         } catch (e) {
           console.error(\`Error processing code for sprite \${spriteData.id}:\`, e);
@@ -1704,24 +1696,117 @@ document.getElementById("theme-button").addEventListener("click", () =>
         {
           type: "button",
           label: '<i class="fa-solid fa-sun"></i> Light',
-          onClick: () => toggleTheme(false),
+          onClick: () => toggleTheme(false, workspace),
         },
         {
           type: "button",
           label: '<i class="fa-solid fa-moon"></i> Dark',
-          onClick: () => toggleTheme(true),
+          onClick: () => toggleTheme(true, workspace),
         },
       ],
       [
         "Show icon on buttons:",
         {
-        type: "checkbox",
-        checked: !root.classList.contains("removeIcons"),
-        onChange: (checked, _popup) => {
-          toggleIcons(!checked);
+          type: "checkbox",
+          checked: !root.classList.contains("removeIcons"),
+          onChange: (checked, _popup) => {
+            toggleIcons(!checked);
+          },
         },
-      },
-      ]
+      ],
     ],
   })
 );
+
+document
+  .getElementById("extensions-custom-button")
+  .addEventListener("click", () =>
+    showPopup({
+      title: "Custom Extensions",
+      rows: [
+        [
+          "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about.",
+        ],
+        [
+          "Insert extension code:",
+          {
+            type: "textarea",
+            placeholder: "class Extension { ... }",
+            className: "extension-code-input",
+          },
+        ],
+        [
+          {
+            type: "button",
+            label: '<i class="fa-solid fa-plus"></i> Add',
+            className: "primary",
+            onClick: (popup) => {
+              const input = popup.querySelector('[data-row="1"][data-col="1"]');
+              const userCode = input ? input.value : "";
+
+              const iframe = document.createElement("iframe");
+              iframe.style.display = "none";
+              iframe.sandbox = "allow-scripts";
+              iframe.srcdoc = `
+                <script>
+                  "use strict";
+                  const registerExtension = (def) => {
+                    parent.postMessage({ type: "registerExtension", code: def.toString() }, "*");
+                  };
+                  window.addEventListener("message", (event) => {
+                    if (event.data && event.data.type === "runCode") {
+                      try {
+                        eval(event.data.code);
+                      } catch (err) {
+                        parent.postMessage({ type: "error", error: err.message }, "*");
+                      }
+                    }
+                  });
+                  parent.postMessage({ type: "iframeReady" }, "*");
+                </script>
+              `;
+              document.body.appendChild(iframe);
+
+              const handleMessage = (event) => {
+                if (!event.data) return;
+
+                switch (event.data.type) {
+                  case "registerExtension":
+                    try {
+                      const ExtensionClass = eval("(" + event.data.code + ")");
+                      registerExtension(ExtensionClass);
+
+                      console.log("Extension registered:", ExtensionClass);
+                    } catch (error) {
+                      console.error("Error in extension:", error);
+                      window.alert("Error in extension: " + error);
+                    }
+
+                    iframe.remove();
+                    window.removeEventListener("message", handleMessage);
+                    break;
+                  case "error":
+                    console.error("Error in extension:", event.data.error);
+                    window.alert("Error in extension: " + event.data.error);
+                    break;
+                  case "iframeReady":
+                    iframe.contentWindow.postMessage(
+                      { type: "runCode", code: userCode },
+                      "*"
+                    );
+                    break;
+                }
+              };
+
+              window.addEventListener("message", handleMessage);
+
+              popup.remove();
+              document
+                .getElementById("extensions-popup")
+                ?.classList.add("hidden");
+            },
+          },
+        ],
+      ],
+    })
+  );

@@ -37,8 +37,8 @@ Blockly.Blocks["set_global_var"] = {
       .appendField("set")
       .appendField(new Blockly.FieldDropdown(() => getVariables()), "VAR")
       .appendField("to");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setStyle("variable_blocks");
   },
 };
@@ -50,8 +50,8 @@ Blockly.Blocks["change_global_var"] = {
       .appendField("change")
       .appendField(new Blockly.FieldDropdown(() => getVariables()), "VAR")
       .appendField("by");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setStyle("variable_blocks");
   },
 };

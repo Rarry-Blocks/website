@@ -24,7 +24,7 @@ Blockly.Blocks["key_pressed"] = {
         ]),
         "KEY"
       )
-      .appendField("key down?");
+      .appendField("key down");
     this.setOutput(true, "Boolean");
     this.setColour("#5CB1D6");
   },
@@ -61,7 +61,7 @@ Blockly.Blocks["mouse_button_pressed"] = {
         ]),
         "BUTTON"
       )
-      .appendField("mouse button down?");
+      .appendField("mouse button down");
     this.setOutput(true, "Boolean");
     this.setColour("#5CB1D6");
   },
@@ -77,7 +77,7 @@ Blockly.Blocks["all_keys_pressed"] = {
 
 Blockly.Blocks["mouse_over"] = {
   init: function () {
-    this.appendDummyInput().appendField("is cursor over me?");
+    this.appendDummyInput().appendField("is cursor over me");
     this.setOutput(true, "Boolean");
     this.setColour("#5CB1D6");
   },

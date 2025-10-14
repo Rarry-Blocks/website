@@ -4,10 +4,10 @@ import * as BlocklyJS from "blockly/javascript";
 Blockly.Blocks["say_message"] = {
   init: function () {
     this.appendValueInput("MESSAGE").setCheck(null).appendField("say");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setInputsInline(true);
-    this.setColour("#9966FF");
+    this.setStyle("looks_blocks");
   },
 };
 
@@ -16,10 +16,10 @@ Blockly.Blocks["say_message_duration"] = {
     this.appendValueInput("MESSAGE").setCheck(null).appendField("say");
     this.appendValueInput("DURATION").setCheck("Number").appendField("for");
     this.appendDummyInput().appendField("seconds");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setInputsInline(true);
-    this.setColour("#9966FF");
+    this.setStyle("looks_blocks");
   },
 };
 
@@ -30,7 +30,7 @@ Blockly.Blocks["switch_costume"] = {
       .appendField("switch costume to");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour("#9966FF");
+    this.setStyle("looks_blocks");
   },
 };
 
@@ -42,7 +42,7 @@ Blockly.Blocks["set_size"] = {
     this.appendDummyInput().appendField("%");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour("#9966FF");
+    this.setStyle("looks_blocks");
   },
 };
 
@@ -54,7 +54,7 @@ Blockly.Blocks["change_size"] = {
     this.appendDummyInput().appendField("%");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour("#9966FF");
+    this.setStyle("looks_blocks");
   },
 };
 
@@ -70,7 +70,7 @@ Blockly.Blocks["get_costume_size"] = {
         "MENU"
       );
     this.setOutput(true, "Number");
-    this.setColour("#9966FF");
+    this.setStyle("looks_blocks");
   },
 };
 
@@ -78,14 +78,42 @@ Blockly.Blocks["get_sprite_scale"] = {
   init: function () {
     this.appendDummyInput().appendField("size");
     this.setOutput(true, "Number");
-    this.setColour("#9966FF");
+    this.setStyle("looks_blocks");
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["say_message"] = function (block, generator) {
+Blockly.Blocks["looks_hide_sprite"] = {
+  init: function () {
+    this.appendDummyInput().appendField("hide sprite");
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setStyle("looks_blocks");
+  },
+};
+
+Blockly.Blocks["looks_show_sprite"] = {
+  init: function () {
+    this.appendDummyInput().appendField("show sprite");
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setStyle("looks_blocks");
+  },
+};
+
+Blockly.Blocks["looks_isVisible"] = {
+  init: function () {
+    this.appendDummyInput().appendField("is visible");
+    this.setOutput(true, "Boolean");
+    this.setStyle("looks_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["say_message"] = function (
+  block,
+  generator
+) {
   const message =
-    generator.valueToCode(block, "MESSAGE", BlocklyJS.Order.NONE) ||
-    "";
+    generator.valueToCode(block, "MESSAGE", BlocklyJS.Order.NONE) || "";
 
   return `sayMessage(${message});\n`;
 };
@@ -95,35 +123,36 @@ BlocklyJS.javascriptGenerator.forBlock["say_message_duration"] = function (
   generator
 ) {
   const message =
-    generator.valueToCode(block, "MESSAGE", BlocklyJS.Order.NONE) ||
-    "";
+    generator.valueToCode(block, "MESSAGE", BlocklyJS.Order.NONE) || "";
   const duration =
-    generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) ||
-    2;
+    generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) || 2;
 
   return `sayMessage(${message}, ${duration});\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["switch_costume"] = function (block, generator) {
-  var costume = generator.valueToCode(
-    block,
-    "COSTUME",
-    BlocklyJS.Order.ATOMIC
-  );
+BlocklyJS.javascriptGenerator.forBlock["switch_costume"] = function (
+  block,
+  generator
+) {
+  var costume = generator.valueToCode(block, "COSTUME", BlocklyJS.Order.ATOMIC);
   return `switchCostume(${costume});\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["set_size"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["set_size"] = function (
+  block,
+  generator
+) {
   const amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) ||
-    100;
+    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 100;
   return `setSize(${amount}, false);\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["change_size"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["change_size"] = function (
+  block,
+  generator
+) {
   const amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) ||
-    100;
+    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 100;
   return `setSize(${amount}, true);\n`;
 };
 
@@ -135,3 +164,16 @@ BlocklyJS.javascriptGenerator.forBlock["get_costume_size"] = function (block) {
 BlocklyJS.javascriptGenerator.forBlock["get_sprite_scale"] = function () {
   return [`getSpriteScale()`, BlocklyJS.Order.NONE];
 };
+
+BlocklyJS.javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
+  return "hideSprite();\n";
+};
+
+BlocklyJS.javascriptGenerator.forBlock["looks_show_sprite"] = function () {
+  return "showSprite();\n";
+};
+
+BlocklyJS.javascriptGenerator.forBlock["looks_isVisible"] = () => [
+  "sprite.visible",
+  BlocklyJS.Order.NONE,
+];

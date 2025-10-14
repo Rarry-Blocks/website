@@ -12,7 +12,7 @@ Blockly.Blocks["when_flag_clicked"] = {
         })
       )
       .appendField("clicked");
-    this.appendStatementInput("DO").setCheck(null);
+    this.appendStatementInput("DO").setCheck("default");
     this.setStyle("events_blocks");
   },
 };

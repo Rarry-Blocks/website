@@ -12,8 +12,8 @@ Blockly.Blocks["play_sound"] = {
       "wait"
     );
     this.setColour("#ff66ba");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
   },
 };
 
@@ -31,8 +31,8 @@ Blockly.Blocks["stop_sound"] = {
   init: function () {
     this.appendValueInput("name").setCheck("String").appendField("stop sound");
     this.setColour("#ff66ba");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
   },
 };
 
@@ -58,8 +58,8 @@ Blockly.Blocks["stop_all_sounds"] = {
       )
       .appendField("sounds");
     this.setColour("#ff66ba");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
   },
 };
 
@@ -84,8 +84,8 @@ Blockly.Blocks["set_sound_property"] = {
       .appendField("to");
     this.appendDummyInput().appendField("%");
     this.setColour("#ff66ba");
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
   },
 };
 

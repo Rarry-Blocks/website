@@ -34,8 +34,8 @@ Blockly.Blocks["json_set"] = {
     this.appendValueInput("OBJECT").setCheck("Object").appendField("in object");
     this.appendValueInput("KEY").setCheck("String").appendField("set");
     this.appendValueInput("VALUE").appendField("to");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("Sets a value to a key in a JSON object.");
@@ -277,9 +277,8 @@ BlocklyJS.javascriptGenerator.forBlock["json_create"] = function (block) {
 
 Blockly.Blocks["json_has_key"] = {
   init: function () {
-    this.appendValueInput("KEY").setCheck("String").appendField("is");
-    this.appendValueInput("OBJECT").setCheck("Object").appendField("in object");
-    this.appendDummyInput().appendField("?");
+    this.appendValueInput("OBJECT").setCheck("Object").appendField("does object");
+    this.appendValueInput("KEY").setCheck("String").appendField("have");
     this.setOutput(true, "Boolean");
     this.setInputsInline(true);
     this.setStyle("json_category");

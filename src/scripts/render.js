@@ -5,6 +5,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     super.init();
     this.BOWL = this.makeBowl();
     this.PILLOW = this.makePillow();
+    this.SPIKEY = this.makeSpikey();
   }
 
   makeBowl() {
@@ -119,22 +120,80 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     };
   }
 
+  makeSpikey() {
+    const maxW = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
+    const maxH = maxW * 2;
+
+    function makeMainPath(blockHeight, up, right) {
+      const extra = blockHeight > maxH ? blockHeight - maxH : 0;
+      const h_ = Math.min(blockHeight, maxH);
+      const h = h_ + extra;
+      const radius = h / 3;
+      const radiusHdiv = 4;
+      const radiusH = Math.min(h_ / radiusHdiv, maxH);
+      const dirR = right ? 1 : -1;
+      const dirU = up ? -1 : 1;
+
+      return `
+        h ${radiusH * dirR * (radiusHdiv / 2)}
+        l ${radiusH * -dirR} ${radius * dirU}
+        l ${radiusH * (dirR / 2)} ${radius * (dirU / 2)}
+        l ${radiusH * (-dirR / 2)} ${radius * (dirU / 2)}
+        l ${radiusH * dirR} ${radius * dirU}
+        h ${radiusH * -dirR * (radiusHdiv / 2)}
+      `;
+    }
+
+    return {
+      type: this.SHAPES.HEXAGONAL,
+      isDynamic: true,
+      width(h) {
+        const half = h / 2;
+        return half > maxW ? maxW : half;
+      },
+      height(h) {
+        return h;
+      },
+      connectionOffsetY(h) {
+        return h / 2;
+      },
+      connectionOffsetX(w) {
+        return -w;
+      },
+      pathDown(h) {
+        return makeMainPath(h, false, false);
+      },
+      pathUp(h) {
+        return makeMainPath(h, true, false);
+      },
+      pathRightDown(h) {
+        return makeMainPath(h, false, true);
+      },
+      pathRightUp(h) {
+        return makeMainPath(h, true, true);
+      },
+    };
+  }
+
   /**
    * @param {Blockly.RenderedConnection} connection
    */
   shapeFor(connection) {
-    let checks = connection.getCheck();
+    let checks = connection.getCheck() ?? [];
     if (!checks && connection.targetConnection)
-      checks = connection.targetConnection.getCheck();
+      checks = connection.targetConnection.getCheck() ?? [];
+    let outputShape = connection.sourceBlock_.getOutputShape();
 
-    if (checks && (connection.type === 1 || connection.type === 2)) {
+    if (connection.type === 1 || connection.type === 2) {
       if (
-        checks.includes("Array") &&
+        (checks.includes("Array") || outputShape === 4) &&
         !["text_length", "text_isEmpty"].includes(connection.sourceBlock_.type)
       ) {
         return this.BOWL;
-      } else if (checks.includes("Object")) {
+      } else if (checks.includes("Object") || outputShape === 5) {
         return this.PILLOW;
+      } else if (checks.includes("Set") || outputShape === 6) {
+        return this.SPIKEY;
       }
     }
 

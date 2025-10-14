@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rarry | Editor</title>
+    <title>Editor - Rarry</title>
+
+    <link href="src/index.css" rel="stylesheet" />
     <link href="src/editor.css" rel="stylesheet" />
 
     <meta name="author" content="ddededodediamante">
@@ -24,7 +26,7 @@
 <body>
     <header>
         <div>
-            <img src="icons/Rarry.svg" alt="Rarry" onclick="location.href='/'" style="cursor: pointer;">
+            <img src="icons/Rarry.svg" alt="Rarry logo" onclick="location.href='/'" style="cursor: pointer;">
             <button id="theme-button">
                 <i class="fa-solid fa-paintbrush"></i>
                 Appearance
@@ -117,6 +119,10 @@
     <div class="extensions-popup hidden" id="extensions-popup">
         <header>
             <h2>Extensions List</h2>
+            <button id="extensions-custom-button" class="orange">
+                <i class="fa-solid fa-plus"></i>
+                Load Custom
+            </button>
             <button class="danger" onclick="document.getElementById('extensions-popup').classList.add('hidden')">
                 <i class="fa-solid fa-xmark"></i>
                 Close
@@ -181,6 +187,10 @@
         </category>
 
         <category name="Looks" colour="#9966FF">
+            <block type="looks_hide_sprite"></block>
+            <block type="looks_show_sprite"></block>
+            <block type="looks_isVisible"></block>
+            <sep gap="50"></sep>
             <block type="say_message">
                 <value name="MESSAGE">
                     <shadow type="text">
@@ -296,6 +306,35 @@
                 </value>
             </block>
             <block type="controls_flow_statements"></block>
+            <block type="controls_run_instantly"></block>
+            <sep gap="50"></sep>
+            <block type="controls_thread_current"></block>
+            <block type="controls_thread_create"></block>
+            <block type="controls_thread_set_var">
+                <value name="THREAD">
+                    <shadow type="controls_thread_current"></shadow>
+                </value>
+                <value name="NAME">
+                    <shadow type="text">
+                        <field name="TEXT">name</field>
+                    </shadow>
+                </value>
+                <value name="VALUE">
+                    <shadow type="math_number">
+                        <field name="NUM">0</field>
+                    </shadow>
+                </value>
+            </block>
+            <block type="controls_thread_get_var">
+                <value name="THREAD">
+                    <shadow type="controls_thread_current"></shadow>
+                </value>
+                <value name="NAME">
+                    <shadow type="text">
+                        <field name="TEXT">name</field>
+                    </shadow>
+                </value>
+            </block>
         </category>
 
         <category name="Operators" colour="#59ba57">
@@ -358,27 +397,9 @@
             </block>
             <block type="text_length"></block>
             <block type="text_isEmpty"></block>
-            <block type="text_indexOf">
-                <value name="VALUE">
-                    <block type="variables_get">
-                        <field name="VAR">text</field>
-                    </block>
-                </value>
-            </block>
-            <block type="text_charAt">
-                <value name="VALUE">
-                    <block type="variables_get">
-                        <field name="VAR">text</field>
-                    </block>
-                </value>
-            </block>
-            <block type="text_getSubstring">
-                <value name="STRING">
-                    <block type="variables_get">
-                        <field name="VAR">text</field>
-                    </block>
-                </value>
-            </block>
+            <block type="text_indexOf"></block>
+            <block type="text_charAt"></block>
+            <block type="text_getSubstring"></block>
             <block type="text_changeCase"></block>
             <block type="text_trim"></block>
             <block type="text_print"></block>
@@ -409,34 +430,26 @@
             </block>
             <block type="lists_length"></block>
             <block type="lists_isEmpty"></block>
-            <block type="lists_indexOf">
-                <value name="VALUE">
-                    <block type="variables_get">
-                        <field name="VAR">list</field>
+            <block type="lists_indexOf"></block>
+            <block type="lists_find">
+                <value name="method">
+                    <block type="logic_compare">
+                        <field name="OP">EQ</field>
+                        <value name="A">
+                            <block type="lists_filter_item"></block>
+                        </value>
+                        <value name="B">
+                            <block type="math_number">
+                                <field name="NUM">0</field>
+                            </block>
+                        </value>
                     </block>
                 </value>
             </block>
-            <block type="lists_getIndex">
-                <value name="VALUE">
-                    <block type="variables_get">
-                        <field name="VAR">list</field>
-                    </block>
-                </value>
-            </block>
-            <block type="lists_setIndex">
-                <value name="LIST">
-                    <block type="variables_get">
-                        <field name="VAR">list</field>
-                    </block>
-                </value>
-            </block>
-            <block type="lists_getSublist">
-                <value name="LIST">
-                    <block type="variables_get">
-                        <field name="VAR">list</field>
-                    </block>
-                </value>
-            </block>
+            </value>
+            <block type="lists_getIndex"></block>
+            <block type="lists_setIndex"></block>
+            <block type="lists_getSublist"></block>
             <block type="lists_split">
                 <value name="DELIM">
                     <shadow type="text">
@@ -444,14 +457,24 @@
                     </shadow>
                 </value>
             </block>
+            <block type="lists_merge"></block>
             <block type="lists_sort"></block>
-            <block type="controls_forEach">
-                <value name="LIST">
-                    <block type="variables_get">
-                        <field name="VAR">list</field>
+            <block type="lists_filter">
+                <value name="method">
+                    <block type="logic_compare">
+                        <field name="OP">EQ</field>
+                        <value name="A">
+                            <block type="lists_filter_item"></block>
+                        </value>
+                        <value name="B">
+                            <block type="math_number">
+                                <field name="NUM">0</field>
+                            </block>
+                        </value>
                     </block>
                 </value>
             </block>
+            <block type="controls_forEach"></block>
         </category>
 
         <category name="Objects" colour="#ff8349">
@@ -477,22 +500,12 @@
                         <field name="TEXT">key</field>
                     </shadow>
                 </value>
-                <value name="OBJECT">
-                    <block type="variables_get">
-                        <field name="VAR">obj</field>
-                    </block>
-                </value>
             </block>
             <block type="json_get">
                 <value name="KEY">
                     <shadow type="text">
                         <field name="TEXT">key</field>
                     </shadow>
-                </value>
-                <value name="OBJECT">
-                    <block type="variables_get">
-                        <field name="VAR">obj</field>
-                    </block>
                 </value>
             </block>
             <block type="json_set">
@@ -501,11 +514,6 @@
                         <field name="TEXT">key</field>
                     </shadow>
                 </value>
-                <value name="OBJECT">
-                    <block type="variables_get">
-                        <field name="VAR">obj</field>
-                    </block>
-                </value>
             </block>
             <block type="json_delete">
                 <value name="KEY">
@@ -513,27 +521,10 @@
                         <field name="TEXT">key</field>
                     </shadow>
                 </value>
-                <value name="OBJECT">
-                    <block type="variables_get">
-                        <field name="VAR">obj</field>
-                    </block>
-                </value>
             </block>
-            <block type="json_property_list">
-                <value name="OBJECT">
-                    <block type="variables_get">
-                        <field name="VAR">obj</field>
-                    </block>
-                </value>
-            </block>
+            <block type="json_property_list"></block>
             <block type="json_parse"></block>
-            <block type="json_clone">
-                <value name="OBJECT">
-                    <block type="variables_get">
-                        <field name="VAR">obj</field>
-                    </block>
-                </value>
-            </block>
+            <block type="json_clone"></block>
         </category>
 
         <category name="Variables" colour="#FF8C1A" custom="GLOBAL_VARIABLES"></category>

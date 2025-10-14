@@ -1,102 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400");
-
-:root {
-  --font: "Inter", sans-serif;
-  --dark: #2b323b;
-  --dark-light: #424c5a;
-  --primary: #3b82f6;
-  --primary-dark: #336ce7;
-  --danger: #f63b3b;
-  --danger-dark: #dd3434;
-  --color1: #f3f4f6;
-  --color2: #e4e5e7;
-  --color3: #cbcdcf;
-  --color4: #b9bbbd;
-}
-
-html.dark {
-  --dark: #e2e8f0;
-  --dark-light: #c8cdd4;
-  --primary: #3b82f6;
-  --primary-dark: #336ce7;
-  --danger: #f63b3b;
-  --danger-dark: #dd3434;
-  --color1: #262d36;
-  --color2: #2f3741;
-  --color3: #3d4552;
-  --color4: #464f5e;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  list-style-position: inside;
-}
-
-body {
-  font-family: var(--font);
-  background-color: var(--color1);
-  overscroll-behavior: none;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-html, body {
-  overflow-x: hidden;
-}
-
-a {
-  color: var(--primary);
-}
-
-header {
-  background-color: var(--primary);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.3rem 0.5rem;
-  z-index: 10;
-}
-
-html.dark header {
-  background-color: var(--color4);
-}
-
-header div {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-button {
-  font-family: var(--font);
-  font-size: medium;
-  font-weight: 700;
-  padding: 0.5rem 0.9rem;
-  border-radius: 0.5rem;
-  border: none;
-  background-color: var(--dark);
-  color: var(--color1);
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-button:hover {
-  background-color: var(--dark-light);
-}
-
-button.orange {
-  background-color: #f18f3f;
-}
-
-button.orange:hover {
-  background-color: #e28940;
-}
-
 .about {
   display: flex;
   flex-direction: column;
@@ -110,6 +11,10 @@ button.orange:hover {
   color: #f3f4f6;
   font-size: larger;
   text-shadow: 0 2px 3px black;
+}
+
+.about * {
+  color: #f3f4f6;
 }
 
 .feature-cards {
@@ -161,8 +66,7 @@ button.orange:hover {
 }
 
 button.large {
-  font-size: 1.2rem;
-  padding: 0.75rem 1.5rem;
+  font-size: 1.5rem;
 }
 
 footer {

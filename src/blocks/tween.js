@@ -1,7 +1,7 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 
-const TweenEasing = Object.freeze({
+const TweenEasing = {
   InLinear: (t) => t,
   OutLinear: (t) => t,
   InOutLinear: (t) => t,
@@ -93,8 +93,13 @@ const TweenEasing = Object.freeze({
     t < 0.5
       ? (1 - TweenEasing.OutBounce(1 - 2 * t)) / 2
       : (1 + TweenEasing.OutBounce(2 * t - 1)) / 2,
+};
+Object.defineProperty(window, "TweenEasing", {
+  value: Object.freeze(TweenEasing),
+  configurable: false,
+  writable: false,
+  enumerable: true
 });
-window.TweenEasing = TweenEasing;
 
 Blockly.Blocks["tween_block"] = {
   init: function () {
@@ -129,7 +134,7 @@ Blockly.Blocks["tween_block"] = {
         "EASING_MODE"
       );
 
-    this.appendStatementInput("DO").setCheck(null);
+    this.appendStatementInput("DO").setCheck("default");
     this.appendDummyInput()
       .setAlign(1)
       .appendField(
@@ -141,8 +146,8 @@ Blockly.Blocks["tween_block"] = {
       )
       .appendField("until finished");
     this.setInputsInline(true);
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setColour("#32a2c0");
     this.setTooltip(
       "Tween a value from one number to another over time using easing"
@@ -236,8 +241,8 @@ Blockly.Blocks["tween_sprite_property"] = {
         "EASING_MODE"
       );
     this.setInputsInline(true);
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setColour("#32a2c0");
     this.setTooltip(
       "Tween a sprite property to a target value over time using easing"

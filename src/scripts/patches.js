@@ -2,10 +2,8 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js";
 
-BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP = `
-if (signal.aborted || thisRun !== currentRunId || window.shouldStop) throw new Error("shouldStop");
-await new Promise(r => setTimeout(r, 16));
-`;
+BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP =
+  'if (stopped()) throw new Error("shouldStop");\nif (!fastExecution) await new Promise(r => setTimeout(r, 16));\n';
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
@@ -43,9 +41,23 @@ Blockly.Blocks["text"] = {
       if (!this.isShadow()) {
         Blockly.Extensions.apply("text_quotes", this, false);
       }
-    }, 0);
+    });
   },
 };
+
+Object.keys(Blockly.Blocks).forEach((type) => {
+  const block = Blockly.Blocks[type];
+  if (!block || typeof block.init !== "function") return;
+
+  const originalInit = block.init;
+  block.init = function () {
+    originalInit.call(this);
+    if (this.previousConnection && this.previousConnection.check_ === null)
+      this.setPreviousStatement(true, "default");
+    if (this.nextConnection && this.nextConnection.check_ === null)
+      this.setNextStatement(true, "default");
+  };
+});
 
 BlocklyJS.javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   block,
@@ -259,6 +271,16 @@ Object.defineProperty(PIXI.Sprite.prototype, "y", {
     }
   },
 });
+
+PIXI.Sprite.prototype.setPosition = function (x = null, y = null, add = false) {
+  const newX = x !== null ? (add ? this.x + x : x) : this.x;
+  const newY = y !== null ? (add ? this.y + y : y) : this.y;
+  if (this.x === newX && this.y === newY) return;
+  originalX.set.call(this, newX);
+  originalY.set.call(this, newY);
+  SpriteChangeEvents.emit("positionChanged", this);
+};
+
 Object.defineProperty(PIXI.Sprite.prototype, "angle", {
   get() {
     return originalAngle.get.call(this);
