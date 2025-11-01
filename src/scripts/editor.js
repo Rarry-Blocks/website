@@ -1607,7 +1607,23 @@ function serializeWorkspace(workspace) {
 function createSession() {
   if (currentSocket && currentSocket.connected) return currentSocket;
 
-  currentSocket = io(`${config.apiUrl}/live`);
+  const localhost = window.location.hostname === "localhost";
+
+  const socketUrl = localhost
+    ? "http://localhost:3000"
+    : "https://dev-rarry.dded.vercel.app";
+
+  currentSocket = io(socketUrl, {
+    path: "/api/socket.io",
+    withCredentials: false,
+    autoConnect: true,
+    transports: ["websocket", "polling"],
+  });
+
+  currentSocket = io(`${socketUrl}/live`, {
+    path: "/api/socket.io",
+    transports: ["websocket", "polling"],
+  });
 
   currentSocket.on("connect", () => {
     console.log("connected to liveshare");
