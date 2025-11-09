@@ -586,7 +586,6 @@ const keysPressed = {};
 const mouseButtonsPressed = {};
 const playingSounds = new Map();
 
-let currentRunId = 0;
 let currentRunController = null;
 
 let eventRegistry = {
@@ -594,7 +593,6 @@ let eventRegistry = {
   key: new Map(),
   stageClick: [],
 };
-window.shouldStop = false;
 
 let _activeEventThreadsCount = 0;
 const activeEventThreads = {};
@@ -620,16 +618,12 @@ function updateRunButtonState() {
 const runningScripts = [];
 
 function stopAllScripts() {
-  window.shouldStop = true;
-
   if (currentRunController) {
     try {
       currentRunController.abort();
     } catch (e) {}
     currentRunController = null;
   }
-
-  currentRunId++;
 
   for (const i of runningScripts) {
     if (i.type === "timeout") clearTimeout(i.id);
@@ -648,19 +642,6 @@ function stopAllScripts() {
   }
   playingSounds.clear();
 
-  for (const spriteData of sprites) {
-    const bubble = spriteData.currentBubble;
-    if (bubble) {
-      if (bubble.destroy) bubble.destroy({ children: true });
-      spriteData.currentBubble = null;
-    }
-
-    if (spriteData.sayTimeout) {
-      clearTimeout(spriteData.sayTimeout);
-      spriteData.sayTimeout = null;
-    }
-  }
-
   for (const k in keysPressed) delete keysPressed[k];
   for (const k in mouseButtonsPressed) delete mouseButtonsPressed[k];
 
@@ -674,6 +655,19 @@ function stopAllScripts() {
 
   Thread.resetAll();
   activeEventThreads.count = 0;
+
+  for (const spriteData of sprites) {
+    const bubble = spriteData.currentBubble;
+    if (bubble) {
+      if (bubble.destroy) bubble.destroy({ children: true });
+      spriteData.currentBubble = null;
+    }
+
+    if (spriteData.sayTimeout) {
+      clearTimeout(spriteData.sayTimeout);
+      spriteData.sayTimeout = null;
+    }
+  }
 }
 
 async function runCode() {
@@ -688,7 +682,6 @@ async function runCode() {
   currentRunController = controller;
 
   let projectStartedTime = Date.now();
-  let thisRun = Number(currentRunId);
 
   sprites.forEach((spriteData) => {
     const tempWorkspace = new Blockly.Workspace();
@@ -704,11 +697,8 @@ async function runCode() {
     tempWorkspace.dispose();
 
     try {
-      window.shouldStop = false;
       runCodeWithFunctions({
         code,
-        thisRun,
-        currentRunId,
         projectStartedTime,
         spriteData,
         app,
@@ -726,12 +716,8 @@ async function runCode() {
     }
   });
 
-  const flagEventsForThisRun = eventRegistry.flag.filter(
-    (e) => e.runId === thisRun
-  );
-
   Promise.allSettled(
-    flagEventsForThisRun.map((entry) => promiseWithAbort(entry.cb, signal))
+    eventRegistry.flag.map((entry) => promiseWithAbort(entry.cb, signal))
   ).then((results) => {
     results.forEach((res) => {
       if (res.status === "rejected" && res.reason?.message !== "shouldStop") {
@@ -846,7 +832,11 @@ export async function getProject() {
 
 async function saveProject() {
   const zip = new JSZip();
-  const json = { sprites: [] };
+  const json = {
+    sprites: [],
+    extensions: activeExtensions,
+    variables: window.projectVariables ?? {},
+  };
   const toUint8Array = (base64) =>
     Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 
@@ -1306,7 +1296,9 @@ const allowedKeys = new Set([
 ]);
 window.addEventListener("keydown", (e) => {
   const key = e.key;
-  keysPressed[key] = true;
+  if (allowedKeys.has(key)) {
+    keysPressed[key] = true;
+  }
 
   const specificHandlers = eventRegistry.key.get(key);
   if (specificHandlers) {

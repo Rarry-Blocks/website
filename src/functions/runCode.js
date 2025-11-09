@@ -12,8 +12,6 @@ const LINE_COLOR = 0xbdc1c7;
 
 export function runCodeWithFunctions({
   code,
-  thisRun,
-  currentRunId,
   projectStartedTime,
   spriteData,
   app,
@@ -24,7 +22,7 @@ export function runCodeWithFunctions({
   runningScripts,
   signal,
   penGraphics,
-  activeEventThreads
+  activeEventThreads,
 }) {
   Thread.resetAll();
   let fastExecution = false;
@@ -39,20 +37,14 @@ export function runCodeWithFunctions({
   const extensions = window.extensions;
 
   function stopped() {
-    return (
-      thisRun !== currentRunId ||
-      window.shouldStop ||
-      (signal && signal.aborted)
-    );
+    return signal.aborted === true;
   }
 
   function _registerEvent(type, key, callback) {
     if (stopped()) return;
-    const runId = thisRun;
 
     const entry = {
       type,
-      runId,
       cb: async () => {
         if (stopped()) return;
 
@@ -108,7 +100,7 @@ export function runCodeWithFunctions({
   }
 
   function getMousePosition(menu) {
-    const mouse = renderer.plugins.interaction.mouse.global;
+    const mouse = renderer.events.pointer.global;
     if (menu === "x")
       return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
     else if (menu === "y")
@@ -235,6 +227,22 @@ export function runCodeWithFunctions({
 
     if (sprite.angle < 0) sprite.angle += 360;
   }
+
+  function pointsTowards(x, y) {
+  const targetX = renderer.width / 2 + x * stage.scale.x;
+  const targetY = renderer.height / 2 - y * stage.scale.y;
+
+  const spriteX = renderer.width / 2 + sprite.x * stage.scale.x;
+  const spriteY = renderer.height / 2 - sprite.y * stage.scale.y;
+
+  const dx = targetX - spriteX;
+  const dy = targetY - spriteY;
+
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  angle = ((angle % 360) + 360) % 360;
+
+  sprite.angle = angle;
+}
 
   function projectTime() {
     return (Date.now() - projectStartedTime) / 1000;
@@ -387,7 +395,7 @@ export function runCodeWithFunctions({
   }
 
   function isMouseTouchingSprite() {
-    const mouse = renderer.plugins.interaction.mouse.global;
+    const mouse = renderer.events.pointer.global;
     const bounds = sprite.getBounds();
     return bounds.contains(mouse.x, mouse.y);
   }
