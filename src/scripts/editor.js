@@ -683,48 +683,55 @@ async function runCode() {
 
   let projectStartedTime = Date.now();
 
-  sprites.forEach((spriteData) => {
-    const tempWorkspace = new Blockly.Workspace();
-    BlocklyJS.javascriptGenerator.init(tempWorkspace);
+  try {
+    for (const spriteData of sprites) {
+      const tempWorkspace = new Blockly.Workspace();
+      BlocklyJS.javascriptGenerator.init(tempWorkspace);
 
-    const xmlText =
-      spriteData.code ||
-      '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
-    const xmlDom = Blockly.utils.xml.textToDom(xmlText);
-    Blockly.Xml.domToWorkspace(xmlDom, tempWorkspace);
+      const xmlText =
+        spriteData.code ||
+        '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
+      const xmlDom = Blockly.utils.xml.textToDom(xmlText);
+      Blockly.Xml.domToWorkspace(xmlDom, tempWorkspace);
 
-    const code = BlocklyJS.javascriptGenerator.workspaceToCode(tempWorkspace);
-    tempWorkspace.dispose();
+      const code = BlocklyJS.javascriptGenerator.workspaceToCode(tempWorkspace);
+      tempWorkspace.dispose();
 
-    try {
-      runCodeWithFunctions({
-        code,
-        projectStartedTime,
-        spriteData,
-        app,
-        eventRegistry,
-        mouseButtonsPressed,
-        keysPressed,
-        playingSounds,
-        runningScripts,
-        signal,
-        penGraphics,
-        activeEventThreads,
-      });
-    } catch (e) {
-      console.error(`Error processing code for sprite ${spriteData.id}:`, e);
+      try {
+        runCodeWithFunctions({
+          code,
+          projectStartedTime,
+          spriteData,
+          app,
+          eventRegistry,
+          mouseButtonsPressed,
+          keysPressed,
+          playingSounds,
+          runningScripts,
+          signal,
+          penGraphics,
+          activeEventThreads,
+        });
+      } catch (e) {
+        console.error(`Error processing code for sprite ${spriteData.id}:`, e);
+      }
     }
-  });
 
-  Promise.allSettled(
-    eventRegistry.flag.map((entry) => promiseWithAbort(entry.cb, signal))
-  ).then((results) => {
+    const results = await Promise.allSettled(
+      eventRegistry.flag.map((entry) => promiseWithAbort(entry.cb, signal))
+    );
+
     results.forEach((res) => {
       if (res.status === "rejected" && res.reason?.message !== "shouldStop") {
         console.error("Error running flag event:", res.reason);
       }
     });
-  });
+  } catch (err) {
+    console.error("Error running project:", err);
+    stopAllScripts();
+  } finally {
+    updateRunButtonState();
+  }
 }
 
 app.view.addEventListener("click", () => {

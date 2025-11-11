@@ -194,7 +194,7 @@ BlocklyJS.javascriptGenerator.forBlock["point_towards"] = function (
 
 BlocklyJS.javascriptGenerator.forBlock["get_position"] = function (block) {
   const menu = block.getFieldValue("MENU");
-  return [`sprite["${menu}"]"`, BlocklyJS.Order.NONE];
+  return [`sprite["${menu}"]`, BlocklyJS.Order.NONE];
 };
 
 BlocklyJS.javascriptGenerator.forBlock["angle_turn"] = function (

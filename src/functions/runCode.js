@@ -108,6 +108,8 @@ export function runCodeWithFunctions({
   }
 
   function sayMessage(message, seconds) {
+    if (stopped()) return;
+    
     message = String(message ?? "");
     if (!message) return;
 

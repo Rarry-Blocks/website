@@ -193,13 +193,13 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
         return this.PILLOW;
       } else if (checks.includes("Set") || outputShape === 6) {
         return this.SPIKEY;
-      } else if (
+      } /*else if (
         checks.includes("String") &&
         connection?.sourceBlock_?.isShadow() &&
         connection?.targetConnection?.shadowState?.type === "text"
       ) {
         return this.SQUARED;
-      }
+      }*/
     }
 
     return super.shapeFor(connection);
