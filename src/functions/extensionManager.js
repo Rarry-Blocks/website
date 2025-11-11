@@ -238,8 +238,10 @@ export async function registerExtension(extClass) {
       const args = `{${argsParts.join(",")}}`;
       const callCode = `extensions["${fullType}"](${args},Thread)`;
 
-      if (block.outputConnection) return [callCode, BlocklyJS.Order.NONE];
-      else return callCode + ";\n";
+      const finalCode = def.promise ? `await ${callCode}` : callCode;
+
+      if (block.outputConnection) return [finalCode, BlocklyJS.Order.NONE];
+      else return finalCode + ";\n";
     };
   });
 
