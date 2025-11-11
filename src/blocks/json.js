@@ -103,6 +103,7 @@ Blockly.Blocks["json_create_item"] = {
   },
 };
 
+/* --- start deprecated --- */
 Blockly.Blocks["json_key_value"] = {
   init: function () {
     this.appendValueInput("KEY").setCheck("String").appendField("key");
@@ -274,10 +275,66 @@ BlocklyJS.javascriptGenerator.forBlock["json_create"] = function (block) {
   const code = `{ ${entries.join(", ")} }`;
   return [code, BlocklyJS.Order.ATOMIC];
 };
+/* --- end deprecated --- */
+
+Blockly.Blocks["json_create_statement"] = {
+  init: function () {
+    this.appendDummyInput().appendField("create object");
+    this.appendStatementInput("STACK").setCheck("json_key_value");
+    this.setOutput(true, "Object");
+    this.setStyle("json_category");
+    this.setTooltip("Create a JSON object using stacked key/value pairs.");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["json_create_statement"] = function (
+  block
+) {
+  const statements = BlocklyJS.javascriptGenerator.statementToCode(
+    block,
+    "STACK"
+  );
+  return [`{\n${statements}}`, BlocklyJS.Order.ATOMIC];
+};
+
+Blockly.Blocks["json_key_value_statement"] = {
+  init: function () {
+    this.appendValueInput("KEY").setCheck("String").appendField("key");
+    this.appendValueInput("VALUE").appendField("value");
+    this.setPreviousStatement(true, "json_key_value");
+    this.setNextStatement(true, "json_key_value");
+    this.setInputsInline(true);
+    this.setStyle("json_category");
+    this.setTooltip("A single key/value pair for a JSON object.");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["json_key_value_statement"] = function (
+  block,
+  generator
+) {
+  const key =
+    BlocklyJS.javascriptGenerator.valueToCode(
+      block,
+      "KEY",
+      BlocklyJS.Order.ATOMIC
+    ) || "";
+  const value =
+    BlocklyJS.javascriptGenerator.valueToCode(
+      block,
+      "VALUE",
+      BlocklyJS.Order.ATOMIC
+    ) || "null";
+
+  if (key) return `${key}: ${value},\n`;
+  else return "";
+};
 
 Blockly.Blocks["json_has_key"] = {
   init: function () {
-    this.appendValueInput("OBJECT").setCheck("Object").appendField("does object");
+    this.appendValueInput("OBJECT")
+      .setCheck("Object")
+      .appendField("does object");
     this.appendValueInput("KEY").setCheck("String").appendField("have");
     this.setOutput(true, "Boolean");
     this.setInputsInline(true);
@@ -440,7 +497,7 @@ Blockly.Blocks["json_clone"] = {
       .appendField("clone object");
     this.setOutput(true, "Object");
     this.setStyle("json_category");
-    this.setTooltip("Creates a deep clone of a JSON-compatible object.");
+    this.setTooltip("Creates a duplicate of a JSON object.");
   },
 };
 

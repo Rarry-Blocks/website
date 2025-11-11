@@ -33,6 +33,11 @@ html.dark {
   box-sizing: border-box;
 }
 
+a {
+  color: var(--primary-dark);
+  text-decoration: none;
+}
+
 h1,
 h2,
 h3,
@@ -63,6 +68,7 @@ header {
   align-items: center;
   padding: 0.3rem 0.5rem;
   z-index: 10;
+  gap: 0.5rem;
 }
 
 html.dark header {
@@ -83,8 +89,16 @@ header h1 {
 header div {
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
+  overflow: hidden;
   gap: 0.5rem;
+}
+
+header button {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hidden {
@@ -102,18 +116,20 @@ input[type="file"] {
   color: var(--color1);
   cursor: pointer;
   will-change: background-color, scale;
-  transition: background-color 0.2s, scale 0.2s;
+  transition: background-color 0.1s, scale 0.1s;
 }
 
 input[type="text"],
-textarea {
+input[type="password"],
+select,
+textarea:not(.blocklyTextarea) {
   font-family: var(--font);
   font-size: medium;
   padding: 0.5rem;
   border-radius: 0.5rem;
-  border: none;
-  color: #2b323b;
-  max-width: 100%;
+  background-color: var(--color2);
+  border: 1px solid var(--color4);
+  color: var(--dark);
 }
 
 button {
@@ -122,14 +138,6 @@ button {
 
 button:not(.tab-button):active {
   scale: 0.95;
-}
-
-html:not(.removeIcons) button:has(i) {
-  padding-left: 0.7rem;
-}
-
-html.removeIcons button i:not(.stay) {
-  display: none;
 }
 
 input[type="file"] {
@@ -148,7 +156,7 @@ img.button {
   width: 2rem;
   cursor: pointer;
   will-change: scale;
-  transition: scale 0.2s;
+  transition: scale 0.1s;
 }
 
 img.button:active {
@@ -191,6 +199,10 @@ button.green:hover {
   background-color: #28b85c;
 }
 
+button.large {
+  font-size: 1.5rem;
+}
+
 html.dark header button {
   color: var(--color1);
 }
@@ -203,34 +215,6 @@ html.removeIcons button i:not(.stay) {
   display: none;
 }
 
-button:hover {
-  background-color: var(--dark-light);
-}
-
-button.orange {
-  background-color: #f18f3f;
-}
-
-button.orange:hover {
-  background-color: #e28940;
-}
-
-html.dark header button {
-  color: var(--color1);
-}
-
-button.large {
-  font-size: 1.5rem;
-}
-
-html:not(.removeIcons) button:has(i) {
-  padding-left: 0.7rem;
-}
-
-html.removeIcons button i {
-  display: none;
-}
-
 @keyframes scaleIn {
   from {
     opacity: 0;
@@ -240,6 +224,17 @@ html.removeIcons button i {
   to {
     opacity: 1;
     scale: 1;
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0;
   }
 }
 
@@ -297,7 +292,47 @@ html.removeIcons button i {
 .popup-close {
   margin-left: auto;
   font-size: 1.2rem;
-  cursor: pointer;
+}
+
+.notification-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 10000;
+}
+
+.notification {
+  background: var(--color2);
+  color: var(--dark);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  padding: 0.4rem;
+  padding-left: 0.8rem;
+  animation: scaleIn 0.3s ease forwards;
+}
+
+.notification.hide {
+  animation: scaleOut 0.3s ease forwards;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notification-close {
+  background: none;
+  color: var(--dark);
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.notification-close:hover {
+  background: var(--danger);
 }
 
 input[type="checkbox"] {
@@ -328,6 +363,40 @@ input[type="checkbox"]:checked::after {
   border: solid #f3f4f6;
   border-width: 0 2px 2px 0;
   transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.userTag {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--primary-dark);
+  color: #e2e8f0;
+}
+
+.userTag a {
+  color: #e2e8f0;
+}
+
+html.dark .userTag {
+  background-color: var(--color3);
+}
+
+.userTag img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 20%;
+}
+
+footer {
+  padding: 1.5rem;
+  text-align: center;
+  background-color: var(--color2);
+  color: var(--dark-light);
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+
+.dropdown-content button:hover {
+  background-color: var(--dark-light);
 }
 
 ::-webkit-scrollbar {

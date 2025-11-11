@@ -3,11 +3,11 @@ import * as BlocklyJS from "blockly/javascript";
 
 Blockly.Blocks["move_steps"] = {
   init: function () {
-    this.appendValueInput("STEPS").setCheck("Number").appendField("move");
-    this.appendDummyInput().appendField("steps");
+    this.appendValueInput("STEPS").setCheck("Number").appendField("step");
+    this.appendDummyInput().appendField("times");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
   },
 };
 
@@ -26,7 +26,7 @@ Blockly.Blocks["change_position"] = {
       .appendField("by");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
   },
 };
 
@@ -45,18 +45,18 @@ Blockly.Blocks["set_position"] = {
       .appendField("to");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
   },
 };
 
 Blockly.Blocks["goto_position"] = {
   init: function () {
-    this.appendValueInput("x").setCheck("Number").appendField("go to x:");
-    this.appendValueInput("y").setCheck("Number").appendField("y:");
+    this.appendValueInput("x").setCheck("Number").appendField("go to x");
+    this.appendValueInput("y").setCheck("Number").appendField("y");
     this.setInputsInline(true);
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
   },
 };
 
@@ -70,7 +70,7 @@ Blockly.Blocks["get_position"] = {
       "MENU"
     );
     this.setOutput(true, "Number");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
   },
 };
 
@@ -105,7 +105,7 @@ Blockly.Blocks["angle_turn"] = {
     this.appendDummyInput().appendField("degrees");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
   },
 };
 
@@ -118,7 +118,20 @@ Blockly.Blocks["angle_set"] = {
     this.setInputsInline(true);
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
+  },
+};
+
+Blockly.Blocks["point_towards"] = {
+  init: function () {
+    this.appendValueInput("x")
+      .setCheck("Number")
+      .appendField("point towards x");
+    this.appendValueInput("y").setCheck("Number").appendField("y");
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setStyle("motion_blocks");
   },
 };
 
@@ -126,7 +139,7 @@ Blockly.Blocks["get_angle"] = {
   init: function () {
     this.appendDummyInput().appendField("angle");
     this.setOutput(true, "Number");
-    this.setColour("#4C97FF");
+    this.setStyle("motion_blocks");
   },
 };
 
@@ -146,7 +159,8 @@ BlocklyJS.javascriptGenerator.forBlock["change_position"] = function (
   const amount =
     generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
-  return `changePosition("${menu}", ${amount});\n`;
+  if (menu === "y") return `sprite["${menu}"] -= ${amount};\n`;
+  else return `sprite["${menu}"] += ${amount};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["set_position"] = function (
@@ -156,7 +170,8 @@ BlocklyJS.javascriptGenerator.forBlock["set_position"] = function (
   const amount =
     generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
-  return `setPosition("${menu}", ${amount});\n`;
+  if (menu === "y") return `sprite["${menu}"] = -${amount};\n`;
+  else return `sprite["${menu}"] = ${amount};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["goto_position"] = function (
@@ -165,12 +180,21 @@ BlocklyJS.javascriptGenerator.forBlock["goto_position"] = function (
 ) {
   const x = generator.valueToCode(block, "x", BlocklyJS.Order.ATOMIC) || 0;
   const y = generator.valueToCode(block, "y", BlocklyJS.Order.ATOMIC) || 0;
-  return `setPosition("xy", ${x}, ${y});\n`;
+  return `sprite.x = ${x};\nsprite.y = -${y};\n`;
+};
+
+BlocklyJS.javascriptGenerator.forBlock["point_towards"] = function (
+  block,
+  generator
+) {
+  const x = generator.valueToCode(block, "x", BlocklyJS.Order.ATOMIC) || 0;
+  const y = generator.valueToCode(block, "y", BlocklyJS.Order.ATOMIC) || 0;
+  return `pointsTowards(${x}, ${y});\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["get_position"] = function (block) {
   const menu = block.getFieldValue("MENU");
-  return [`getPosition("${menu}")`, BlocklyJS.Order.NONE];
+  return [`sprite["${menu}"]"`, BlocklyJS.Order.NONE];
 };
 
 BlocklyJS.javascriptGenerator.forBlock["angle_turn"] = function (
@@ -194,6 +218,6 @@ BlocklyJS.javascriptGenerator.forBlock["angle_set"] = function (
 };
 
 BlocklyJS.javascriptGenerator.forBlock["get_angle"] = () => [
-  "getAngle()",
+  "sprite.angle",
   BlocklyJS.Order.NONE,
 ];

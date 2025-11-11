@@ -1,4 +1,4 @@
-export const Thread = (function () {
+export function createThreadSystem() {
   const threads = new Map();
   let current = null;
   let nextId = 1;
@@ -79,4 +79,6 @@ export const Thread = (function () {
       };
     },
   };
-})();
+};
+
+export const Thread = createThreadSystem();

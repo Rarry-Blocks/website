@@ -71,3 +71,25 @@ BlocklyJS.javascriptGenerator.forBlock['lists_merge'] = function (block, generat
   const code = `${val_list}.concat(${val_list2})`;
   return [code, BlocklyJS.Order.NONE];
 };
+
+Blockly.Blocks['lists_foreach'] = {
+  init: function () {
+    this.appendValueInput('LIST')
+      .setCheck('Array')
+      .appendField('for each item in list');
+    this.appendStatementInput('DO')
+      .appendField('do');
+    this.setInputsInline(false);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setStyle("list_blocks");
+    this.setTooltip("Loops through every item in a list and runs the code inside for each one");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock['lists_foreach'] = function (block, generator) {
+  const list = generator.valueToCode(block, 'LIST', BlocklyJS.Order.NONE) || '[]';
+  const branch = generator.statementToCode(block, 'DO');
+  const code = `${list}.forEach(findOrFilterItem => {\n${branch}});\n`;
+  return code;
+};

@@ -1,0 +1,24 @@
+body {
+  background-image: url("/icons/blur.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+body,
+.info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.info {
+  border-radius: 1rem;
+  gap: 1.5rem;
+  padding: 2rem;
+  font-size: large;
+  background-color: var(--color1);
+  color: var(--dark);
+}

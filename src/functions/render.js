@@ -128,19 +128,18 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       const extra = blockHeight > maxH ? blockHeight - maxH : 0;
       const h_ = Math.min(blockHeight, maxH);
       const h = h_ + extra;
-      const radius = h / 3;
-      const radiusHdiv = 4;
-      const radiusH = Math.min(h_ / radiusHdiv, maxH);
+      const radius = h / 4;
+      const radiusH = Math.min(h_ / 4, maxH);
       const dirR = right ? 1 : -1;
       const dirU = up ? -1 : 1;
 
       return `
-        h ${radiusH * dirR * (radiusHdiv / 2)}
+        h ${2 * radiusH * dirR}
         l ${radiusH * -dirR} ${radius * dirU}
-        l ${radiusH * (dirR / 2)} ${radius * (dirU / 2)}
-        l ${radiusH * (-dirR / 2)} ${radius * (dirU / 2)}
         l ${radiusH * dirR} ${radius * dirU}
-        h ${radiusH * -dirR * (radiusHdiv / 2)}
+        l ${radiusH * -dirR} ${radius * dirU}
+        l ${radiusH * dirR} ${radius * dirU}
+        h ${2 * radiusH * -dirR}
       `;
     }
 
@@ -194,6 +193,12 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
         return this.PILLOW;
       } else if (checks.includes("Set") || outputShape === 6) {
         return this.SPIKEY;
+      } else if (
+        checks.includes("String") &&
+        connection?.sourceBlock_?.isShadow() &&
+        connection?.targetConnection?.shadowState?.type === "text"
+      ) {
+        return this.SQUARED;
       }
     }
 

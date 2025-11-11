@@ -118,5 +118,5 @@ Blockly.Blocks["get_sound_property"] = {
 
 BlocklyJS.javascriptGenerator.forBlock["get_sound_property"] = function (block) {
   var property = block.getFieldValue("property");
-  return [`getSoundProperty("${property}")`, BlocklyJS.Order.NONE];
+  return [`soundProperties["${property}"]`, BlocklyJS.Order.NONE];
 };

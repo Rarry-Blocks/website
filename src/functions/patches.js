@@ -1,6 +1,6 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
-import * as PIXI from "pixi.js";
+import * as PIXI from "pixi.js-legacy";
 
 BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP =
   'if (stopped()) throw new Error("shouldStop");\nif (!fastExecution) await new Promise(r => setTimeout(r, 16));\n';

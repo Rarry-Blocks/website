@@ -1,0 +1,27 @@
+.info {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#userProfile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: x-large;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--color2);
+  color: var(--dark);
+}
+
+#userProfile img {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 20%;
+}

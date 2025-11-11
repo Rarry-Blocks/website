@@ -268,11 +268,11 @@ BlocklyJS.javascriptGenerator.forBlock["tween_sprite_property"] = function (
     fromGetter = "getSpriteScale()";
     setter = `setSize(tweenValue, false)`;
   } else if (prop === "angle") {
-    fromGetter = `getAngle()`;
+    fromGetter = `sprite.angle`;
     setter = `setAngle(tweenValue, false)`;
   } else {
-    fromGetter = `getPosition("${prop}")`;
-    setter = `setPosition("${prop}", tweenValue)`;
+    fromGetter = `sprite["${prop}"]`;
+    setter = `sprite["${prop}"] = tweenValue`;
   }
 
   setter = generator.addLoopTrap(setter, block);

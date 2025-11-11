@@ -15,8 +15,10 @@
     "@blockly/plugin-strict-connection-checker": "^6.0.1",
     "@fortawesome/fontawesome-free": "^7.0.1",
     "blockly": "^12.2.0",
+    "jszip": "^3.10.1",
     "pako": "^2.1.0",
-    "pixi.js": "^5.3.3",
+    "pixi.js-legacy": "^7.4.3",
+    "socket.io-client": "^4.8.1",
     "terser": "^5.44.0"
   }
 }

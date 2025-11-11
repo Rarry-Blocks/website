@@ -3,7 +3,7 @@ import * as BlocklyJS from "blockly/javascript";
 
 Blockly.Blocks["say_message"] = {
   init: function () {
-    this.appendValueInput("MESSAGE").setCheck(null).appendField("say");
+    this.appendValueInput("MESSAGE").appendField("say");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setInputsInline(true);
@@ -13,7 +13,7 @@ Blockly.Blocks["say_message"] = {
 
 Blockly.Blocks["say_message_duration"] = {
   init: function () {
-    this.appendValueInput("MESSAGE").setCheck(null).appendField("say");
+    this.appendValueInput("MESSAGE").appendField("say");
     this.appendValueInput("DURATION").setCheck("Number").appendField("for");
     this.appendDummyInput().appendField("seconds");
     this.setPreviousStatement(true, "default");

@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home - Rarry</title>
+    <title>User - Rarry</title>
 
+    <link href="src/userprofile.css" rel="stylesheet" />
     <link href="src/index.css" rel="stylesheet" />
-    <link href="src/home.css" rel="stylesheet" />
 
     <meta name="author" content="ddededodediamante" />
     <meta
@@ -33,7 +33,12 @@
   <body>
     <header>
       <div>
-        <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" />
+        <img
+          src="icons/Rarry.svg"
+          alt="Rarry logo"
+          onclick="location.href='/'"
+          style="cursor: pointer"
+        />
         <button onclick="location.href='/editor'">
           <i class="fa-solid fa-code"></i>
           Editor
@@ -51,40 +56,9 @@
       </div>
     </header>
 
-    <section class="about">
-      <h2>What is Rarry?</h2>
-      <p>
-        Rarry is a web-based platform that allows to create games or projects
-        using visual block-coding, inspired by Scratch.
-      </p>
-
-      <h2>Features</h2>
-      <div class="feature-cards">
-        <div class="feature-card">
-          <h3>Visual Block Editor</h3>
-          <p>Write code by snapping blocks together, no typing required.</p>
-        </div>
-        <div class="feature-card">
-          <h3>Custom Extensions</h3>
-          <p>
-            Extend your projects with custom blocks, new categories, and
-            powerful features.
-          </p>
-        </div>
-        <div class="feature-card">
-          <h3>Themes</h3>
-          <p>Switch between light and dark modes to match your style.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="cta-section">
-      <h2>Ready to build your first project?</h2>
-      <button class="orange large" onclick="location.href='/editor'">
-        <i class="fa-solid fa-code"></i>
-        Launch the Editor
-      </button>
-    </section>
+    <div class="info">
+      <div id="userProfile"></div>
+    </div>
 
     <footer>
       <p>
@@ -93,6 +67,6 @@
       </p>
     </footer>
 
-    <script type="module" src="src/scripts/index.js"></script>
+    <script type="module" src="src/scripts/userprofile.js"></script>
   </body>
 </html>
