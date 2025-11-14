@@ -10,6 +10,7 @@ import { io } from "socket.io-client";
 import CustomRenderer from "../functions/render.js";
 import { setupThemeButton } from "../functions/theme.js";
 import {
+  compressAudio,
   promiseWithAbort,
   showNotification,
   showPopup,
@@ -26,7 +27,7 @@ import { runCodeWithFunctions } from "../functions/runCode.js";
 import config from "../config";
 
 BlocklyJS.javascriptGenerator.addReservedWords(
-  "whenFlagClicked,moveSteps,getAngle,getMousePosition,sayMessage,waitOneFrame,wait,switchCostume,setSize,setAngle,projectTime,isKeyPressed,isMouseButtonPressed,getCostumeSize,getSpriteScale,_startTween,startTween,soundProperties,setSoundProperty,playSound,stopSound,stopAllSounds,isMouseTouchingSprite,setPenStatus,setPenColor,setPenColorHex,setPenSize,clearPen,Thread,fastExecution,BUBBLE_TEXTSTYLE,sprite,renderer,stage,costumeMap,soundMap,stopped,code,penGraphics,runningScripts,findOrFilterItem"
+  "whenFlagClicked,moveSteps,getAngle,getMousePosition,sayMessage,waitOneFrame,wait,switchCostume,setSize,setAngle,projectTime,isKeyPressed,isMouseButtonPressed,getCostumeSize,getSpriteScale,_startTween,startTween,soundProperties,setSoundProperty,playSound,stopSound,stopAllSounds,isMouseTouchingSprite,setPenStatus,setPenColor,setPenColorHex,setPenSize,clearPen,Thread,fastExecution,BUBBLE_TEXTSTYLE,sprite,renderer,stage,costumeMap,soundMap,stopped,code,penGraphics,runningScripts,findOrFilterItem,registerEvent,triggerCustomEvent,hideSprite,showSprite"
 );
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
@@ -91,8 +92,7 @@ function createPenGraphics() {
 }
 createPenGraphics();
 
-window.projectVariables = {};
-
+export let projectVariables = {};
 export let sprites = [];
 export let activeSprite = null;
 
@@ -132,7 +132,7 @@ workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (_) {
   button.setAttribute("callbackKey", "ADD_GLOBAL_VARIABLE");
   xmlList.push(button);
 
-  if (Object.keys(window.projectVariables).length === 0) return xmlList;
+  if (Object.keys(projectVariables).length === 0) return xmlList;
 
   const valueShadow = Blockly.utils.xml.createElement("value");
   valueShadow.setAttribute("name", "VALUE");
@@ -154,7 +154,7 @@ workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (_) {
   change.appendChild(valueShadow);
   xmlList.push(change);
 
-  for (const name in window.projectVariables) {
+  for (const name in projectVariables) {
     const get = Blockly.utils.xml.createElement("block");
     get.setAttribute("type", "get_global_var");
     const varField = Blockly.utils.xml.createElement("field");
@@ -172,12 +172,12 @@ function addGlobalVariable(name, emit = false) {
   if (name) {
     let newName = name,
       count = 0;
-    while (newName in window.projectVariables) {
+    while (newName in projectVariables) {
       count++;
       newName = name + count;
     }
 
-    window.projectVariables[newName] = 0;
+    projectVariables[newName] = 0;
 
     if (emit && currentSocket && currentRoom)
       currentSocket.emit("projectUpdate", {
@@ -326,10 +326,10 @@ function renderSpriteInfo() {
     const sprite = activeSprite.pixiSprite;
 
     infoEl.innerHTML = `
-    <p>x: ${Math.round(sprite.x)}</p>
-    <p>y: ${Math.round(-sprite.y)}</p>
-    <p>angle: ${Math.round(sprite.angle)}</p>
+    <p>${Math.round(sprite.x)}, ${Math.round(-sprite.y)}</p>
+    <p>${Math.round(sprite.angle)}º</p>
     <p>size: ${Math.round(((sprite.scale.x + sprite.scale.y) / 2) * 100)}</p>
+    <p><i class="fa-solid fa-${sprite.visible ? "eye" : "eye-slash"}"></i></p>
     `;
   }
 }
@@ -343,14 +343,10 @@ function createRenameableLabel(initialName, onRename) {
   const nameLabel = document.createElement("p");
   nameLabel.textContent = initialName;
   nameLabel.style.margin = "0";
+  nameLabel.style.cursor = "pointer";
 
-  const renameBtn = document.createElement("button");
-  renameBtn.innerHTML = '<i class="fa-solid fa-pencil"></i> Rename';
-
-  renameBtn.onclick = () => {
+  function startRename() {
     let willRename = true;
-
-    renameBtn.style.display = "none";
 
     const input = document.createElement("input");
     input.type = "text";
@@ -370,7 +366,6 @@ function createRenameableLabel(initialName, onRename) {
         }
       }
       container.replaceChild(nameLabel, input);
-      renameBtn.style.display = "";
     }
 
     input.addEventListener("blur", commit);
@@ -378,12 +373,13 @@ function createRenameableLabel(initialName, onRename) {
       if (e.key === "Enter") input.blur();
       else if (e.key === "Escape") {
         willRename = false;
+        input.blur();
       }
     });
-  };
+  }
 
+  nameLabel.addEventListener("click", startRename);
   container.appendChild(nameLabel);
-  container.appendChild(renameBtn);
 
   return container;
 }
@@ -427,6 +423,18 @@ function renderCostumesList() {
       }
     });
 
+    const _texture = costume.texture.baseTexture || costume.texture;
+    const sizeLabel = document.createElement("span");
+    sizeLabel.className = "smallLabel";
+    sizeLabel.textContent = "Loading...";
+    if (_texture.valid) {
+      sizeLabel.textContent = `${_texture.width}x${_texture.height}`;
+    } else {
+      _texture.once("update", () => {
+        sizeLabel.textContent = `${_texture.width}x${_texture.height}`;
+      });
+    }
+
     const deleteBtn = createDeleteButton(() => {
       const deleted = activeSprite.costumes[index];
       activeSprite.costumes.splice(index, 1);
@@ -452,6 +460,7 @@ function renderCostumesList() {
     costumeContainer.appendChild(img);
     costumeContainer.appendChild(renameableLabel);
     costumeContainer.appendChild(deleteBtn);
+    costumeContainer.appendChild(sizeLabel);
 
     costumesList.appendChild(costumeContainer);
   });
@@ -494,9 +503,7 @@ function renderSoundsList() {
     let sizeLabel;
     if (typeof sizeBytes === "number" && sizeBytes > 0) {
       sizeLabel = document.createElement("span");
-      sizeLabel.style.marginLeft = "auto";
-      sizeLabel.style.fontSize = "0.8em";
-      sizeLabel.style.color = "#666";
+      sizeLabel.className = "smallLabel";
 
       const sizeKB = sizeBytes / 1024;
       if (sizeKB < 1024) {
@@ -506,23 +513,24 @@ function renderSoundsList() {
       }
     }
 
-    const playButton = document.createElement("button");
-    playButton.textContent = "Play";
-    playButton.className = "primary";
+    const playButton = document.createElement("img");
+    playButton.src = "icons/play.svg";
+    playButton.className = "button";
+    playButton.draggable = false;
     playButton.onclick = () => {
       if (playButton.audio) {
         playButton.audio.pause();
         playButton.audio.currentTime = 0;
-        playButton.textContent = "Play";
+        playButton.src = "icons/play.svg";
         playButton.audio = null;
       } else {
         const audio = new Audio(sound.dataURL);
         playButton.audio = audio;
-        playButton.textContent = "Stop";
+        playButton.src = "icons/stopAudio.svg";
 
         audio.addEventListener("ended", () => {
           if (playButton.audio === audio) {
-            playButton.textContent = "Play";
+            playButton.src = "icons/play.svg";
             playButton.audio = null;
           }
         });
@@ -592,6 +600,9 @@ let eventRegistry = {
   flag: [],
   key: new Map(),
   stageClick: [],
+  timer: [],
+  interval: [],
+  custom: new Map(),
 };
 
 let _activeEventThreadsCount = 0;
@@ -726,6 +737,16 @@ async function runCode() {
         console.error("Error running flag event:", res.reason);
       }
     });
+
+    for (const entry of eventRegistry.timer) {
+      const id = setTimeout(() => entry.cb(), entry.value * 1000);
+      runningScripts.push({ type: "timeout", id });
+    }
+
+    for (const entry of eventRegistry.interval) {
+      const id = setInterval(() => entry.cb(), entry.seconds * 1000);
+      runningScripts.push({ type: "interval", id });
+    }
   } catch (err) {
     console.error("Error running project:", err);
     stopAllScripts();
@@ -758,12 +779,12 @@ tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const tab = button.dataset.tab;
     if (tab !== "sounds") {
-      document.querySelectorAll("#sounds-list button").forEach((i) => {
+      document.querySelectorAll("#sounds-list .button").forEach((i) => {
         if (i.audio) {
           i.audio.pause();
           i.audio.currentTime = 0;
           i.audio = null;
-          i.textContent = "Play";
+          i.src = "icons/play.svg";
         }
       });
     }
@@ -833,7 +854,7 @@ export async function getProject() {
   return {
     sprites: spritesData,
     extensions: activeExtensions,
-    variables: window.projectVariables ?? {},
+    variables: projectVariables ?? {},
   };
 }
 
@@ -842,7 +863,7 @@ async function saveProject() {
   const json = {
     sprites: [],
     extensions: activeExtensions,
-    variables: window.projectVariables ?? {},
+    variables: projectVariables ?? {},
   };
   const toUint8Array = (base64) =>
     Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -1096,7 +1117,7 @@ async function handleProjectData(data) {
       return;
     }
 
-    if (data.variables) window.projectVariables = data.variables;
+    if (data.variables) projectVariables = data.variables;
     createPenGraphics();
 
     data?.sprites?.forEach((entry, i) => {
@@ -1225,12 +1246,16 @@ document.getElementById("costume-upload").addEventListener("change", (e) => {
   e.target.value = "";
 });
 
-document.getElementById("sound-upload").addEventListener("change", (e) => {
+document.getElementById("sound-upload").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file || !activeSprite) return;
 
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
+    let dataURL = reader.result;
+
+    dataURL = await compressAudio(dataURL);
+
     let baseName = file.name.split(".")[0];
     let uniqueName = baseName;
     let counter = 1;
@@ -1245,9 +1270,9 @@ document.getElementById("sound-upload").addEventListener("change", (e) => {
 
     activeSprite.sounds.push({
       name: uniqueName,
-      dataURL: reader.result,
+      dataURL,
     });
-
+    
     if (currentSocket && currentRoom) {
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
@@ -1255,7 +1280,7 @@ document.getElementById("sound-upload").addEventListener("change", (e) => {
         data: {
           spriteId: activeSprite.id,
           name: uniqueName,
-          dataURL: reader.result,
+          dataURL,
         },
       });
     }
@@ -1264,6 +1289,7 @@ document.getElementById("sound-upload").addEventListener("change", (e) => {
       renderSoundsList();
     }
   };
+
   reader.readAsDataURL(file);
   e.target.value = "";
 });
@@ -1705,7 +1731,7 @@ function createSession() {
   currentSocket.on("projectUpdate", ({ type, data }) => {
     switch (type) {
       case "addVariable": {
-        window.projectVariables[data] = 0;
+        projectVariables[data] = 0;
         break;
       }
       case "addSprite": {

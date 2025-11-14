@@ -94,9 +94,7 @@
             </div>
 
             <div id="sprite-info">
-                <p>x: 0</p>
-                <p>y: 0</p>
-                <p>angle: 0</p>
+                <p>Loading...</p>
             </div>
 
             <div id="sprites-section">
@@ -136,8 +134,14 @@
         <category name="Events" colour="#ffc400">
             <block type="when_flag_clicked"></block>
             <block type="project_timer"></block>
+            <sep gap="50"></sep>
             <block type="when_key_clicked"></block>
             <block type="when_stage_clicked"></block>
+            <block type="when_timer_reaches"></block>
+            <block type="every_seconds"></block>
+            <sep gap="50"></sep>
+            <block type="when_custom_event_triggered"></block>
+            <block type="trigger_custom_event"></block>
         </category>
 
         <category name="Control" colour="#FFAB19">

@@ -1,10 +1,11 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { projectVariables } from "../scripts/editor";
 
 function getVariables() {
-  if (Object.keys(window.projectVariables).length === 0)
+  if (Object.keys(projectVariables).length === 0)
     return [["unknown", "unknown"]];
-  else return Object.keys(window.projectVariables).map((name) => [name, name]);
+  else return Object.keys(projectVariables).map((name) => [name, name]);
 }
 
 Blockly.Blocks["get_global_var"] = {
@@ -22,7 +23,7 @@ Blockly.Blocks["get_global_var"] = {
         text: `Delete "${varName}" variable`,
         enabled: true,
         callback: () => {
-          delete window.projectVariables[varName];
+          delete projectVariables[varName];
           this.workspace.refreshToolboxSelection();
         },
       });

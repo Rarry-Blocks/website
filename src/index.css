@@ -5,7 +5,7 @@
   --dark: #2b323b;
   --dark-light: #424c5a;
   --primary: #3b82f6;
-  --primary-dark: #336ce7;
+  --primary-dark: #3067dc;
   --danger: #f63b3b;
   --danger-dark: #dd3434;
   --color1: #f3f4f6;
@@ -18,7 +18,7 @@ html.dark {
   --dark: #e2e8f0;
   --dark-light: #c8cdd4;
   --primary: #3b82f6;
-  --primary-dark: #336ce7;
+  --primary-dark: #3067dc;
   --danger: #f63b3b;
   --danger-dark: #dd3434;
   --color1: #262d36;
@@ -95,12 +95,6 @@ header div {
   gap: 0.5rem;
 }
 
-header button {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .hidden {
   display: none !important;
 }
@@ -133,6 +127,12 @@ textarea:not(.blocklyTextarea) {
 }
 
 button {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
   background-color: var(--dark);
 }
 

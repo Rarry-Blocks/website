@@ -37,7 +37,7 @@ const blockStyles = {
     colourPrimary: "#9966FF",
   },
   events_blocks: {
-    colourPrimary: "#FFC400",
+    colourPrimary: "#e9c600",
   },
   control_blocks: {
     colourPrimary: "#FFAB19",

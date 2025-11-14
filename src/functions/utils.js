@@ -184,3 +184,43 @@ export function promiseWithAbort(promiseOrFn, signal) {
     return Promise.reject(err);
   }
 }
+
+export async function compressAudio(dataURL) {
+  if (!dataURL || !dataURL.startsWith("data:")) return dataURL;
+
+  if (dataURL.startsWith("data:audio/ogg")) return dataURL;
+
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const base64 = dataURL.split(",")[1];
+  const buffer = await audioCtx.decodeAudioData(
+    Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer
+  );
+
+  if (!(window.MediaRecorder && MediaRecorder.isTypeSupported("audio/ogg"))) {
+    console.warn("OGG compression not supported, keeping original.");
+    return dataURL;
+  }
+
+  const stream = audioCtx.createMediaStreamDestination();
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(stream);
+
+  const recorder = new MediaRecorder(stream.stream, { mimeType: "audio/ogg" });
+
+  const chunks = [];
+  recorder.ondataavailable = e => chunks.push(e.data);
+
+  return new Promise((resolve) => {
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "audio/ogg" });
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result); 
+      reader.readAsDataURL(blob);
+    };
+
+    recorder.start();
+    source.start();
+    source.onended = () => recorder.stop();
+  });
+}

@@ -339,3 +339,9 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   height: 2rem;
   border-radius: 20%;
 }
+
+.smallLabel {
+  margin-left: auto;
+  font-size: 0.8em;
+  color: var(--dark-light);
+}

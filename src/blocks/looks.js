@@ -166,11 +166,11 @@ BlocklyJS.javascriptGenerator.forBlock["get_sprite_scale"] = function () {
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
-  return "hideSprite();\n";
+  return "toggleVisibility(false);\n";
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_show_sprite"] = function () {
-  return "showSprite();\n";
+  return "toggleVisibility(true);\n";
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_isVisible"] = () => [

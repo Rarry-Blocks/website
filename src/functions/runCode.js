@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js-legacy";
-import { calculateBubblePosition } from "../scripts/editor";
+import { calculateBubblePosition, projectVariables } from "../scripts/editor";
 import { Thread } from "./threads";
 import { promiseWithAbort } from "./utils";
 
@@ -40,7 +40,7 @@ export function runCodeWithFunctions({
     return signal.aborted === true;
   }
 
-  function _registerEvent(type, key, callback) {
+  function registerEvent(type, key, callback) {
     if (stopped()) return;
 
     const entry = {
@@ -78,19 +78,25 @@ export function runCodeWithFunctions({
       case "stageClick":
         eventRegistry.stageClick.push(entry);
         break;
+      case "timer":
+        eventRegistry.timer.push({ ...entry, value: key });
+        break;
+      case "interval":
+        eventRegistry.interval.push({ ...entry, seconds: key });
+        break;
+      case "custom":
+        if (!eventRegistry.custom.has(key)) eventRegistry.custom.set(key, []);
+        eventRegistry.custom.get(key).push(entry);
+        break;
     }
   }
 
-  function whenFlagClicked(callback) {
-    _registerEvent("flag", null, callback);
-  }
-
-  function whenKeyPressed(key, callback) {
-    _registerEvent("key", key, callback);
-  }
-
-  function whenStageClicked(callback) {
-    _registerEvent("stageClick", null, callback);
+  function triggerCustomEvent(eventName) {
+    const entries = eventRegistry.custom.get(eventName);
+    if (!entries) return;
+    for (const entry of entries) {
+      entry.cb();
+    }
   }
 
   function moveSteps(steps = 0) {
@@ -109,7 +115,7 @@ export function runCodeWithFunctions({
 
   function sayMessage(message, seconds) {
     if (stopped()) return;
-    
+
     message = String(message ?? "");
     if (!message) return;
 
@@ -221,30 +227,22 @@ export function runCodeWithFunctions({
   }
 
   function setAngle(amount, additive) {
-    if (additive) {
-      sprite.angle = (sprite.angle + amount) % 360;
-    } else {
-      sprite.angle = amount % 360;
-    }
-
-    if (sprite.angle < 0) sprite.angle += 360;
+    let angle = additive ? sprite.angle + amount : amount
+    angle = ((angle % 360) + 360) % 360;
+    sprite.angle = angle;
   }
 
   function pointsTowards(x, y) {
-  const targetX = renderer.width / 2 + x * stage.scale.x;
-  const targetY = renderer.height / 2 - y * stage.scale.y;
+    const { width, height } = renderer
+    const targetX = width / 2 + x * stage.scale.x;
+    const targetY = height / 2 - y * stage.scale.y;
+    const spriteX = width / 2 + sprite.x * stage.scale.x;
+    const spriteY = height / 2 - sprite.y * stage.scale.y;
 
-  const spriteX = renderer.width / 2 + sprite.x * stage.scale.x;
-  const spriteY = renderer.height / 2 - sprite.y * stage.scale.y;
-
-  const dx = targetX - spriteX;
-  const dy = targetY - spriteY;
-
-  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  angle = ((angle % 360) + 360) % 360;
-
-  sprite.angle = angle;
-}
+    let angle = Math.atan2(targetX - spriteX, targetY - spriteY) * (180 / Math.PI);
+    angle = ((angle % 360) + 360) % 360;
+    sprite.angle = angle;
+  }
 
   function projectTime() {
     return (Date.now() - projectStartedTime) / 1000;
@@ -433,14 +431,9 @@ export function runCodeWithFunctions({
     penGraphics.clear();
   }
 
-  function hideSprite() {
-    sprite.visible = false;
-    if (spriteData.currentBubble) spriteData.currentBubble.visible = false;
-  }
-
-  function showSprite() {
-    sprite.visible = true;
-    if (spriteData.currentBubble) spriteData.currentBubble.visible = true;
+  function toggleVisibility(bool = true) {
+    sprite.visible = bool;
+    if (spriteData.currentBubble) spriteData.currentBubble.visible = bool;
   }
 
   eval(code);
