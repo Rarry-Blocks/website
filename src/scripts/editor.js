@@ -1820,7 +1820,7 @@ function createSession() {
     try {
       Blockly.Events.fromJson(event, _workspace).run(true);
     } catch (err) {
-      console.error("blockly update error:", err);
+      console.error("blockly update error:", err, event);
     }
     Blockly.Events.enable();
 
@@ -1987,17 +1987,25 @@ liveShare.addEventListener("click", async () => {
 
   createSession();
 
-  if (!roomExisted)
-    currentSocket.emit("createRoom", { token: getToken() }, (res) => {
-      if (res?.error) {
-        showNotification({ message: `Error: ${res.error}` });
-        return;
-      }
-      amHost = true;
-      currentRoom = res.roomId;
-      showRoomPopup();
-    });
-  else showRoomPopup();
+  if (!roomExisted) {
+    const token = getToken();
+    if (!token) {
+      showNotification({
+        message: "You must be logged in to create a shared room",
+      });
+    } else {
+      currentSocket.emit("createRoom", { token }, (res) => {
+        if (res?.error) {
+          console.error(res.error);
+          showNotification({ message: `Error: ${res.error}` });
+          return;
+        }
+        amHost = true;
+        currentRoom = res.roomId;
+        showRoomPopup();
+      });
+    }
+  } else showRoomPopup();
 });
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -2046,7 +2054,7 @@ function sanitizeEvent(event) {
 
   if (event.type === Blockly.Events.BLOCK_DRAG) {
     return {
-      type: raw.type,
+      type: raw?.type || event.type,
       blockId: raw.blockId,
       oldCoordinate: raw.oldCoordinate || null,
       newCoordinate: raw.newCoordinate || null,
