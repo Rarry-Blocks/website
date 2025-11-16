@@ -3,6 +3,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js-legacy";
+import { Backpack } from "@blockly/workspace-backpack";
 import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
@@ -119,8 +120,9 @@ export const workspace = Blockly.inject("blocklyDiv", {
     scaleSpeed: 1.2,
   },
 });
-window.toolbox = toolbox;
-window.workspace = workspace;
+
+const backpack = new Backpack(workspace);
+backpack.init();
 
 setupThemeButton(workspace);
 
@@ -1246,53 +1248,55 @@ document.getElementById("costume-upload").addEventListener("change", (e) => {
   e.target.value = "";
 });
 
-document.getElementById("sound-upload").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file || !activeSprite) return;
+document
+  .getElementById("sound-upload")
+  .addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file || !activeSprite) return;
 
-  const reader = new FileReader();
-  reader.onload = async () => {
-    let dataURL = reader.result;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      let dataURL = reader.result;
 
-    dataURL = await compressAudio(dataURL);
+      dataURL = await compressAudio(dataURL);
 
-    let baseName = file.name.split(".")[0];
-    let uniqueName = baseName;
-    let counter = 1;
+      let baseName = file.name.split(".")[0];
+      let uniqueName = baseName;
+      let counter = 1;
 
-    const nameExists = (name) =>
-      activeSprite.sounds.some((s) => s.name === name);
+      const nameExists = (name) =>
+        activeSprite.sounds.some((s) => s.name === name);
 
-    while (nameExists(uniqueName)) {
-      counter++;
-      uniqueName = `${baseName}_${counter}`;
-    }
+      while (nameExists(uniqueName)) {
+        counter++;
+        uniqueName = `${baseName}_${counter}`;
+      }
 
-    activeSprite.sounds.push({
-      name: uniqueName,
-      dataURL,
-    });
-    
-    if (currentSocket && currentRoom) {
-      currentSocket.emit("projectUpdate", {
-        roomId: currentRoom,
-        type: "addSound",
-        data: {
-          spriteId: activeSprite.id,
-          name: uniqueName,
-          dataURL,
-        },
+      activeSprite.sounds.push({
+        name: uniqueName,
+        dataURL,
       });
-    }
 
-    if (document.getElementById("sounds-tab").classList.contains("active")) {
-      renderSoundsList();
-    }
-  };
+      if (currentSocket && currentRoom) {
+        currentSocket.emit("projectUpdate", {
+          roomId: currentRoom,
+          type: "addSound",
+          data: {
+            spriteId: activeSprite.id,
+            name: uniqueName,
+            dataURL,
+          },
+        });
+      }
 
-  reader.readAsDataURL(file);
-  e.target.value = "";
-});
+      if (document.getElementById("sounds-tab").classList.contains("active")) {
+        renderSoundsList();
+      }
+    };
+
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  });
 
 window.addEventListener("resize", () => {
   resizeCanvas();

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@blockly/plugin-strict-connection-checker": "^6.0.1",
+    "@blockly/workspace-backpack": "^7.0.4",
     "@fortawesome/fontawesome-free": "^7.0.1",
     "blockly": "^12.2.0",
     "jszip": "^3.10.1",
