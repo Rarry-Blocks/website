@@ -1798,7 +1798,12 @@ function createSession() {
   });
 
   currentSocket.on("blocklyUpdate", ({ spriteId, event, from }) => {
-    if (from === currentSocket.id) return;
+    if (from === currentSocket?.id) return;
+
+    if (!event || typeof event !== "object") {
+      console.warn("received bad blockly update (skipping):", event);
+      return;
+    }
 
     const sprite = sprites.find((s) => s.id === spriteId);
     if (!sprite) return;
@@ -2058,11 +2063,7 @@ function sanitizeEvent(event) {
 }
 
 workspace.addChangeListener((event) => {
-  if (
-    !activeSprite ||
-    ignoredEvents.has(event.type)
-  )
-    return;
+  if (!activeSprite || ignoredEvents.has(event.type)) return;
 
   activeSprite.code = Blockly.Xml.domToText(
     Blockly.Xml.workspaceToDom(workspace)
@@ -2074,7 +2075,6 @@ workspace.addChangeListener((event) => {
       roomId: currentRoom,
       spriteId: activeSprite.id,
       event: json,
-      from: currentSocket.id,
     });
   }
 });
