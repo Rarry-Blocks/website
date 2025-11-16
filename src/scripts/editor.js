@@ -3,7 +3,6 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js-legacy";
-import { Backpack } from "@blockly/workspace-backpack";
 import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
@@ -120,9 +119,6 @@ export const workspace = Blockly.inject("blocklyDiv", {
     scaleSpeed: 1.2,
   },
 });
-
-const backpack = new Backpack(workspace);
-backpack.init();
 
 setupThemeButton(workspace);
 
