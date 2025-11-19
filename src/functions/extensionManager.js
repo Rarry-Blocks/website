@@ -2,7 +2,6 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import { activeExtensions } from "../scripts/editor";
 import { Thread } from "./threads";
-import { minify } from "terser";
 
 Thread.resetAll();
 
@@ -245,5 +244,5 @@ export async function registerExtension(extClass) {
     };
   });
 
-  activeExtensions.push({ id, code: (await minify(extClass.toString())).code });
+  activeExtensions.push({ id, code: extClass.toString() });
 }

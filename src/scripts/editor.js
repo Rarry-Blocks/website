@@ -11,6 +11,7 @@ import CustomRenderer from "../functions/render.js";
 import { setupThemeButton } from "../functions/theme.js";
 import {
   compressAudio,
+  compressImage,
   promiseWithAbort,
   showNotification,
   showPopup,
@@ -118,7 +119,11 @@ export const workspace = Blockly.inject("blocklyDiv", {
     minScale: 0.3,
     scaleSpeed: 1.2,
   },
+  plugins: {
+    connectionChecker: "CustomChecker",
+  },
 });
+workspace.setConnec;
 
 setupThemeButton(workspace);
 
@@ -188,6 +193,48 @@ function addGlobalVariable(name, emit = false) {
 
 workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", () =>
   addGlobalVariable(null, true)
+);
+
+function dynamicFunctionsCategory(workspace) {
+  const xmlList = [];
+
+  const block = document.createElement("block");
+  block.setAttribute("type", "functions_definition");
+  xmlList.push(block);
+
+  const sep = document.createElement("sep");
+  sep.setAttribute("gap", "50");
+  xmlList.push(sep);
+
+  const defs = workspace
+    .getTopBlocks(false)
+    .filter((b) => b.type === "functions_definition");
+
+  defs.forEach((defBlock) => {
+    const block = document.createElement("block");
+    block.setAttribute("type", "functions_call");
+
+    const mutation = document.createElement("mutation");
+    mutation.setAttribute("definitionId", defBlock.id);
+    mutation.setAttribute("items", defBlock.argTypes_.length);
+
+    for (let i = 0; i < defBlock.argTypes_.length; i++) {
+      const item = document.createElement("item");
+      item.setAttribute("type", defBlock.argTypes_[i]);
+      item.setAttribute("name", defBlock.argNames_[i]);
+      mutation.appendChild(item);
+    }
+
+    block.appendChild(mutation);
+    xmlList.push(block);
+  });
+
+  return xmlList;
+}
+
+workspace.registerToolboxCategoryCallback(
+  "FUNCTIONS_CATEGORY",
+  dynamicFunctionsCategory
 );
 
 function addSprite(id, emit = false) {
@@ -694,12 +741,14 @@ async function runCode() {
 
   try {
     for (const spriteData of sprites) {
-      const tempWorkspace = new Blockly.Workspace();
-      BlocklyJS.javascriptGenerator.init(tempWorkspace);
+      const tempWorkspace = new Blockly.Workspace({
+        readOnly: true,
+        plugins: {
+          connectionChecker: "CustomChecker",
+        },
+      });
 
-      const xmlText =
-        spriteData.code ||
-        '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
+      const xmlText = spriteData.code || "<xml></xml>";
       const xmlDom = Blockly.utils.xml.textToDom(xmlText);
       Blockly.Xml.domToWorkspace(xmlDom, tempWorkspace);
 
@@ -866,62 +915,6 @@ async function saveProject() {
   const toUint8Array = (base64) =>
     Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 
-  async function ensureWebp(dataURL) {
-    if (!dataURL || typeof dataURL !== "string") return null;
-    if (dataURL.startsWith("data:image/webp")) return dataURL;
-
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL("image/webp", 0.9));
-      };
-      img.src = dataURL;
-    });
-  }
-
-  async function ensureOgg(dataURL) {
-    if (!dataURL || typeof dataURL !== "string") return null;
-    if (dataURL.startsWith("data:audio/ogg")) return dataURL;
-
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const base64 = dataURL.split(",")[1];
-    const buffer = await audioCtx.decodeAudioData(
-      Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)).buffer
-    );
-
-    if (window.MediaRecorder && MediaRecorder.isTypeSupported("audio/ogg")) {
-      const stream = audioCtx.createMediaStreamDestination();
-      const source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(stream);
-      source.start(0);
-
-      const recorder = new MediaRecorder(stream.stream, {
-        mimeType: "audio/ogg",
-      });
-      const chunks = [];
-      recorder.ondataavailable = (e) => chunks.push(e.data);
-
-      return new Promise((resolve) => {
-        recorder.onstop = async () => {
-          const blob = new Blob(chunks, { type: "audio/ogg" });
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        };
-        recorder.start();
-        source.onended = () => recorder.stop();
-      });
-    } else {
-      return dataURL;
-    }
-  }
-
   await Promise.all(
     sprites.map(async (sprite) => {
       const spriteId = sprite.id;
@@ -939,7 +932,7 @@ async function saveProject() {
               );
             }
 
-            const processed = await ensureWebp(dataURL);
+            const processed = await compressImage(dataURL);
             if (!processed) return null;
 
             const base64 = processed.split(",")[1];
@@ -954,7 +947,7 @@ async function saveProject() {
       const soundEntries = (
         await Promise.all(
           sprite.sounds.map(async (s) => {
-            const processed = await ensureOgg(s.dataURL);
+            const processed = await compressAudio(s.dataURL);
             if (!processed) return null;
 
             const base64 = processed.split(",")[1];
@@ -1253,7 +1246,6 @@ document
     const reader = new FileReader();
     reader.onload = async () => {
       let dataURL = reader.result;
-
       dataURL = await compressAudio(dataURL);
 
       let baseName = file.name.split(".")[0];
@@ -1307,13 +1299,10 @@ function isXmlEmpty(input = "") {
 }
 
 window.addEventListener("beforeunload", (e) => {
-  if (currentSocket) currentSocket?.disconnect?.();
-  if (
-    sprites.length <= 1 &&
-    sprites.some((sprite) => !isXmlEmpty(sprite.code))
-  ) {
+  if (sprites.some((sprite) => !isXmlEmpty(sprite.code))) {
     e.preventDefault();
     e.returnValue = "";
+    if (currentSocket) currentSocket?.disconnect?.();
   }
 });
 
@@ -1815,7 +1804,12 @@ function createSession() {
       _workspace = workspace;
     } else {
       temp = true;
-      _workspace = new Blockly.Workspace();
+      _workspace = new Blockly.Workspace({
+        readOnly: true,
+        plugins: {
+          connectionChecker: "CustomChecker",
+        },
+      });
 
       const xml = Blockly.utils.xml.textToDom(sprite.code || "<xml></xml>");
       Blockly.Xml.domToWorkspace(xml, _workspace);
@@ -2080,3 +2074,58 @@ workspace.addChangeListener((event) => {
 });
 
 workspace.addChangeListener(Blockly.Events.disableOrphans);
+
+class ScratchDragger extends Blockly.dragging.Dragger {
+  setDraggable(draggable) {
+    this.draggable = draggable;
+  }
+}
+
+Blockly.registry.register(
+  Blockly.registry.Type.BLOCK_DRAGGER,
+  Blockly.registry.DEFAULT,
+  ScratchDragger,
+  true
+);
+
+function updateAllFunctionCalls(workspace) {
+  const allBlocks = workspace.getAllBlocks(false);
+  const defs = allBlocks.filter((b) => b.type === "functions_definition");
+  const defMap = {};
+  defs.forEach((def) => (defMap[def.id] = def));
+
+  const calls = allBlocks.filter((b) => b.type === "functions_call");
+
+  Blockly.Events.disable();
+  try {
+    calls.forEach((callBlock) => {
+      const def = defMap[callBlock.definitionId_];
+      if (!def) return;
+
+      const oldArgTypes = (callBlock.argTypes_ || []).slice();
+      const oldArgNames = (callBlock.argNames_ || []).slice();
+      const defTypes = def.argTypes_ || [];
+      const defNames = def.argNames_ || [];
+
+      if (
+        JSON.stringify(oldArgTypes) !== JSON.stringify(defTypes) ||
+        JSON.stringify(oldArgNames) !== JSON.stringify(defNames)
+      ) {
+        callBlock.argTypes_ = defTypes.slice();
+        callBlock.argNames_ = defNames.slice();
+        callBlock.updateShape_();
+      }
+    });
+  } finally {
+    Blockly.Events.enable();
+  }
+}
+
+workspace.addChangeListener((event) => {
+  if (
+    event.type === Blockly.Events.BLOCK_CHANGE &&
+    event.element === "mutation"
+  ) {
+    updateAllFunctionCalls(workspace);
+  }
+});

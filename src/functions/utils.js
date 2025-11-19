@@ -9,7 +9,11 @@ export function showNotification({
   notification.className = "notification";
   notification.innerHTML = `
     ${message}
-    ${closable ? '<button class="notification-close">×</button>' : ""}
+    ${
+      closable
+        ? '<button class="notification-close"><i class="fa-solid fa-xmark"></i></button>'
+        : ""
+    }
   `;
 
   let container = document.querySelector(".notification-container");
@@ -114,7 +118,7 @@ export function showPopup({ innerHTML = "", title = "", rows = [] }) {
     <div class="popup-content">
       <header>
         <h2>${title}</h2>
-        <button class="popup-close danger">×</button>
+        <button class="popup-close danger"><i class="fa-solid fa-xmark"></i></button>
       </header>
       <div class="popup-body">
         ${rowsHTML}
@@ -185,42 +189,66 @@ export function promiseWithAbort(promiseOrFn, signal) {
   }
 }
 
-export async function compressAudio(dataURL) {
-  if (!dataURL || !dataURL.startsWith("data:")) return dataURL;
-
-  if (dataURL.startsWith("data:audio/ogg")) return dataURL;
-
+async function encodeOggWithMediaRecorder(dataURL) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
   const base64 = dataURL.split(",")[1];
-  const buffer = await audioCtx.decodeAudioData(
-    Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer
-  );
+  const raw = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const buffer = await audioCtx.decodeAudioData(raw.buffer);
 
-  if (!(window.MediaRecorder && MediaRecorder.isTypeSupported("audio/ogg"))) {
-    console.warn("OGG compression not supported, keeping original.");
-    return dataURL;
-  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
 
-  const stream = audioCtx.createMediaStreamDestination();
-  const source = audioCtx.createBufferSource();
-  source.buffer = buffer;
-  source.connect(stream);
+  const dest = audioCtx.createMediaStreamDestination();
+  src.connect(dest);
 
-  const recorder = new MediaRecorder(stream.stream, { mimeType: "audio/ogg" });
+  const recorder = new MediaRecorder(dest.stream, {
+    mimeType: "audio/ogg",
+  });
 
   const chunks = [];
-  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.ondataavailable = (e) => chunks.push(e.data);
 
   return new Promise((resolve) => {
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: "audio/ogg" });
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result); 
-      reader.readAsDataURL(blob);
+      const fr = new FileReader();
+      fr.onloadend = () => resolve(fr.result);
+      fr.readAsDataURL(blob);
     };
 
     recorder.start();
-    source.start();
-    source.onended = () => recorder.stop();
+    src.start();
+    src.onended = () => recorder.stop();
+  });
+}
+
+export async function compressAudio(dataURL) {
+  if (window.MediaRecorder && MediaRecorder.isTypeSupported("audio/ogg")) {
+    try {
+      return await encodeOggWithMediaRecorder(dataURL);
+    } catch (e) {
+      console.warn("OGG recording failed, falling back:", e);
+    }
+  }
+
+  return dataURL;
+}
+
+export async function compressImage(dataURL) {
+  if (!dataURL || typeof dataURL !== "string") return null;
+  if (dataURL.startsWith("data:image/webp")) return dataURL;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL("image/webp", 0.9));
+    };
+    img.src = dataURL;
   });
 }

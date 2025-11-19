@@ -435,6 +435,6 @@ export function runCodeWithFunctions({
     sprite.visible = bool;
     if (spriteData.currentBubble) spriteData.currentBubble.visible = bool;
   }
-
+  
   eval(code);
 }
