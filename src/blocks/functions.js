@@ -71,19 +71,27 @@ Blockly.Blocks["functions_argument_block"] = {
   init() {
     this.setStyle("procedure_blocks");
     this.appendDummyInput().appendField(
-      new Blockly.FieldLabel("arg"),
+      new Blockly.FieldLabel("string"),
       "ARG_NAME"
     );
-    this.setOutput(true, ["String", "Number", ARG_BLOCK_TYPE]);
+    this.argType_ = "string";
+    this.setOutput(true, null);
     this.setMovable(true);
     this.setDeletable(true);
-    if (this.setDragStrategy) this.setDragStrategy(new DuplicateOnDrag(this));
+
+    setTimeout(() => {
+      if (this.setDragStrategy && this.isShadow()) {
+        this.setDragStrategy(new DuplicateOnDrag(this));
+      }
+    });
   },
 
   mutationToDom: function () {
     const container = Blockly.utils.xml.createElement("mutation");
     const name = this.getFieldValue("ARG_NAME") || "arg";
+    const type = this.argType_ || "string";
     container.setAttribute("name", name);
+    container.setAttribute("type", type);
     return container;
   },
 
@@ -97,6 +105,20 @@ Blockly.Blocks["functions_argument_block"] = {
         "ARG_NAME"
       );
     }
+
+    const type = xmlElement.getAttribute("type") || "String";
+    this.updateType_(type);
+  },
+
+  updateType_: function (type) {
+    this.argType_ = type;
+
+    let outputType = "String";
+    if (type === "string") outputType = "String";
+    else if (type === "number") outputType = "Number";
+    else if (type === "boolean") outputType = "Boolean";
+
+    this.setOutput(true, [outputType, ARG_BLOCK_TYPE]);
   },
 };
 
@@ -113,7 +135,12 @@ Blockly.Blocks["functions_definition"] = {
     this.updateShape_();
     this.setMutator(
       new Blockly.icons.MutatorIcon(
-        ["functions_args_string", "functions_args_label"],
+        [
+          "functions_args_string",
+          "functions_args_number",
+          "functions_args_boolean",
+          "functions_args_label",
+        ],
         this
       )
     );
@@ -176,18 +203,30 @@ Blockly.Blocks["functions_definition"] = {
 
   decompose: function (workspace) {
     const containerBlock = workspace.newBlock("functions_args_container");
-    if (workspace.rendered)  containerBlock.initSvg();
+    if (workspace.rendered) containerBlock.initSvg();
     let connection = containerBlock.getInput("STACK").connection;
 
     for (let i = 0; i < this.itemCount_; i++) {
       const type = this.argTypes_[i] || "arg";
       const itemBlock = workspace.newBlock(
-        type === "label" ? "functions_args_label" : "functions_args_string"
+        type === "label"
+          ? "functions_args_label"
+          : type === "number"
+          ? "functions_args_number"
+          : type === "boolean"
+          ? "functions_args_boolean"
+          : "functions_args_string"
       );
       if (workspace.rendered) itemBlock.initSvg();
 
-      if (type === "arg") {
+      if (type === "string" || type === "arg") {
         itemBlock.setFieldValue(this.argNames_[i] || "arg", "ARG_NAME");
+        itemBlock.valueConnection_ = null;
+      } else if (type === "number") {
+        itemBlock.setFieldValue(this.argNames_[i] || "num", "ARG_NAME");
+        itemBlock.valueConnection_ = null;
+      } else if (type === "boolean") {
+        itemBlock.setFieldValue(this.argNames_[i] || "bool", "ARG_NAME");
         itemBlock.valueConnection_ = null;
       } else {
         itemBlock.setFieldValue(this.argNames_[i] || "text", "LABEL_TEXT");
@@ -207,18 +246,24 @@ Blockly.Blocks["functions_definition"] = {
     while (itemBlock) {
       if (!(itemBlock.isInsertionMarker && itemBlock.isInsertionMarker())) {
         if (itemBlock.type === "functions_args_string") {
-          newTypes.push("arg");
-          newNames.push(itemBlock.getFieldValue("ARG_NAME") || "arg");
+          newTypes.push("string");
+          newNames.push(itemBlock.getFieldValue("ARG_NAME"));
+        } else if (itemBlock.type === "functions_args_number") {
+          newTypes.push("number");
+          newNames.push(itemBlock.getFieldValue("ARG_NAME"));
+        } else if (itemBlock.type === "functions_args_boolean") {
+          newTypes.push("boolean");
+          newNames.push(itemBlock.getFieldValue("ARG_NAME"));
         } else if (itemBlock.type === "functions_args_label") {
           newTypes.push("label");
-          newNames.push(itemBlock.getFieldValue("LABEL_TEXT") || "text");
+          newNames.push(itemBlock.getFieldValue("LABEL_TEXT"));
         }
       }
       itemBlock = itemBlock.getNextBlock();
     }
 
     for (let i = this.itemCount_ - 1; i >= 0; i--) {
-      const inputName = this.argTypes_[i] === "arg" ? "ARG" + i : "LABEL" + i;
+      const inputName = this.argTypes_[i] !== "label" ? "ARG" + i : "LABEL" + i;
       const input = this.getInput(inputName);
       if (input) {
         const conn = input.connection && input.connection.targetConnection;
@@ -243,7 +288,7 @@ Blockly.Blocks["functions_definition"] = {
     let i = 0;
     while (itemBlock) {
       if (!(itemBlock.isInsertionMarker && itemBlock.isInsertionMarker())) {
-        if (itemBlock.type === "functions_args_string") {
+        if (itemBlock.type !== "functions_args_label") {
           const input = this.getInput("ARG" + i);
           itemBlock.valueConnection_ =
             input && input.connection && input.connection.targetConnection;
@@ -260,13 +305,14 @@ Blockly.Blocks["functions_definition"] = {
     return this.getInput("ARG" + index) || this.getInput("LABEL" + index);
   },
 
-  createDefaultArgBlock_: function () {
+  createDefaultArgBlock_: function (outputType) {
     const ws = this.workspace;
     if (!ws) return null;
 
     const block = ws.newBlock("functions_argument_block");
     block.setShadow(true);
     block.setEditable(false);
+    block.updateType_(outputType);
 
     if (ws.rendered) {
       block.initSvg();
@@ -313,7 +359,7 @@ Blockly.Blocks["functions_definition"] = {
           firstArgAdded = true;
         }
 
-        const reporter = this.createDefaultArgBlock_();
+        const reporter = this.createDefaultArgBlock_(type);
         reporter.setFieldValue(name, "ARG_NAME");
         try {
           reporter.outputConnection.connect(input.connection);
@@ -348,7 +394,33 @@ Blockly.Blocks["functions_args_string"] = {
     this.setStyle("procedure_blocks");
     this.appendDummyInput()
       .appendField("string argument")
-      .appendField(new Blockly.FieldTextInput("arg"), "ARG_NAME");
+      .appendField(new Blockly.FieldTextInput("str"), "ARG_NAME");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.contextMenu = false;
+    this.valueConnection_ = null;
+  },
+};
+
+Blockly.Blocks["functions_args_number"] = {
+  init: function () {
+    this.setStyle("procedure_blocks");
+    this.appendDummyInput()
+      .appendField("number argument")
+      .appendField(new Blockly.FieldTextInput("num"), "ARG_NAME");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.contextMenu = false;
+    this.valueConnection_ = null;
+  },
+};
+
+Blockly.Blocks["functions_args_boolean"] = {
+  init: function () {
+    this.setStyle("procedure_blocks");
+    this.appendDummyInput()
+      .appendField("boolean argument")
+      .appendField(new Blockly.FieldTextInput("bool"), "ARG_NAME");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.contextMenu = false;
@@ -447,7 +519,15 @@ Blockly.Blocks["functions_call"] = {
         if (type === "label") {
           this.appendDummyInput("LABEL" + i).appendField(name);
         } else {
-          const input = this.appendValueInput("ARG" + i).setCheck("String");
+          const input = this.appendValueInput("ARG" + i).setCheck(
+            type === "string"
+              ? "String"
+              : type === "number"
+              ? "Number"
+              : type === "boolean"
+              ? "Boolean"
+              : "String"
+          );
           if (!firstArgAdded) {
             input.appendField("my block with");
             firstArgAdded = true;
@@ -468,27 +548,21 @@ BlocklyJS.javascriptGenerator.forBlock["functions_argument_block"] = function (
   return [name, BlocklyJS.Order.ATOMIC];
 };
 
-function sanitizeId(id) {
-  let sanitized = id.replace(/[^a-zA-Z0-9_$]/g, "_");
-  if (/^\d/.test(sanitized)) sanitized = "_" + sanitized;
-  return sanitized;
-}
-
 BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
   block,
   generator
 ) {
   const args = [];
   for (let i = 0; i < block.itemCount_; i++) {
-    if (block.argTypes_[i] === "arg") {
+    if (block.argTypes_[i] !== "label") {
       args.push(block.argNames_[i]);
     }
   }
 
   const bodyCode = generator.statementToCode(block, "BODY");
-  const funcName = sanitizeId(block.id);
-
-  const code = `function ${funcName}(${args.join(", ")}) {\n${bodyCode}}\n`;
+  const code = `MyFunctions[${generator.quote_(block.id)}] = (${args.join(
+    ", "
+  )}) => {\n${bodyCode}}\n`;
   return code;
 };
 
@@ -498,15 +572,15 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
 ) {
   const args = [];
   for (let i = 0; i < block.argTypes_.length; i++) {
-    if (block.argTypes_[i] === "arg") {
+    if (block.argTypes_[i] !== "label") {
       const argCode =
         generator.valueToCode(block, "ARG" + i, BlocklyJS.Order.NONE) ||
-        "undefined";
+        "null";
       args.push(argCode);
     }
   }
 
-  const funcName = sanitizeId(this.definitionId_);
-  if (!funcName) return "";
-  else return `${funcName}(${args.join(", ")});\n`;
+  return `MyFunctions[${generator.quote_(this.definitionId_)}](${args.join(
+    ", "
+  )});\n`;
 };

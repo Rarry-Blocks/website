@@ -35,6 +35,7 @@ export function runCodeWithFunctions({
   );
   const soundMap = new Map((spriteData.sounds || []).map((s) => [s.name, s]));
   const extensions = window.extensions;
+  const MyFunctions = {};
 
   function stopped() {
     return signal.aborted === true;
