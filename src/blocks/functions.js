@@ -226,18 +226,7 @@ Blockly.Blocks["functions_definition"] = {
 
     this.updateShape_();
     this.setMutator(
-      new Blockly.icons.MutatorIcon(
-        [
-          "functions_args_label",
-          "functions_args_string",
-          "functions_args_number",
-          "functions_args_boolean",
-          "functions_args_array",
-          "functions_args_object",
-          "functions_args_statement",
-        ],
-        this
-      )
+      new Blockly.icons.MutatorIcon(["functions_args_generic"], this)
     );
   },
 
@@ -386,14 +375,12 @@ Blockly.Blocks["functions_definition"] = {
     let connection = containerBlock.getInput("STACK").connection;
 
     for (let i = 0; i < this.itemCount_; i++) {
-      const type = this.argTypes_[i] || "string";
-      const itemBlock = workspace.newBlock("functions_args_" + type);
+      const type = this.argTypes_[i] || "label";
+      const name = this.argNames_[i] || "text";
+      const itemBlock = workspace.newBlock("functions_args_generic");
+      itemBlock.setFieldValue(type, "ARG_TYPE");
+      itemBlock.setFieldValue(name, "ARG_NAME");
       if (workspace.rendered) itemBlock.initSvg();
-
-      itemBlock.setFieldValue(
-        this.argNames_[i],
-        type === "label" ? "LABEL_TEXT" : "ARG_NAME"
-      );
       itemBlock.valueConnection_ = null;
 
       connection.connect(itemBlock.previousConnection);
@@ -412,11 +399,8 @@ Blockly.Blocks["functions_definition"] = {
     let itemBlock = containerBlock.getInputTargetBlock("STACK");
     while (itemBlock) {
       if (!(itemBlock.isInsertionMarker && itemBlock.isInsertionMarker())) {
-        const type = itemBlock.type.slice(15);
-        const name = itemBlock.getFieldValue(
-          type === "label" ? "LABEL_TEXT" : "ARG_NAME"
-        );
-
+        const type = itemBlock.getFieldValue("ARG_TYPE");
+        const name = itemBlock.getFieldValue("ARG_NAME");
         newTypes.push(type);
         newNames.push(name);
       }
@@ -435,7 +419,6 @@ Blockly.Blocks["functions_definition"] = {
         }
       }
     }
-    // -----------------------------------
 
     itemBlock = containerBlock.getInputTargetBlock("STACK");
     let index = 0;
@@ -519,90 +502,26 @@ Blockly.Blocks["functions_args_container"] = {
   },
 };
 
-Blockly.Blocks["functions_args_string"] = {
-  init: function () {
+Blockly.Blocks["functions_args_generic"] = {
+  init() {
     this.setStyle("procedure_blocks");
-    this.appendDummyInput()
-      .appendField("string argument")
-      .appendField(new Blockly.FieldTextInput("str"), "ARG_NAME");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.contextMenu = false;
-    this.valueConnection_ = null;
-  },
-};
 
-Blockly.Blocks["functions_args_number"] = {
-  init: function () {
-    this.setStyle("procedure_blocks");
     this.appendDummyInput()
-      .appendField("number argument")
-      .appendField(new Blockly.FieldTextInput("num"), "ARG_NAME");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.contextMenu = false;
-    this.valueConnection_ = null;
-  },
-};
+      .appendField("argument")
+      .appendField(
+        new Blockly.FieldDropdown([
+          ["label", "label"],
+          ["string", "string"],
+          ["number", "number"],
+          ["boolean", "boolean"],
+          ["array", "array"],
+          ["object", "object"],
+          ["statement", "statement"],
+        ]),
+        "ARG_TYPE"
+      )
+      .appendField(new Blockly.FieldTextInput("arg"), "ARG_NAME");
 
-Blockly.Blocks["functions_args_boolean"] = {
-  init: function () {
-    this.setStyle("procedure_blocks");
-    this.appendDummyInput()
-      .appendField("boolean argument")
-      .appendField(new Blockly.FieldTextInput("bool"), "ARG_NAME");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.contextMenu = false;
-    this.valueConnection_ = null;
-  },
-};
-
-Blockly.Blocks["functions_args_array"] = {
-  init: function () {
-    this.setStyle("procedure_blocks");
-    this.appendDummyInput()
-      .appendField("list argument")
-      .appendField(new Blockly.FieldTextInput("arr"), "ARG_NAME");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.contextMenu = false;
-    this.valueConnection_ = null;
-  },
-};
-
-Blockly.Blocks["functions_args_object"] = {
-  init: function () {
-    this.setStyle("procedure_blocks");
-    this.appendDummyInput()
-      .appendField("object argument")
-      .appendField(new Blockly.FieldTextInput("obj"), "ARG_NAME");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.contextMenu = false;
-    this.valueConnection_ = null;
-  },
-};
-
-Blockly.Blocks["functions_args_statement"] = {
-  init: function () {
-    this.setStyle("procedure_blocks");
-    this.appendDummyInput()
-      .appendField("statement argument")
-      .appendField(new Blockly.FieldTextInput("code"), "ARG_NAME");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.contextMenu = false;
-    this.valueConnection_ = null;
-  },
-};
-
-Blockly.Blocks["functions_args_label"] = {
-  init: function () {
-    this.setStyle("procedure_blocks");
-    this.appendDummyInput()
-      .appendField("label")
-      .appendField(new Blockly.FieldTextInput("text"), "LABEL_TEXT");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.contextMenu = false;
@@ -758,14 +677,14 @@ BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
   const params = block.argTypes_
     .map((type, i) => {
       if (type === "label") return null;
-      return block.argTypes_[i] + "_" + block.argNames_[i];
+      return type + "_" + block.argNames_[i];
     })
     .filter(Boolean);
 
   const body = BlocklyJS.javascriptGenerator.statementToCode(block, "BODY");
-  return `MyFunctions[${generator.quote_(block.functionId_)}] = (${params.join(
-    ", "
-  )}) => {\n${body}};\n`;
+  return `MyFunctions[${generator.quote_(
+    block.functionId_
+  )}] = async (${params.join(", ")}) => {\n${body}};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
@@ -773,7 +692,6 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
   generator
 ) {
   const args = [];
-  let stmtCode = "";
 
   for (let i = 0; i < block.argTypes_.length; i++) {
     const type = block.argTypes_[i];
@@ -783,15 +701,14 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
     if (type === "label") continue;
 
     if (type === "statement")
-      args.push(`() => {${generator.statementToCode(block, key)}}`);
+      args.push(`async () => {${generator.statementToCode(block, key)}}`);
     else
       args.push(
         generator.valueToCode(block, key, BlocklyJS.Order.NONE) || "null"
       );
   }
 
-  return (
-    `MyFunctions[${generator.quote_(block.functionId_)}](${args.join(", ")})` +
-    `;\n${stmtCode}`
-  );
+  return `await MyFunctions[${generator.quote_(block.functionId_)}](${args.join(
+    ", "
+  )});\n`;
 };
