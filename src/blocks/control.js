@@ -174,3 +174,14 @@ BlocklyJS.javascriptGenerator.forBlock["controls_run_instantly"] = function (
 fastExecution = true;
 ${branch}fastExecution = _prevFast;\n`;
 };
+
+Blockly.Blocks["controls_stopscript"] = {
+  init: function () {
+    this.appendDummyInput().appendField("stop this script");
+    this.setPreviousStatement(true, "default");
+    this.setStyle("control_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_stopscript"] = () =>
+  'throw new Error("shouldStop");\n';

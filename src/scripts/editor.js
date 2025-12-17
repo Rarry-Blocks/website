@@ -209,6 +209,16 @@ function dynamicFunctionsCategory(workspace) {
   block.setAttribute("type", "functions_definition");
   xmlList.push(block);
 
+  const blockReturnValue = document.createElement("value");
+  blockReturnValue.setAttribute("name", "VALUE");
+  blockReturnValue.innerHTML =
+    '<shadow type="text"><field name="TEXT">name</field></shadow>';
+
+  const blockReturn = document.createElement("block");
+  blockReturn.setAttribute("type", "functions_return");
+  blockReturn.appendChild(blockReturnValue);
+  xmlList.push(blockReturn);
+
   const sep = document.createElement("sep");
   sep.setAttribute("gap", "50");
   xmlList.push(sep);
@@ -225,6 +235,10 @@ function dynamicFunctionsCategory(workspace) {
     mutation.setAttribute("functionId", defBlock.functionId_);
     mutation.setAttribute("shape", defBlock.blockShape_);
     mutation.setAttribute("items", defBlock.argTypes_.length);
+    mutation.setAttribute(
+      "returntypes",
+      JSON.stringify(defBlock.returnTypes_ || [])
+    );
 
     for (let i = 0; i < defBlock.argTypes_.length; i++) {
       const item = document.createElement("item");
@@ -2128,22 +2142,8 @@ function updateAllFunctionCalls(workspace) {
       const def = defs.find(d => d.functionId_ === callBlock.functionId_);
       if (!def) return;
 
-      const oldTypes = callBlock.argTypes_ || [];
-      const oldNames = callBlock.argNames_ || [];
-      const oldShape = callBlock.blockShape_ || "statement";
-
-      const newTypes = def.argTypes_ || [];
-      const newNames = def.argNames_ || [];
-      const newShape = def.blockShape_ || "statement";
-
-      const changed =
-        oldShape !== newShape ||
-        JSON.stringify(oldTypes) !== JSON.stringify(newTypes) ||
-        JSON.stringify(oldNames) !== JSON.stringify(newNames);
-
-      if (changed) {
-        callBlock.matchDefinition(def);
-      }
+      def.updateReturnState_();
+      callBlock.matchDefinition(def);
     });
   } finally {
     Blockly.Events.enable();
@@ -2151,10 +2151,15 @@ function updateAllFunctionCalls(workspace) {
 }
 
 workspace.addChangeListener(event => {
-  if (
-    event.type === Blockly.Events.BLOCK_CHANGE &&
-    event.element === "mutation"
-  ) {
-    updateAllFunctionCalls(workspace);
-  }
+  if (event.isUiEvent || event.isBlank) return;
+
+  const block = workspace.getBlockById(event?.newParentId ?? event?.oldParentId ?? event?.blockId);
+
+  if (!block || block?.getRootBlock()?.type !== "functions_definition") return;
+
+  updateAllFunctionCalls(workspace);
 });
+
+workspace.updateAllFunctionCalls = () => {
+  updateAllFunctionCalls(workspace);
+};

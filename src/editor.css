@@ -316,6 +316,19 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   padding: 3px;
 }
 
+.blocklyWidgetDiv .blocklyMenu {
+  background-color: var(--color1);
+  border-color: var(--color2);
+}
+
+.blocklyMenuItem {
+  color: var(--dark);
+}
+
+.blocklyMenuItemDisabled {
+  color: var(--color4);
+}
+
 .categoryBubble {
   margin: 0;
   padding: 0;
