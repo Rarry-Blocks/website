@@ -11,8 +11,7 @@
 
   <meta name="author" content="ddededodediamante">
   <meta name="description" content="Create and share games using visual block-coding, powered by Blockly.">
-  <meta name="keywords"
-    content="Rarry, block coding, Scratch, visual programming, game maker, online coding">
+  <meta name="keywords" content="Rarry, block coding, Scratch, visual programming, game maker, online coding">
   <meta name="theme-color" content="#3b82f6">
   <meta property="og:title" content="Rarry">
   <meta property="og:image" content="icons/Rarry.svg">
@@ -166,6 +165,25 @@
       <block type="controls_flow_statements"></block>
       <block type="controls_stopblock"></block>
       <sep gap="50"></sep>
+      <block type="controls_whenstartasclone"></block>
+      <block type="controls_createclone">
+        <value name="ID">
+          <shadow type="controls_sprites_menu"></shadow>
+        </value>
+      </block>
+      <block type="controls_delete_all_clones">
+        <value name="ID">
+          <shadow type="controls_sprites_menu"></shadow>
+        </value>
+      </block>
+      <block type="controls_delete_this_clone"></block>
+      <block type="controls_is_clone"></block>
+      <block type="controls_clone_count">
+        <value name="ID">
+          <shadow type="controls_sprites_menu"></shadow>
+        </value>
+      </block>
+      <sep gap="50"></sep>
       <block type="controls_run_instantly"></block>
       <block type="controls_thread_current"></block>
       <block type="controls_thread_create"></block>
@@ -266,8 +284,11 @@
     </category>
 
     <category name="Looks" colour="#9966FF">
-      <block type="looks_hide_sprite"></block>
-      <block type="looks_show_sprite"></block>
+      <block type="looks_setVisibility_sprite">
+        <value name="VISIBLE">
+          <shadow type="logic_boolean"></shadow>
+        </value>
+      </block>
       <block type="looks_isVisible"></block>
       <sep gap="50"></sep>
       <block type="say_message">

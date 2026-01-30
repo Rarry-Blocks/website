@@ -17,14 +17,20 @@ import {
   showPopup,
 } from "../functions/utils.js";
 
+import { Costume, Sprite, SpriteManager } from "../components/Sprite.js";
 import { SpriteChangeEvents } from "../functions/patches.js";
 import { registerExtension } from "../functions/extensionManager.js";
 import { Thread } from "../functions/threads.js";
-import { runCodeWithFunctions } from "../functions/runCode.js";
+import {
+  runCodeWithFunctions,
+  runEventForSprite,
+  triggerCloneEvents,
+} from "../functions/runCode.js";
 
+import builtInExtensions from "../functions/builtInExtensions.js";
 import config from "../config";
 
-BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.join(','));
+BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.join(","));
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
@@ -51,7 +57,7 @@ export const BASE_WIDTH = 480;
 export const BASE_HEIGHT = 360;
 const MAX_HTTP_BUFFER = 20 * 1024 * 1024;
 
-const app = new PIXI.Application({
+export const app = new PIXI.Application({
   width: BASE_WIDTH,
   height: BASE_HEIGHT,
   backgroundColor: 0xffffff,
@@ -79,7 +85,7 @@ resizeCanvas();
 
 stageContainer.appendChild(app.view);
 
-let penGraphics;
+export let penGraphics;
 function createPenGraphics() {
   if (penGraphics && !penGraphics._destroyed) return;
   penGraphics = new PIXI.Graphics();
@@ -89,7 +95,6 @@ function createPenGraphics() {
 createPenGraphics();
 
 export let projectVariables = {};
-export let sprites = [];
 export let activeSprite = null;
 
 Blockly.blockRendering.register("custom_zelos", CustomRenderer);
@@ -220,9 +225,9 @@ function dynamicFunctionsCategory(workspace) {
 
   const defs = workspace
     .getTopBlocks(false)
-    .filter((b) => b.type === "functions_definition");
+    .filter(b => b.type === "functions_definition");
 
-  defs.forEach((defBlock) => {
+  defs.forEach(defBlock => {
     const block = document.createElement("block");
     block.setAttribute("type", "functions_call");
 
@@ -230,10 +235,7 @@ function dynamicFunctionsCategory(workspace) {
     mutation.setAttribute("functionId", defBlock.functionId_);
     mutation.setAttribute("shape", defBlock.blockShape_);
     mutation.setAttribute("items", defBlock.argTypes_.length);
-    mutation.setAttribute(
-      "returntypes",
-      JSON.stringify(defBlock.returnTypes_ || []),
-    );
+    mutation.setAttribute("returntypes", JSON.stringify(defBlock.returnTypes_ || []));
 
     for (let i = 0; i < defBlock.argTypes_.length; i++) {
       const item = document.createElement("item");
@@ -249,51 +251,63 @@ function dynamicFunctionsCategory(workspace) {
   return xmlList;
 }
 
-workspace.registerToolboxCategoryCallback(
-  "FUNCTIONS_CATEGORY",
-  dynamicFunctionsCategory,
-);
+workspace.registerToolboxCategoryCallback("FUNCTIONS_CATEGORY", dynamicFunctionsCategory);
+
+export const spriteManager = new SpriteManager(app);
 
 function addSprite(id, emit = false) {
   const texture = PIXI.Texture.from("./icons/ddededodediamante.png", {
     crossorigin: true,
   });
-  const sprite = new PIXI.Sprite(texture);
-  sprite.anchor.set(0.5);
-  sprite.x = 0;
-  sprite.y = 0;
-  sprite.scale._parentScaleEvent = sprite;
-  app.stage.addChild(sprite);
 
-  if (!id) id = "sprite-" + Date.now();
-
-  const spriteData = {
+  const sprite = spriteManager.create({
     id,
-    pixiSprite: sprite,
-    code: "",
-    costumes: [{ name: "default", texture: texture }],
-    sounds: [],
-  };
-  sprites.push(spriteData);
+    costumes: [new Costume({ name: "default", texture })],
+  });
 
   if (emit && currentSocket && currentRoom) {
     currentSocket.emit("projectUpdate", {
       roomId: currentRoom,
       type: "addSprite",
+      data: sprite.id,
+    });
+  }
+
+  return sprite;
+}
+
+function deleteSprite(id, emit = false) {
+  const sprite = spriteManager.get(id);
+  if (!sprite) return;
+
+  if (sprite.currentBubble) {
+    app.stage.removeChild(sprite.currentBubble);
+    sprite.currentBubble = null;
+  }
+
+  spriteManager.remove(sprite);
+
+  if (emit && currentSocket && currentRoom) {
+    currentSocket.emit("projectUpdate", {
+      roomId: currentRoom,
+      type: "removeSprite",
       data: id,
     });
   }
 
-  return spriteData;
+  workspace.clear();
+
+  const remaining = spriteManager.getOriginals();
+  setActiveSprite(remaining[0] ?? null);
 }
 
-function setActiveSprite(spriteData) {
-  activeSprite = spriteData;
+function setActiveSprite(sprite) {
+  activeSprite = sprite;
   renderSpritesList(true);
 
   const workspaceContainer = workspace.getParentSvg().parentNode;
 
-  if (!spriteData) {
+  if (!sprite) {
     deleteSpriteButton.disabled = true;
     workspaceContainer.style.display = "none";
     return;
@@ -305,72 +319,43 @@ function setActiveSprite(spriteData) {
   Blockly.Events.disable();
 
   const xmlText =
-    activeSprite.code ||
-    '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
+    activeSprite.code || '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
   const xmlDom = Blockly.utils.xml.textToDom(xmlText);
   Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
 
   Blockly.Events.enable();
 }
 
-function deleteSprite(id, emit = false) {
-  const sprite = sprites.find((s) => s.id === id);
-  if (!sprite) return;
-
-  if (sprite.currentBubble) {
-    app.stage.removeChild(sprite.currentBubble);
-    sprite.currentBubble = null;
-  }
-
-  app.stage.removeChild(sprite.pixiSprite);
-
-  const index = sprites.indexOf(sprite);
-
-  if (emit && currentSocket && currentRoom) {
-    currentSocket.emit("projectUpdate", {
-      roomId: currentRoom,
-      type: "removeSprite",
-      data: id,
-    });
-  }
-
-  sprites = sprites.filter((s) => s.id !== sprite.id);
-
-  workspace.clear();
-
-  if (sprites.length > 0) {
-    setActiveSprite(sprites[Math.min(index, sprites.length - 1)]);
-  } else {
-    setActiveSprite(null);
-  }
-}
-
 function renderSpritesList(renderOthers = false) {
   const listEl = document.getElementById("sprites-list");
   listEl.innerHTML = "";
-  if (sprites.length === 0) listEl.style.display = "none";
-  else listEl.style.display = "";
 
-  sprites.forEach((spriteData) => {
+  const sprites = spriteManager.getOriginals();
+
+  listEl.style.display = sprites.length === 0 ? "none" : "";
+
+  sprites.forEach(sprite => {
     const spriteIconContainer = document.createElement("div");
-    if (activeSprite && activeSprite.id === spriteData.id)
+
+    if (activeSprite?.id === sprite.id) {
       spriteIconContainer.className = "active";
+    }
 
     const img = new Image(50, 50);
     img.style.objectFit = "contain";
-    const costumeTexture = spriteData.pixiSprite.texture;
-    const baseTex = costumeTexture.baseTexture;
+
+    const baseTex = sprite.pixiSprite.texture.baseTexture;
 
     if (baseTex.valid) {
       img.src = baseTex.resource?.url || "";
     } else {
-      baseTex.on("loaded", () => {
+      baseTex.once("loaded", () => {
         img.src = baseTex.resource?.url || "";
       });
     }
 
     spriteIconContainer.appendChild(img);
-    spriteIconContainer.onclick = () => setActiveSprite(spriteData);
+    spriteIconContainer.onclick = () => setActiveSprite(sprite);
     listEl.appendChild(spriteIconContainer);
   });
 
@@ -385,17 +370,19 @@ function renderSpriteInfo() {
   const infoEl = document.getElementById("sprite-info");
 
   if (!activeSprite) {
-    infoEl.innerHTML = "<p>Select a sprite to see its info.</p>";
-  } else {
-    const sprite = activeSprite.pixiSprite;
+    infoEl.innerHTML = "<p>Select a sprite to see its properties.</p>";
+    return;
+  }
 
-    infoEl.innerHTML = `
+  const sprite = activeSprite.pixiSprite;
+
+  infoEl.innerHTML = `
+    <p>${activeSprite.name ?? "Sprite"}</p>
     <p>${Math.round(sprite.x)}, ${Math.round(-sprite.y)}</p>
     <p>${Math.round(sprite.angle)}º</p>
     <p>size: ${Math.round(((sprite.scale.x + sprite.scale.y) / 2) * 100)}</p>
     <p><i class="fa-solid fa-${sprite.visible ? "eye" : "eye-slash"}"></i></p>
-    `;
-  }
+  `;
 }
 
 function createRenameableLabel(initialName, onRename) {
@@ -433,7 +420,7 @@ function createRenameableLabel(initialName, onRename) {
     }
 
     input.addEventListener("blur", commit);
-    input.addEventListener("keydown", (e) => {
+    input.addEventListener("keydown", e => {
       if (e.key === "Enter") input.blur();
       else if (e.key === "Escape") {
         willRename = false;
@@ -470,7 +457,7 @@ function renderCostumesList() {
     img.style.objectFit = "contain";
     img.src = costume.texture.baseTexture.resource.url;
 
-    const renameableLabel = createRenameableLabel(costume.name, (newName) => {
+    const renameableLabel = createRenameableLabel(costume.name, newName => {
       const oldName = costume.name;
       costume.name = newName;
 
@@ -542,12 +529,11 @@ function renderSoundsList() {
 
     let sizeBytes = 0;
     if (sound.dataURL) {
-      const base64Length =
-        sound.dataURL.length - (sound.dataURL.indexOf(",") + 1);
+      const base64Length = sound.dataURL.length - (sound.dataURL.indexOf(",") + 1);
       sizeBytes = Math.floor((base64Length * 3) / 4);
     }
 
-    const renameableLabel = createRenameableLabel(sound.name, (newName) => {
+    const renameableLabel = createRenameableLabel(sound.name, newName => {
       const oldName = sound.name;
       sound.name = newName;
 
@@ -654,14 +640,15 @@ export function calculateBubblePosition(
   return { x: bubbleX, y: bubbleY };
 }
 
-const keysPressed = {};
-const mouseButtonsPressed = {};
-const playingSounds = new Map();
+export const keysPressed = {};
+export const mouseButtonsPressed = {};
+export const playingSounds = new Map();
 
-let currentRunController = null;
+export let currentRunController = null;
 
-let eventRegistry = {
+export const eventRegistry = {
   flag: [],
+  clone: [],
   key: new Map(),
   stageClick: [],
   timer: [],
@@ -670,7 +657,7 @@ let eventRegistry = {
 };
 
 let _activeEventThreadsCount = 0;
-const activeEventThreads = {};
+export const activeEventThreads = {};
 
 Object.defineProperty(activeEventThreads, "count", {
   get() {
@@ -693,11 +680,16 @@ function updateRunButtonState() {
 const runningScripts = [];
 
 function stopAllScripts() {
+  spriteManager
+    .getOriginals()
+    .forEach(s => s.clones.forEach(c => spriteManager.remove(c)));
+
   if (currentRunController) {
     try {
       currentRunController.abort();
-    } catch (e) { }
-    currentRunController = null;
+    } finally {
+      currentRunController = null;
+    }
   }
 
   for (const i of runningScripts) {
@@ -712,7 +704,7 @@ function stopAllScripts() {
       try {
         audio.pause();
         audio.currentTime = 0;
-      } catch (e) { }
+      } catch (e) {}
     }
   }
   playingSounds.clear();
@@ -731,7 +723,7 @@ function stopAllScripts() {
   Thread.resetAll();
   activeEventThreads.count = 0;
 
-  for (const spriteData of sprites) {
+  for (const spriteData of spriteManager.getAll()) {
     const bubble = spriteData.currentBubble;
     if (bubble) {
       if (bubble.destroy) bubble.destroy({ children: true });
@@ -748,18 +740,17 @@ function stopAllScripts() {
 async function runCode() {
   stopAllScripts();
 
-  await new Promise((r) => requestAnimationFrame(r));
+  await new Promise(r => requestAnimationFrame(r));
 
   runButton.classList.add("active");
 
   const controller = new AbortController();
-  const signal = controller.signal;
   currentRunController = controller;
 
   let projectStartedTime = Date.now();
 
   try {
-    for (const spriteData of sprites) {
+    for (const spriteData of spriteManager.getOriginals()) {
       const tempWorkspace = new Blockly.Workspace({
         readOnly: true,
         plugins: {
@@ -779,39 +770,48 @@ async function runCode() {
           code,
           projectStartedTime,
           spriteData,
-          app,
-          eventRegistry,
-          mouseButtonsPressed,
-          keysPressed,
-          playingSounds,
-          runningScripts,
-          signal,
-          penGraphics,
-          activeEventThreads,
-          abort: () => controller.abort()
+          abort: () => controller.abort(),
         });
       } catch (e) {
         console.error(`Error processing code for sprite ${spriteData.id}:`, e);
       }
     }
 
-    const results = await Promise.allSettled(
-      eventRegistry.flag.map((entry) => promiseWithAbort(entry.cb, signal)),
-    );
-
-    results.forEach((res) => {
-      if (res.status === "rejected" && res.reason?.message !== "shouldStop") {
-        console.error("Error running flag event:", res.reason);
+    for (const spriteData of spriteManager.getAll()) {
+      for (const entry of eventRegistry.flag) {
+        if (entry.spriteId === spriteData.id || entry.spriteId === spriteData.root?.id) {
+          runEventForSprite(entry, spriteData, currentRunController.signal);
+        }
       }
-    });
+    }
 
     for (const entry of eventRegistry.timer) {
-      const id = setTimeout(() => entry.cb(), entry.value * 1000);
+      const id = setTimeout(() => {
+        for (const spriteData of spriteManager.getAll()) {
+          if (
+            entry.spriteId === spriteData.id ||
+            entry.spriteId === spriteData.root?.id
+          ) {
+            runEventForSprite(entry, spriteData, currentRunController.signal);
+          }
+        }
+      }, entry.value * 1000);
+
       runningScripts.push({ type: "timeout", id });
     }
 
     for (const entry of eventRegistry.interval) {
-      const id = setInterval(() => entry.cb(), entry.seconds * 1000);
+      const id = setInterval(() => {
+        for (const spriteData of spriteManager.getAll()) {
+          if (
+            entry.spriteId === spriteData.id ||
+            entry.spriteId === spriteData.root?.id
+          ) {
+            runEventForSprite(entry, spriteData, currentRunController.signal);
+          }
+        }
+      }, entry.seconds * 1000);
+
       runningScripts.push({ type: "interval", id });
     }
   } catch (err) {
@@ -823,9 +823,63 @@ async function runCode() {
 }
 
 app.view.addEventListener("click", () => {
-  for (const entry of eventRegistry.stageClick) {
-    entry.cb();
+  for (const spriteData of spriteManager.getAll()) {
+    for (const entry of eventRegistry.stageClick) {
+      if (entry.spriteId === spriteData.id || entry.spriteId === spriteData.root?.id) {
+        runEventForSprite(entry, spriteData, currentRunController.signal);
+      }
+    }
   }
+});
+
+const allowedKeys = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  " ",
+  "Enter",
+  "Escape",
+  ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+]);
+window.addEventListener("keydown", e => {
+  const key = e.key;
+  if (!allowedKeys.has(key)) return;
+
+  keysPressed[key] = true;
+
+  const entries = [
+    ...(eventRegistry.key.get(key) ?? []),
+    ...(eventRegistry.key.get("any") ?? []),
+  ];
+
+  for (const spriteData of spriteManager.getAll()) {
+    for (const entry of entries) {
+      if (entry.spriteId === spriteData.id || entry.spriteId === spriteData.root?.id) {
+        runEventForSprite(entry, spriteData, currentRunController.signal);
+      }
+    }
+  }
+});
+
+window.addEventListener("keyup", e => {
+  const key = e.key;
+  if (allowedKeys.has(key)) {
+    keysPressed[key] = false;
+  }
+});
+
+window.addEventListener("blur", () => {
+  for (const key in keysPressed) {
+    keysPressed[key] = false;
+  }
+});
+
+window.addEventListener("mousedown", e => {
+  mouseButtonsPressed[e.button] = true;
+});
+window.addEventListener("mouseup", e => {
+  mouseButtonsPressed[e.button] = false;
 });
 
 document.getElementById("add-sprite-button").addEventListener("click", () => {
@@ -833,20 +887,16 @@ document.getElementById("add-sprite-button").addEventListener("click", () => {
   setActiveSprite(spriteData);
 });
 
-deleteSpriteButton.addEventListener("click", () =>
-  deleteSprite(activeSprite.id, true),
-);
+deleteSpriteButton.addEventListener("click", () => deleteSprite(activeSprite.id, true));
 
 runButton.addEventListener("click", runCode);
-document
-  .getElementById("stop-button")
-  .addEventListener("click", stopAllScripts);
+document.getElementById("stop-button").addEventListener("click", stopAllScripts);
 
-tabButtons.forEach((button) => {
+tabButtons.forEach(button => {
   button.addEventListener("click", () => {
     const tab = button.dataset.tab;
     if (tab !== "sounds") {
-      document.querySelectorAll("#sounds-list .button").forEach((i) => {
+      document.querySelectorAll("#sounds-list .button").forEach(i => {
         if (i.audio) {
           i.audio.pause();
           i.audio.currentTime = 0;
@@ -856,13 +906,13 @@ tabButtons.forEach((button) => {
       });
     }
 
-    tabButtons.forEach((i) => {
+    tabButtons.forEach(i => {
       i.classList.add("inactive");
     });
 
     button.classList.remove("inactive");
 
-    tabContents.forEach((content) => {
+    tabContents.forEach(content => {
       content.classList.toggle("active", content.id === `${tab}-tab`);
     });
 
@@ -877,49 +927,8 @@ tabButtons.forEach((button) => {
 });
 
 export async function getProject() {
-  const spritesData = await Promise.all(
-    sprites.map(async (sprite) => {
-      const costumesData = await Promise.all(
-        sprite.costumes.map(async (c) => {
-          let dataURL;
-          const url = c?.texture?.baseTexture?.resource?.url;
-          if (typeof url === "string" && url.startsWith("data:")) {
-            dataURL = url;
-          } else {
-            dataURL = await app.renderer.extract.base64(
-              new PIXI.Sprite(c.texture),
-            );
-          }
-          return {
-            name: c.name,
-            data: dataURL,
-          };
-        }),
-      );
-
-      return {
-        id: sprite.id,
-        code: sprite.code,
-        costumes: costumesData,
-        sounds: sprite.sounds.map((s) => ({ name: s.name, data: s.dataURL })),
-        data: {
-          x: sprite.pixiSprite.x,
-          y: sprite.pixiSprite.y,
-          scale: {
-            x: sprite.pixiSprite.scale.x ?? 1,
-            y: sprite.pixiSprite.scale.y ?? 1,
-          },
-          angle: sprite.pixiSprite.angle,
-          currentCostume: sprite.costumes.findIndex(
-            (c) => c.texture === sprite.pixiSprite.texture,
-          ),
-        },
-      };
-    }),
-  );
-
   return {
-    sprites: spritesData,
+    sprites: spriteManager.toJSON(),
     extensions: activeExtensions,
     variables: projectVariables ?? {},
   };
@@ -932,64 +941,71 @@ async function saveProject() {
     extensions: activeExtensions,
     variables: projectVariables ?? {},
   };
-  const toUint8Array = (base64) =>
-    Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+  const toUint8Array = base64 => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 
   await Promise.all(
-    sprites.map(async (sprite) => {
+    spriteManager.getOriginals().map(async sprite => {
+      const baseJSON = sprite.toJSON();
       const spriteId = sprite.id;
 
       const costumeEntries = (
         await Promise.all(
-          sprite.costumes.map(async (c) => {
+          sprite.costumes.map(async c => {
             let dataURL;
-            const url = c?.texture?.baseTexture?.resource?.url;
+            const url = c.texture?.baseTexture?.resource?.url;
+
             if (typeof url === "string" && url.startsWith("data:")) {
               dataURL = url;
             } else {
-              dataURL = await app.renderer.extract.base64(
-                new PIXI.Sprite(c.texture),
-              );
+              dataURL = await app.renderer.extract.base64(new PIXI.Sprite(c.texture));
             }
 
             const processed = await compressImage(dataURL);
             if (!processed) return null;
 
             const base64 = processed.split(",")[1];
-            const binary = toUint8Array(base64);
-            const fileName = `${spriteId}.c.${c.name}.webp`;
-            zip.file(fileName, binary, { binary: true });
-            return { name: c.name, path: fileName };
+            zip.file(`${spriteId}.c.${c.name}.webp`, toUint8Array(base64), {
+              binary: true,
+            });
+
+            return {
+              name: c.name,
+              texture: `${spriteId}.c.${c.name}.webp`,
+            };
           }),
         )
       ).filter(Boolean);
 
       const soundEntries = (
         await Promise.all(
-          sprite.sounds.map(async (s) => {
+          sprite.sounds.map(async s => {
             const processed = await compressAudio(s.dataURL);
             if (!processed) return null;
 
             const base64 = processed.split(",")[1];
-            const binary = toUint8Array(base64);
-            const fileName = `${spriteId}.s.${s.name}.ogg`;
-            zip.file(fileName, binary, { binary: true });
-            return { name: s.name, path: fileName };
+            zip.file(`${spriteId}.s.${s.name}.ogg`, toUint8Array(base64), {
+              binary: true,
+            });
+
+            return {
+              name: s.name,
+              path: `${spriteId}.s.${s.name}.ogg`,
+            };
           }),
         )
       ).filter(Boolean);
 
       json.sprites.push({
-        id: spriteId,
-        code: sprite.code,
+        ...baseJSON,
         costumes: costumeEntries,
         sounds: soundEntries,
-        data: sprite.data,
       });
     }),
   );
 
   zip.file("project.json", JSON.stringify(json));
+
   const blob = await zip.generateAsync({
     type: "blob",
     compression: "DEFLATE",
@@ -1009,28 +1025,78 @@ async function loadProject(ev) {
   if (file.name.endsWith(".rarry")) return oldLoadProject(ev);
 
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
-  const json = JSON.parse(await zip.file("project.json").async("string"));
+
+  const projectFile = zip.file("project.json");
+  if (!projectFile) {
+    return alert("project.rarryz missing project.json");
+  }
+  const json = JSON.parse(await projectFile.async("string"));
+
+  if (!Array.isArray(json.sprites)) {
+    return alert("No valid sprites found in project.");
+  }
+
   const sprites = [];
 
   for (const entry of json.sprites) {
-    const sprite = { ...entry, costumes: [], sounds: [] };
+    const sprite = { ...entry };
+    sprite.costumes = [];
+    sprite.sounds = [];
 
-    await Promise.all([
-      ...(entry.costumes || []).map(async (c) => {
-        const base64 = await zip.file(c.path).async("base64");
-        sprite.costumes.push({
-          name: c.name,
-          data: `data:image/webp;base64,${base64}`,
-        });
-      }),
-      ...(entry.sounds || []).map(async (s) => {
-        const base64 = await zip.file(s.path).async("base64");
-        sprite.sounds.push({
-          name: s.name,
-          data: `data:audio/ogg;base64,${base64}`,
-        });
-      }),
-    ]);
+    if (Array.isArray(entry.costumes)) {
+      for (const c of entry.costumes) {
+        const srcCandidate = c.texture ?? c.path ?? c.data;
+        if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
+          sprite.costumes.push({ name: c.name, texture: srcCandidate });
+          continue;
+        }
+
+        if (typeof srcCandidate === "string") {
+          const fileEntry = zip.file(srcCandidate);
+          if (!fileEntry) {
+            throw new Error(`Missing costume file in archive: ${srcCandidate}`);
+          }
+          const base64 = await fileEntry.async("base64");
+          const dataUrl = `data:image/webp;base64,${base64}`;
+          sprite.costumes.push({ name: c.name, texture: dataUrl });
+          continue;
+        }
+
+        throw new Error(
+          `Invalid costume entry for sprite ${entry.id ?? "<unknown>"}: ${JSON.stringify(c)}`,
+        );
+      }
+    }
+
+    if (Array.isArray(entry.sounds)) {
+      for (const s of entry.sounds) {
+        const srcCandidate = s.data ?? s.path;
+        if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
+          sprite.sounds.push({ name: s.name, data: srcCandidate });
+          continue;
+        }
+        if (typeof srcCandidate === "string") {
+          const fileEntry = zip.file(srcCandidate);
+          if (!fileEntry) {
+            throw new Error(`Missing sound file in archive: ${srcCandidate}`);
+          }
+          const base64 = await fileEntry.async("base64");
+          const dataUrl = `data:audio/ogg;base64,${base64}`;
+          sprite.sounds.push({ name: s.name, data: dataUrl });
+          continue;
+        }
+        throw new Error(
+          `Invalid sound entry for sprite ${entry.id ?? "<unknown>"}: ${JSON.stringify(s)}`,
+        );
+      }
+    }
+
+    sprite.code = entry.code ?? "";
+    sprite.x = entry.x ?? entry.data?.x ?? 0;
+    sprite.y = entry.y ?? entry.data?.y ?? 0;
+    sprite.scale = entry.scale ?? entry.data?.scale?.x ?? 1;
+    sprite.rotation = entry.rotation ?? entry.data?.angle ?? entry.data?.rotation ?? 0;
+    sprite.currentCostume = entry.currentCostume ?? entry.data?.currentCostume ?? 0;
 
     sprites.push(sprite);
   }
@@ -1052,7 +1118,7 @@ async function oldLoadProject(input) {
       return await handleProjectData(data);
     } catch (err) {
       console.error("Invalid JSON string passed to loadProject:", err);
-      return window.alert("Invalid JSON string provided.");
+      return alert("Invalid JSON string provided.");
     }
   }
 
@@ -1078,7 +1144,7 @@ async function oldLoadProject(input) {
         data = JSON.parse(json);
       } catch (err) {
         console.error("Failed to parse file", err);
-        return window.alert("Invalid or corrupted project file.");
+        return alert("Invalid or corrupted project file.");
       }
     }
 
@@ -1090,7 +1156,7 @@ async function oldLoadProject(input) {
 async function handleProjectData(data) {
   if (!data || typeof data !== "object") {
     console.error("Invalid project data:", data);
-    window.alert("Invalid project data.");
+    alert("Invalid project data.");
     return;
   }
 
@@ -1099,110 +1165,42 @@ async function handleProjectData(data) {
   }
 
   try {
-    if (data?.extensions) {
-      const extensionsToLoad = data.extensions.filter(
-        (i) => !activeExtensions.some((z) => (z?.id || z) === (i?.id || i)),
+    if (data.extensions) {
+      const toLoad = data.extensions.filter(
+        e => !activeExtensions.some(a => (a?.id || a) === (e?.id || e)),
       );
 
-      for (const ext of extensionsToLoad) {
+      for (const ext of toLoad) {
         try {
-          if (typeof ext === "string") {
-            addExtension(ext);
-          } else if (ext?.id) {
-            const ExtensionClass = await eval("(" + ext.code + ")");
-            if (ExtensionClass) await registerExtension(ExtensionClass);
+          if (typeof ext === "string") addExtension(ext);
+          else if (ext?.id) {
+            const Cls = await eval("(" + ext.code + ")");
+            if (Cls) await registerExtension(Cls);
           }
         } catch (err) {
-          console.error("Failed to load extension", ext?.id || ext, err);
+          console.error("Failed to load extension", ext, err);
         }
       }
     }
 
-    for (const child of app.stage.removeChildren()) {
-      if (child.destroy) child.destroy({ children: true });
-    }
-    sprites = [];
-
     if (!Array.isArray(data.sprites)) {
-      window.alert("No valid sprites found in file.");
+      alert("No valid sprites found in project.");
       return;
     }
+
+    spriteManager.clear();
+
+    data.sprites.forEach(Sprite.assertValidSprite);
 
     if (data.variables) projectVariables = data.variables;
     createPenGraphics();
 
-    data?.sprites?.forEach((entry, i) => {
-      if (!entry || typeof entry !== "object") return;
+    spriteManager.fromJSON(data.sprites);
 
-      const spriteData = {
-        id: entry.id || `sprite-${i}`,
-        code: entry.code || "",
-        costumes: [],
-        sounds: [],
-        data: {
-          x: entry?.data?.x ?? 0,
-          y: entry?.data?.y ?? 0,
-          scale: {
-            x: entry?.data?.scale?.x ?? 1,
-            y: entry?.data?.scale?.y ?? 1,
-          },
-          angle: entry?.data?.angle ?? 0,
-          rotation: entry?.data?.rotation ?? 0,
-          currentCostume: entry?.data?.currentCostume,
-        },
-      };
-
-      if (Array.isArray(entry.costumes)) {
-        entry.costumes.forEach((c) => {
-          if (!c?.data || !c.name) return;
-          try {
-            const texture = PIXI.Texture.from(c.data);
-            spriteData.costumes.push({ name: c.name, texture });
-          } catch (err) {
-            console.warn(`Failed to load costume: ${c.name}`, err);
-            const texture = PIXI.Texture.WHITE;
-            spriteData.costumes.push({ name: c.name, texture });
-          }
-        });
-      }
-
-      if (Array.isArray(entry.sounds)) {
-        entry.sounds.forEach((s) => {
-          if (!s?.name || !s?.data) return;
-          spriteData.sounds.push({ name: s.name, dataURL: s.data });
-        });
-      }
-
-      const sprite =
-        spriteData.costumes.length > 0
-          ? new PIXI.Sprite(spriteData.costumes[0].texture)
-          : new PIXI.Sprite();
-
-      sprite.anchor.set(0.5);
-      sprite.x = spriteData.data.x;
-      sprite.y = spriteData.data.y;
-      sprite.scale.x = spriteData.data.scale.x;
-      sprite.scale.y = spriteData.data.scale.y;
-
-      if (entry?.data?.angle !== null) sprite.angle = spriteData.data.angle;
-      else sprite.rotation = spriteData.data.rotation;
-
-      const cc = spriteData.data.currentCostume;
-      if (typeof cc === "number" && spriteData.costumes[cc]) {
-        sprite.texture = spriteData.costumes[cc].texture;
-      }
-
-      spriteData.pixiSprite = sprite;
-      spriteData.pixiSprite.scale._parentScaleEvent = sprite;
-
-      app.stage.addChild(sprite);
-      sprites.push(spriteData);
-    });
-
-    setActiveSprite(sprites[0] || null);
+    setActiveSprite(spriteManager.getOriginals()[0] ?? null);
   } catch (err) {
     console.error("Failed to load project:", err);
-    window.alert("Something went wrong while loading the project.");
+    alert(err.message || "Something went wrong while loading the project.");
   }
 }
 
@@ -1213,7 +1211,7 @@ loadButton.addEventListener("click", () => {
 });
 loadInput.addEventListener("change", loadProject);
 
-document.getElementById("costume-upload").addEventListener("change", (e) => {
+document.getElementById("costume-upload").addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file || !activeSprite) return;
 
@@ -1225,15 +1223,14 @@ document.getElementById("costume-upload").addEventListener("change", (e) => {
     let uniqueName = baseName;
     let counter = 1;
 
-    const nameExists = (name) =>
-      activeSprite.costumes.some((c) => c.name === name);
+    const nameExists = name => activeSprite.costumes.some(c => c.name === name);
 
     while (nameExists(uniqueName)) {
       counter++;
       uniqueName = `${baseName}_${counter}`;
     }
 
-    activeSprite.costumes.push({ name: uniqueName, texture });
+    activeSprite.costumes.push(new Costume({ name: uniqueName, texture }));
 
     if (activeSprite.pixiSprite.texture === PIXI.Texture.EMPTY) {
       activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
@@ -1252,7 +1249,7 @@ document.getElementById("costume-upload").addEventListener("change", (e) => {
     }
 
     if (document.getElementById("costumes-tab").classList.contains("active")) {
-      tabButtons.forEach((button) => {
+      tabButtons.forEach(button => {
         if (button.dataset.tab === "costumes") button.click();
       });
     }
@@ -1261,67 +1258,64 @@ document.getElementById("costume-upload").addEventListener("change", (e) => {
   e.target.value = "";
 });
 
-document
-  .getElementById("sound-upload")
-  .addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file || !activeSprite) return;
+document.getElementById("sound-upload").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file || !activeSprite) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      let dataURL = reader.result;
-      dataURL = await compressAudio(dataURL);
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let dataURL = reader.result;
+    dataURL = await compressAudio(dataURL);
 
-      if (currentSocket && currentRoom) {
-        const base64 = dataURL.substring(dataURL.indexOf(",") + 1);
-        const estimatedBytes = base64.length * 0.75;
-        if (estimatedBytes >= MAX_HTTP_BUFFER) {
-          showNotification({
-            message:
-              "❌ This audio file may be too large to upload. Try compressing it to avoid this.",
-          });
-          e.target.value = "";
-          return;
-        }
-      }
-
-      let baseName = file.name.split(".")[0];
-      let uniqueName = baseName;
-      let counter = 1;
-
-      const nameExists = (name) =>
-        activeSprite.sounds.some((s) => s.name === name);
-
-      while (nameExists(uniqueName)) {
-        counter++;
-        uniqueName = `${baseName}_${counter}`;
-      }
-
-      activeSprite.sounds.push({
-        name: uniqueName,
-        dataURL,
-      });
-
-      if (currentSocket && currentRoom) {
-        currentSocket.emit("projectUpdate", {
-          roomId: currentRoom,
-          type: "addSound",
-          data: {
-            spriteId: activeSprite.id,
-            name: uniqueName,
-            dataURL,
-          },
+    if (currentSocket && currentRoom) {
+      const base64 = dataURL.substring(dataURL.indexOf(",") + 1);
+      const estimatedBytes = base64.length * 0.75;
+      if (estimatedBytes >= MAX_HTTP_BUFFER) {
+        showNotification({
+          message:
+            "❌ This audio file may be too large to upload. Try compressing it to avoid this.",
         });
+        e.target.value = "";
+        return;
       }
+    }
 
-      if (document.getElementById("sounds-tab").classList.contains("active")) {
-        renderSoundsList();
-      }
-    };
+    let baseName = file.name.split(".")[0];
+    let uniqueName = baseName;
+    let counter = 1;
 
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  });
+    const nameExists = name => activeSprite.sounds.some(s => s.name === name);
+
+    while (nameExists(uniqueName)) {
+      counter++;
+      uniqueName = `${baseName}_${counter}`;
+    }
+
+    activeSprite.sounds.push({
+      name: uniqueName,
+      dataURL,
+    });
+
+    if (currentSocket && currentRoom) {
+      currentSocket.emit("projectUpdate", {
+        roomId: currentRoom,
+        type: "addSound",
+        data: {
+          spriteId: activeSprite.id,
+          name: uniqueName,
+          dataURL,
+        },
+      });
+    }
+
+    if (document.getElementById("sounds-tab").classList.contains("active")) {
+      renderSoundsList();
+    }
+  };
+
+  reader.readAsDataURL(file);
+  e.target.value = "";
+});
 
 window.addEventListener("resize", () => {
   resizeCanvas();
@@ -1335,73 +1329,22 @@ function isXmlEmpty(input = "") {
   );
 }
 
-window.addEventListener("beforeunload", (e) => {
-  if (sprites.some((sprite) => !isXmlEmpty(sprite.code))) {
+window.addEventListener("beforeunload", e => {
+  if (spriteManager.getOriginals().some(s => !isXmlEmpty(s.code))) {
     e.preventDefault();
     e.returnValue = "";
     if (currentSocket) currentSocket?.disconnect?.();
   }
 });
 
-const allowedKeys = new Set([
-  "ArrowUp",
-  "ArrowDown",
-  "ArrowLeft",
-  "ArrowRight",
-  " ",
-  "Enter",
-  "Escape",
-  ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-]);
-window.addEventListener("keydown", (e) => {
-  const key = e.key;
-  if (!allowedKeys.has(key)) return;
-
-  keysPressed[key] = true;
-
-  const specificHandlers = eventRegistry.key.get(key);
-  if (specificHandlers) {
-    for (const entry of specificHandlers) {
-      entry.cb();
-    }
-  }
-
-  const anyHandlers = eventRegistry.key.get("any");
-  if (anyHandlers) {
-    for (const entry of anyHandlers) {
-      entry.cb(key);
-    }
-  }
-});
-
-window.addEventListener("keyup", (e) => {
-  const key = e.key;
-  if (allowedKeys.has(key)) {
-    keysPressed[key] = false;
-  }
-});
-
-window.addEventListener("blur", () => {
-  for (const key in keysPressed) {
-    keysPressed[key] = false;
-  }
-});
-
-window.addEventListener("mousedown", (e) => {
-  mouseButtonsPressed[e.button] = true;
-});
-window.addEventListener("mouseup", (e) => {
-  mouseButtonsPressed[e.button] = false;
-});
-
-SpriteChangeEvents.on("scaleChanged", (sprite) => {
+SpriteChangeEvents.on("scaleChanged", sprite => {
   if (activeSprite?.pixiSprite === sprite) renderSpriteInfo();
 });
 
-SpriteChangeEvents.on("positionChanged", (sprite) => {
+SpriteChangeEvents.on("positionChanged", sprite => {
   if (activeSprite?.pixiSprite === sprite) renderSpriteInfo();
 
-  const spriteData = sprites.find((s) => s?.pixiSprite === sprite);
+  const spriteData = spriteManager.getAll().find(s => s?.pixiSprite === sprite);
   if (!spriteData) return;
 
   if (spriteData.currentBubble) {
@@ -1422,15 +1365,13 @@ SpriteChangeEvents.on("positionChanged", (sprite) => {
   spriteData.lastPos = [x, y];
 });
 
-SpriteChangeEvents.on("textureChanged", (event) => {
+SpriteChangeEvents.on("textureChanged", event => {
   renderSpritesList(false);
 });
 
 /* setup extensions stuff */
 
 export const activeExtensions = [];
-
-import builtInExtensions from "../functions/builtInExtensions.js";
 
 const extensionsPopup = document.querySelector(".extensions-popup");
 const extensionsList = document.querySelector(".extensions-list");
@@ -1445,8 +1386,8 @@ function addExtensionButton() {
   button.innerHTML = '<i class="fa-solid fa-plus stay"></i>';
   button.id = "extensionButton";
 
-  ["pointerdown", "mousedown", "mouseup", "click"].forEach((evt) =>
-    button.addEventListener(evt, (e) => {
+  ["pointerdown", "mousedown", "mouseup", "click"].forEach(evt =>
+    button.addEventListener(evt, e => {
       e.stopPropagation();
       e.preventDefault();
     }),
@@ -1462,7 +1403,7 @@ function addExtensionButton() {
 function addExtension(id, emit = false) {
   if (activeExtensions.includes(id)) return;
 
-  const extension = builtInExtensions.find((e) => e?.id === id);
+  const extension = builtInExtensions.find(e => e?.id === id);
   if (!extension || !extension.xml) return;
 
   const parser = new DOMParser();
@@ -1492,7 +1433,7 @@ function addExtension(id, emit = false) {
 
 addExtensionButton();
 
-builtInExtensions.forEach((e) => {
+builtInExtensions.forEach(e => {
   if (!e || !e.id) return;
 
   const extension = document.createElement("div");
@@ -1510,43 +1451,42 @@ const stageDiv = document.getElementById("stage-div");
 
 fullscreenButton.addEventListener("click", () => {
   const isFull = stageDiv.classList.toggle("fullscreen");
-  fullscreenButton.innerHTML = `<img src="icons/${isFull ? "smallscreen.svg" : "fullscreen.svg"
-    }">`;
+  fullscreenButton.innerHTML = `<img src="icons/${
+    isFull ? "smallscreen.svg" : "fullscreen.svg"
+  }">`;
   resizeCanvas();
 });
 
-document
-  .getElementById("extensions-custom-button")
-  .addEventListener("click", () => {
-    const isSharing = currentSocket && currentRoom;
-    showPopup({
-      title: "Custom Extensions",
-      rows: [
-        [
-          "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about.",
-        ],
-        [
-          "Insert extension code:",
-          {
-            type: "textarea",
-            placeholder: "class Extension { ... }",
-            className: "extension-code-input",
-          },
-        ],
-        [
-          {
-            type: "button",
-            label: '<i class="fa-solid fa-plus"></i> Add',
-            className: "primary",
-            disabled: isSharing,
-            onClick: (popup) => {
-              const input = popup.querySelector('[data-row="1"][data-col="1"]');
-              const userCode = input ? input.value : "";
+document.getElementById("extensions-custom-button").addEventListener("click", () => {
+  const isSharing = currentSocket && currentRoom;
+  showPopup({
+    title: "Custom Extensions",
+    rows: [
+      [
+        "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about.",
+      ],
+      [
+        "Insert extension code:",
+        {
+          type: "textarea",
+          placeholder: "class Extension { ... }",
+          className: "extension-code-input",
+        },
+      ],
+      [
+        {
+          type: "button",
+          label: '<i class="fa-solid fa-plus"></i> Add',
+          className: "primary",
+          disabled: isSharing,
+          onClick: popup => {
+            const input = popup.querySelector('[data-row="1"][data-col="1"]');
+            const userCode = input ? input.value : "";
 
-              const iframe = document.createElement("iframe");
-              iframe.style.display = "none";
-              iframe.sandbox = "allow-scripts";
-              iframe.srcdoc = `
+            const iframe = document.createElement("iframe");
+            iframe.style.display = "none";
+            iframe.sandbox = "allow-scripts";
+            iframe.srcdoc = `
                 <script>
                   "use strict";
                   const registerExtension = (def) => {
@@ -1564,56 +1504,54 @@ document
                   parent.postMessage({ type: "iframeReady" }, "*");
                 </script>
               `;
-              document.body.appendChild(iframe);
+            document.body.appendChild(iframe);
 
-              const handleMessage = (event) => {
-                if (!event.data) return;
+            const handleMessage = event => {
+              if (!event.data) return;
 
-                switch (event.data.type) {
-                  case "registerExtension":
-                    try {
-                      const extensionCode = "(" + event.data.code + ")";
-                      const ExtensionClass = eval(extensionCode);
-                      registerExtension(ExtensionClass);
+              switch (event.data.type) {
+                case "registerExtension":
+                  try {
+                    const extensionCode = "(" + event.data.code + ")";
+                    const ExtensionClass = eval(extensionCode);
+                    registerExtension(ExtensionClass);
 
-                      console.log("extension registered:", ExtensionClass);
-                    } catch (error) {
-                      console.error("Error in extension:", error);
-                      window.alert("Error in extension: " + error);
-                    }
+                    console.log("extension registered:", ExtensionClass);
+                  } catch (error) {
+                    console.error("Error in extension:", error);
+                    alert("Error in extension: " + error);
+                  }
 
-                    iframe.remove();
-                    window.removeEventListener("message", handleMessage);
-                    break;
-                  case "error":
-                    console.error("Error in extension:", event.data.error);
-                    window.alert("Error in extension: " + event.data.error);
-                    window.removeEventListener("message", handleMessage);
-                    break;
-                  case "iframeReady":
-                    iframe.contentWindow.postMessage(
-                      { type: "runCode", code: userCode },
-                      "*",
-                    );
-                    break;
-                }
-              };
+                  iframe.remove();
+                  window.removeEventListener("message", handleMessage);
+                  break;
+                case "error":
+                  console.error("Error in extension:", event.data.error);
+                  alert("Error in extension: " + event.data.error);
+                  window.removeEventListener("message", handleMessage);
+                  break;
+                case "iframeReady":
+                  iframe.contentWindow.postMessage(
+                    { type: "runCode", code: userCode },
+                    "*",
+                  );
+                  break;
+              }
+            };
 
-              window.addEventListener("message", handleMessage);
+            window.addEventListener("message", handleMessage);
 
-              popup.remove();
-              document
-                .getElementById("extensions-popup")
-                ?.classList.add("hidden");
-            },
+            popup.remove();
+            document.getElementById("extensions-popup")?.classList.add("hidden");
           },
-          isSharing
-            ? "You can't add custom extensions while live sharing the project."
-            : "",
-        ],
+        },
+        isSharing
+          ? "You can't add custom extensions while live sharing the project."
+          : "",
       ],
-    });
+    ],
   });
+});
 
 function getToken() {
   return localStorage.getItem("tooken");
@@ -1644,7 +1582,7 @@ function createSession() {
     updateUsersList();
   });
 
-  currentSocket.on("userList", (users) => {
+  currentSocket.on("userList", users => {
     connectedUsers = users;
     updateUsersList();
   });
@@ -1660,7 +1598,7 @@ function createSession() {
     updateUsersList();
   });
 
-  currentSocket.on("projectData", async (data) => {
+  currentSocket.on("projectData", async data => {
     console.log("received project data from host");
     await handleProjectData(data);
   });
@@ -1686,47 +1624,47 @@ function createSession() {
         break;
       }
       case "addCostume": {
-        const target = sprites.find((s) => s.id === data.spriteId);
+        const target = spriteManager.get(data.spriteId);
         if (!target) return;
         const texture = PIXI.Texture.from(data.texture);
-        target.costumes.push({ name: data.name, texture });
+        target.costumes.push(new Costume({ name: data.name, texture }));
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
       }
       case "addSound": {
-        const target = sprites.find((s) => s.id === data.spriteId);
+        const target = spriteManager.get(data.spriteId);
         if (!target) return;
         target.sounds.push({ name: data.name, dataURL: data.dataURL });
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
       }
       case "renameCostume": {
-        const target = sprites.find((s) => s.id === data.spriteId);
+        const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        const costume = target.costumes.find((c) => c.name === data.oldName);
+        const costume = target.costumes.find(c => c.name === data.oldName);
         if (costume) costume.name = data.newName;
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
       }
       case "deleteCostume": {
-        const target = sprites.find((s) => s.id === data.spriteId);
+        const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        target.costumes = target.costumes.filter((c) => c.name !== data.name);
+        target.costumes = target.costumes.filter(c => c.name !== data.name);
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
       }
       case "renameSound": {
-        const target = sprites.find((s) => s.id === data.spriteId);
+        const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        const sound = target.sounds.find((s) => s.name === data.oldName);
+        const sound = target.sounds.find(s => s.name === data.oldName);
         if (sound) sound.name = data.newName;
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
       }
       case "deleteSound": {
-        const target = sprites.find((s) => s.id === data.spriteId);
+        const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        target.sounds = target.sounds.filter((s) => s.name !== data.name);
+        target.sounds = target.sounds.filter(s => s.name !== data.name);
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
       }
@@ -1741,7 +1679,7 @@ function createSession() {
       return;
     }
 
-    const sprite = sprites.find((s) => s.id === spriteId);
+    const sprite = spriteManager.get(spriteId);
     if (!sprite) return;
 
     let _workspace,
@@ -1768,17 +1706,12 @@ function createSession() {
     } catch (err) {
       console.error("blockly update error:", err, event);
     } finally {
-      if (
-        event.type === Blockly.Events.BLOCK_CHANGE &&
-        event.element === "mutation"
-      ) {
+      if (event.type === Blockly.Events.BLOCK_CHANGE && event.element === "mutation") {
         updateAllFunctionCalls(workspace);
       }
 
       if (temp) {
-        const newXml = Blockly.Xml.domToText(
-          Blockly.Xml.workspaceToDom(_workspace),
-        );
+        const newXml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(_workspace));
         sprite.code = newXml;
 
         _workspace.dispose();
@@ -1791,13 +1724,9 @@ function createSession() {
   currentSocket.on("invitesStatus", ({ enabled }) => {
     invitesEnabled = enabled;
 
-    const toggleInvites = document.querySelector(
-      '[data-row="1"][data-col="0"]',
-    );
+    const toggleInvites = document.querySelector('[data-row="1"][data-col="0"]');
     if (toggleInvites)
-      toggleInvites.textContent = enabled
-        ? "Disable Invites"
-        : "Enable Invites";
+      toggleInvites.textContent = enabled ? "Disable Invites" : "Enable Invites";
 
     const copyLink = document.querySelector('[data-row="1"][data-col="1"]');
     if (copyLink) copyLink.disabled = !enabled;
@@ -1827,18 +1756,19 @@ function updateUsersList() {
   if (!container) return;
 
   container.innerHTML = connectedUsers
-    .map((u) => {
+    .map(u => {
       const canKick = amHost && !u.isHost;
       return `
         <div>
           <img src="${config.apiUrl}/users/${u.id}/avatar">
           <b>${u.isHost ? "👑 " : ""}${u.username}</b>
-          ${canKick
-          ? `<button class="kick-btn danger" data-id="${u.id}">
+          ${
+            canKick
+              ? `<button class="kick-btn danger" data-id="${u.id}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>`
-          : ""
-        }
+              : ""
+          }
         </div>`;
     })
     .join("");
@@ -1849,8 +1779,8 @@ function updateUsersList() {
   `;
 
   if (amHost) {
-    container.querySelectorAll(".kick-btn").forEach((btn) =>
-      btn.addEventListener("click", (e) => {
+    container.querySelectorAll(".kick-btn").forEach(btn =>
+      btn.addEventListener("click", e => {
         const targetUserId = e.target.dataset.id;
         if (confirm("Kick this user?"))
           currentSocket.emit("kickUser", { roomId: currentRoom, targetUserId });
@@ -1865,25 +1795,23 @@ liveShare.addEventListener("click", async () => {
 
   function showRoomPopup() {
     const shareUrl =
-      window.location.origin +
-      window.location.pathname +
-      `?room=${currentRoom}`;
+      window.location.origin + window.location.pathname + `?room=${currentRoom}`;
 
     const invitesLabel = invitesEnabled ? "Disable Invites" : "Enable Invites";
     const buttons = [
       amHost
         ? {
-          type: "button",
-          label: invitesLabel,
-          onClick: () => {
-            const newStatus = !invitesEnabled;
-            invitesEnabled = newStatus;
-            currentSocket.emit("toggleInvites", {
-              roomId: currentRoom,
-              enabled: newStatus,
-            });
-          },
-        }
+            type: "button",
+            label: invitesLabel,
+            onClick: () => {
+              const newStatus = !invitesEnabled;
+              invitesEnabled = newStatus;
+              currentSocket.emit("toggleInvites", {
+                roomId: currentRoom,
+                enabled: newStatus,
+              });
+            },
+          }
         : invitesLabel,
       {
         type: "button",
@@ -1896,7 +1824,7 @@ liveShare.addEventListener("click", async () => {
             showNotification({ message: "Copied room link!" });
           } catch (e) {
             console.error("Copy failed", e);
-            window.alert(shareUrl);
+            alert(shareUrl);
           }
         },
       },
@@ -1904,7 +1832,7 @@ liveShare.addEventListener("click", async () => {
         type: "button",
         className: "danger",
         label: amHost ? "Close room" : "Leave room",
-        onClick: (popup) => {
+        onClick: popup => {
           showNotification({
             message: amHost ? "Room closed" : "Left room",
           });
@@ -1947,7 +1875,7 @@ liveShare.addEventListener("click", async () => {
         message: "You must be logged in to create a shared room",
       });
     } else {
-      currentSocket.emit("createRoom", { token }, (res) => {
+      currentSocket.emit("createRoom", { token }, res => {
         if (res?.error) {
           console.error(res.error);
           showNotification({ message: `Error: ${res.error}` });
@@ -1972,7 +1900,7 @@ if (roomId) {
   } else {
     createSession();
 
-    currentSocket.emit("joinRoom", { token, roomId }, (res) => {
+    currentSocket.emit("joinRoom", { token, roomId }, res => {
       if (res?.error) {
         showNotification({ message: `Error: ${res.error}` });
         return;
@@ -1985,8 +1913,7 @@ if (roomId) {
     });
   }
 } else {
-  let spriteData = addSprite();
-  setActiveSprite(spriteData);
+  setActiveSprite(addSprite());
 }
 
 const ignoredEvents = new Set([
@@ -2010,12 +1937,10 @@ function sanitizeEvent(event) {
   return JSON.parse(JSON.stringify(raw));
 }
 
-workspace.addChangeListener((event) => {
+workspace.addChangeListener(event => {
   if (!activeSprite || ignoredEvents.has(event.type)) return;
 
-  activeSprite.code = Blockly.Xml.domToText(
-    Blockly.Xml.workspaceToDom(workspace),
-  );
+  activeSprite.code = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
 
   if (currentSocket && currentRoom) {
     const json = sanitizeEvent(event);
@@ -2045,16 +1970,16 @@ Blockly.registry.register(
 
 function updateAllFunctionCalls(workspace) {
   const allBlocks = workspace.getAllBlocks(false);
-  const defs = allBlocks.filter((b) => b.type === "functions_definition");
+  const defs = allBlocks.filter(b => b.type === "functions_definition");
   const defMap = {};
-  defs.forEach((def) => (defMap[def.functionId_] = def));
+  defs.forEach(def => (defMap[def.functionId_] = def));
 
-  const calls = allBlocks.filter((b) => b.type === "functions_call");
+  const calls = allBlocks.filter(b => b.type === "functions_call");
 
   Blockly.Events.disable();
   try {
-    calls.forEach((callBlock) => {
-      const def = defs.find((d) => d.functionId_ === callBlock.functionId_);
+    calls.forEach(callBlock => {
+      const def = defs.find(d => d.functionId_ === callBlock.functionId_);
       if (!def) return;
 
       def.updateReturnState_();
@@ -2065,7 +1990,7 @@ function updateAllFunctionCalls(workspace) {
   }
 }
 
-workspace.addChangeListener((event) => {
+workspace.addChangeListener(event => {
   if (event.isUiEvent || event.isBlank) return;
 
   const block = workspace.getBlockById(
@@ -2085,25 +2010,25 @@ workspace.updateAllFunctionCalls = () => {
 if (window.location.hostname === "localhost") {
   const stageControls = document.getElementById("stage-controls");
 
-  const devButton = document.createElement('button');
+  const devButton = document.createElement("button");
   devButton.innerHTML = '<img src="icons/dev-tools-icon.png">';
-  devButton.addEventListener('click', (e) => {
+  devButton.addEventListener("click", e => {
     showPopup({
       title: "Dev Tools",
       rows: [
         [
           {
-          type: "button",
-          label: 'Console log workspace XML',
-          onClick: (popup) => {
-            console.log(Blockly.Xml.workspaceToDom(workspace));
+            type: "button",
+            label: "Console log workspace XML",
+            onClick: popup => {
+              console.log(Blockly.Xml.workspaceToDom(workspace));
 
-            popup.remove();
-          }
-        },
-        ]
-      ]
-    })
+              popup.remove();
+            },
+          },
+        ],
+      ],
+    });
   });
 
   stageControls.appendChild(devButton);

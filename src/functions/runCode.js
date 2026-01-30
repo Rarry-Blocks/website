@@ -1,5 +1,17 @@
 import * as PIXI from "pixi.js-legacy";
-import { calculateBubblePosition, projectVariables } from "../scripts/editor";
+import {
+  app,
+  calculateBubblePosition,
+  eventRegistry,
+  projectVariables,
+  spriteManager,
+  penGraphics,
+  keysPressed,
+  mouseButtonsPressed,
+  playingSounds,
+  activeEventThreads,
+  currentRunController,
+} from "../scripts/editor";
 import { Thread } from "./threads";
 import { promiseWithAbort, tweenEasing } from "./utils";
 import { extensions } from "./extensionManager";
@@ -11,83 +23,108 @@ const BUBBLE_COLOR = 0xffffff;
 const BUBBLE_TEXTSTYLE = new PIXI.TextStyle({ fill: 0x000000, fontSize: 24 });
 const LINE_COLOR = 0xbdc1c7;
 
+function createRuntimeContext(spriteData) {
+  return {
+    spriteData,
+    sprite: spriteData.pixiSprite,
+    projectVariables,
+    spriteManager,
+    penGraphics,
+    keysPressed,
+    mouseButtonsPressed,
+    playingSounds,
+  };
+}
+
+export async function runEventForSprite(entry, spriteData) {
+  if (currentRunController.signal.aborted) return;
+
+  const ctx = createRuntimeContext(spriteData);
+
+  const threadId = Thread.create();
+  Thread.enter(threadId);
+  activeEventThreads.count++;
+
+  try {
+    const result = await promiseWithAbort(
+      () => entry.factory(ctx, Thread.getCurrentContext()),
+      currentRunController.signal
+    );
+    if (result === "shouldStop") return;
+  } catch (err) {
+    if (err?.message !== "shouldStop") console.error(err);
+  } finally {
+    Thread.exit();
+    activeEventThreads.count--;
+  }
+}
+
+export function triggerCloneEvents(clone) {
+  for (const entry of eventRegistry.clone) {
+    if (entry.spriteId === clone.root.id) {
+      runEventForSprite(entry, clone);
+    }
+  }
+}
+
 export function runCodeWithFunctions({
   code,
   projectStartedTime,
   spriteData,
-  app,
-  eventRegistry,
-  mouseButtonsPressed,
-  keysPressed,
-  playingSounds,
-  runningScripts,
-  signal,
-  penGraphics,
-  activeEventThreads,
-  abort
+  abort,
 }) {
   Thread.resetAll();
-  let fastExecution = false;
 
-  const sprite = spriteData.pixiSprite;
+  let fastExecution = false;
+  let sprite = spriteData.pixiSprite;
+  let currentSpriteData = spriteData;
+
+  const stopProject = abort;
   const renderer = app.renderer;
   const stage = app.stage;
-  const costumeMap = new Map(
-    (spriteData.costumes || []).map((c) => [c.name, c])
-  );
-  const soundMap = new Map((spriteData.sounds || []).map((s) => [s.name, s]));
+  const costumeMap = new Map((spriteData.costumes || []).map(c => [c.name, c]));
+  const soundMap = new Map((spriteData.sounds || []).map(s => [s.name, s]));
   const MyFunctions = {};
 
   function stopped() {
-    return signal.aborted === true;
+    return currentRunController.signal.aborted === true;
   }
-
-  const stopProject = abort;
 
   function registerEvent(type, key, callback) {
     if (stopped()) return;
 
     const entry = {
       type,
-      cb: async () => {
-        if (stopped()) return;
-
-        const threadId = Thread.create();
-        Thread.enter(threadId);
-        activeEventThreads.count++;
-
-        try {
-          const result = await promiseWithAbort(
-            () => callback(Thread.getCurrentContext()),
-            signal
-          );
-          if (result === "shouldStop" || stopped()) return;
-        } catch (err) {
-          if (err.message !== "shouldStop") console.error(err);
-        } finally {
-          Thread.exit();
-          activeEventThreads.count--;
-        }
-      },
+      spriteId: spriteData.id,
+      factory: callback,
     };
 
     switch (type) {
       case "flag":
         eventRegistry.flag.push(entry);
         break;
+
+      case "clone":
+        eventRegistry.clone.push(entry);
+        break;
+
       case "key":
         if (!eventRegistry.key.has(key)) eventRegistry.key.set(key, []);
         eventRegistry.key.get(key).push(entry);
         break;
+
       case "stageClick":
         eventRegistry.stageClick.push(entry);
         break;
+
       case "timer":
         eventRegistry.timer.push({ ...entry, value: key });
         break;
+
       case "interval":
         eventRegistry.interval.push({ ...entry, seconds: key });
         break;
+
       case "custom":
         if (!eventRegistry.custom.has(key)) eventRegistry.custom.set(key, []);
         eventRegistry.custom.get(key).push(entry);
@@ -95,11 +132,16 @@ export function runCodeWithFunctions({
     }
   }
 
-  function triggerCustomEvent(eventName) {
-    const entries = eventRegistry.custom.get(eventName);
+  function triggerCustomEvent(name) {
+    const entries = eventRegistry.custom.get(name);
     if (!entries) return;
-    for (const entry of entries) {
-      entry.cb();
+
+    for (const spriteData of spriteManager.getAll()) {
+      for (const entry of entries) {
+        if (entry.spriteId === spriteData.id || entry.spriteId === spriteData.root?.id) {
+          runEventForSprite(entry, spriteData, currentRunController.signal);
+        }
+      }
     }
   }
 
@@ -111,8 +153,7 @@ export function runCodeWithFunctions({
 
   function getMousePosition(menu) {
     const mouse = renderer.events.pointer.global;
-    if (menu === "x")
-      return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
+    if (menu === "x") return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
     else if (menu === "y")
       return -Math.round((mouse.y - renderer.height / 2) / stage.scale.y);
   }
@@ -169,7 +210,7 @@ export function runCodeWithFunctions({
       sprite,
       bubble.width,
       bubble.height,
-      BUBBLE_TAIL_HEIGHT
+      BUBBLE_TAIL_HEIGHT,
     );
     container.x = pos.x;
     container.y = pos.y;
@@ -177,10 +218,13 @@ export function runCodeWithFunctions({
     container.visible = true;
 
     if (typeof seconds === "number" && seconds > 0) {
-      spriteData.sayTimeout = setTimeout(() => {
-        container.visible = false;
-        spriteData.sayTimeout = null;
-      }, Math.min(seconds * 1000, 2147483647));
+      spriteData.sayTimeout = setTimeout(
+        () => {
+          container.visible = false;
+          spriteData.sayTimeout = null;
+        },
+        Math.min(seconds * 1000, 2147483647),
+      );
     }
   }
 
@@ -191,8 +235,8 @@ export function runCodeWithFunctions({
       const id = requestAnimationFrame(() => {
         if (stopped()) return rej("stopped");
         runningScripts.splice(
-          runningScripts.findIndex((t) => t.id === id),
-          1
+          runningScripts.findIndex(t => t.id === id),
+          1,
         );
         res();
       });
@@ -207,8 +251,8 @@ export function runCodeWithFunctions({
       const id = setTimeout(() => {
         if (stopped()) return rej("stopped");
         runningScripts.splice(
-          runningScripts.findIndex((t) => t.id === id),
-          1
+          runningScripts.findIndex(t => t.id === id),
+          1,
         );
         res();
       }, ms);
@@ -225,20 +269,19 @@ export function runCodeWithFunctions({
 
   function setSize(amount = 0, additive) {
     let amountN = amount / 100;
-    if (additive)
-      sprite.scale.set(sprite.scale.x + amountN, sprite.scale.y + amountN);
+    if (additive) sprite.scale.set(sprite.scale.x + amountN, sprite.scale.y + amountN);
     else sprite.scale.set(amountN, amountN);
   }
 
   function setAngle(amount, additive) {
-    let angle = additive ? sprite.angle + amount : amount
+    let angle = additive ? sprite.angle + amount : amount;
     angle = ((angle % 360) + 360) % 360;
     sprite.angle = angle;
   }
 
   function pointsTowards(x, y) {
-    const { width, height } = renderer
-    const targetX = width / 2 + x * stage.scale.x;
+    const { width, height } = renderer;
+    const targetX = width / 2 + -x * stage.scale.x;
     const targetY = height / 2 - y * stage.scale.y;
     const spriteX = width / 2 + sprite.x * stage.scale.x;
     const spriteY = height / 2 - sprite.y * stage.scale.y;
@@ -254,7 +297,7 @@ export function runCodeWithFunctions({
 
   function isKeyPressed(key) {
     if (key === "any") {
-      return Object.values(keysPressed).some((pressed) => pressed);
+      return Object.values(keysPressed).some(pressed => pressed);
     }
 
     return !!keysPressed[key];
@@ -262,7 +305,7 @@ export function runCodeWithFunctions({
 
   function isMouseButtonPressed(button) {
     if (button === "any") {
-      return Object.values(mouseButtonsPressed).some((pressed) => pressed);
+      return Object.values(mouseButtonsPressed).some(pressed => pressed);
     }
 
     return !!mouseButtonsPressed[button];
@@ -286,7 +329,7 @@ export function runCodeWithFunctions({
   function startTween({ from, to, duration, easing, onUpdate, wait = true }) {
     if (stopped()) return;
 
-    const tweenPromise = new Promise((resolve) => {
+    const tweenPromise = new Promise(resolve => {
       const start = performance.now();
       const change = to - from;
       const easeFn = tweenEasing[easing] || tweenEasing.linear;
@@ -332,8 +375,7 @@ export function runCodeWithFunctions({
     const sound = soundMap.get(name);
     if (!sound) return;
 
-    if (!playingSounds.has(spriteData.id))
-      playingSounds.set(spriteData.id, new Map());
+    if (!playingSounds.has(spriteData.id)) playingSounds.set(spriteData.id, new Map());
 
     const spriteSounds = playingSounds.get(spriteData.id);
 
@@ -360,7 +402,7 @@ export function runCodeWithFunctions({
     audio.addEventListener("pause", cleanup);
 
     if (wait) {
-      return new Promise((res) => {
+      return new Promise(res => {
         audio.addEventListener("ended", () => res());
       });
     }
@@ -440,7 +482,7 @@ export function runCodeWithFunctions({
     if (spriteData.currentBubble) spriteData.currentBubble.visible = bool;
   }
 
-  console.info('Generated code:\n' + code);
+  console.info("Generated code:\n" + code);
 
   eval(code);
 }

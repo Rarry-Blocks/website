@@ -100,6 +100,15 @@ Blockly.Blocks["looks_show_sprite"] = {
   },
 };
 
+Blockly.Blocks["looks_setVisibility_sprite"] = {
+  init: function () {
+    this.appendValueInput("VISIBLE").setCheck("Boolean").appendField("set visibility to");
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setStyle("looks_blocks");
+  },
+};
+
 Blockly.Blocks["looks_isVisible"] = {
   init: function () {
     this.appendDummyInput().appendField("is visible");
@@ -171,6 +180,16 @@ BlocklyJS.javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
 
 BlocklyJS.javascriptGenerator.forBlock["looks_show_sprite"] = function () {
   return "toggleVisibility(true);\n";
+};
+
+BlocklyJS.javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
+  block,
+  generator
+) {
+  const visible =
+    generator.valueToCode(block, "VISIBLE", BlocklyJS.Order.ATOMIC) ?? "false";
+
+  return `toggleVisibility(${visible});\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_isVisible"] = () => [

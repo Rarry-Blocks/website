@@ -3,7 +3,10 @@ import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js-legacy";
 
 BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP =
-  'if (stopped()) throw new Error("shouldStop");\nif (!fastExecution) await new Promise(r => setTimeout(r, 16));\n';
+  `if (stopped()) throw "shouldStop";
+if (!fastExecution) await new Promise(r => setTimeout(r, 16));
+else await new Promise(setTimeout);
+`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
