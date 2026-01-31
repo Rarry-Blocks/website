@@ -30,6 +30,8 @@ import.meta.glob("../blocks/**/*.js", { eager: true });
 
 Thread.resetAll();
 
+window.Blockly = Blockly;
+
 let currentSocket = null;
 let currentRoom = null;
 let amHost = false;
