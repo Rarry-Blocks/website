@@ -31,6 +31,8 @@ BlocklyJS.javascriptGenerator.addReservedWords(
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
+window.Blockly = Blockly;
+
 let currentSocket = null;
 let currentRoom = null;
 let amHost = false;
