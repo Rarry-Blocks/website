@@ -2,11 +2,7 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js-legacy";
 
-BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP =
-  `if (stopped()) throw "shouldStop";
-if (!fastExecution) await new Promise(r => setTimeout(r, 16));
-else await new Promise(setTimeout);
-`;
+BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP = `yield;\n`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
@@ -114,7 +110,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   }
 
   let code =
-    "async function " +
+    "function* " +
     procedureName +
     "(" +
     args.join(", ") +
@@ -187,7 +183,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defreturn"] = function (
   }
 
   let code =
-    "async function " +
+    "function* " +
     procedureName +
     "(" +
     args.join(", ") +

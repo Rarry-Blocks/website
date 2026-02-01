@@ -24,7 +24,7 @@ BlocklyJS.javascriptGenerator.forBlock["play_sound"] = function (block, generato
     BlocklyJS.Order.ATOMIC
   );
   var wait = block.getFieldValue("wait");
-  return `await playSound(${name}, ${wait});\n`;
+  return `yield* playSound(${name}, ${wait});\n`;
 };
 
 Blockly.Blocks["stop_sound"] = {

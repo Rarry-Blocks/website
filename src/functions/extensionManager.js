@@ -1,11 +1,8 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import { activeExtensions } from "../scripts/editor";
-import { Thread } from "./threads";
 
 export const extensions = {};
-
-Thread.resetAll();
 
 class DuplicateOnDrag {
   constructor(block) {

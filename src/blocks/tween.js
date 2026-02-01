@@ -73,13 +73,13 @@ BlocklyJS.javascriptGenerator.forBlock["tween_block"] = function (block, generat
   let branch = BlocklyJS.javascriptGenerator.statementToCode(block, "DO");
   branch = BlocklyJS.javascriptGenerator.addLoopTrap(branch, block);
 
-  const code = `await startTween({
+  const code = `yield* startTween({
   from: ${from},
   to: ${to},
   duration: ${duration},
   easing: "${easingMode + easingType}",
   wait: ${waitMode === "WAIT"},
-  onUpdate: async (tweenValue) => {
+  onUpdate: function* (tweenValue) => {
     ${branch}  }
 });\n`;
 
@@ -167,12 +167,12 @@ BlocklyJS.javascriptGenerator.forBlock["tween_sprite_property"] = function (
 
   setter = generator.addLoopTrap(setter, block);
 
-  const code = `await startTween({
+  const code = `yield* startTween({
   from: ${fromGetter},
   to: ${to},
   duration: ${duration},
   easing: "${easingMode + easingType}",
-  onUpdate: async (tweenValue) => {
+  onUpdate: function* (tweenValue) => {
     ${setter};
   }
 });\n`;

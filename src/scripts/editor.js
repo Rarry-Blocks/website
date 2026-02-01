@@ -12,7 +12,6 @@ import { setupThemeButton } from "../functions/theme.js";
 import {
   compressAudio,
   compressImage,
-  promiseWithAbort,
   showNotification,
   showPopup,
 } from "../functions/utils.js";
@@ -20,21 +19,17 @@ import {
 import { Costume, Sprite, SpriteManager } from "../components/Sprite.js";
 import { SpriteChangeEvents } from "../functions/patches.js";
 import { registerExtension } from "../functions/extensionManager.js";
-import { Thread } from "../functions/threads.js";
-import {
-  runCodeWithFunctions,
-  runEventForSprite,
-  triggerCloneEvents,
-} from "../functions/runCode.js";
+import { runCodeWithFunctions } from "../functions/runCode.js";
 
 import builtInExtensions from "../functions/builtInExtensions.js";
 import config from "../config";
+import { VM } from "../components/VM.js";
 
-BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.join(","));
+BlocklyJS.javascriptGenerator.addReservedWords(
+  [...config.reservedWords.all].join(",")
+);
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
-
-Thread.resetAll();
 
 let currentSocket = null;
 let currentRoom = null;
@@ -176,25 +171,45 @@ workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (_) {
   return xmlList;
 });
 
+function isValidIdentifier(name) {
+  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
+}
+
+function makeUniqueName(base) {
+  let name = base;
+  let count = 0;
+
+  while (
+    name in projectVariables ||
+    config.reservedWords.all.has(name)
+  ) {
+    count++;
+    name = `${base}${count}`;
+  }
+
+  return name;
+}
+
 function addGlobalVariable(name, emit = false) {
   if (!name) name = prompt("New variable name:");
-  if (name) {
-    let newName = name,
-      count = 0;
-    while (newName in projectVariables || config.reservedWords.includes(newName)) {
-      count++;
-      newName = name + count;
-    }
+  if (!name) return;
 
-    projectVariables[newName] = 0;
+  name = name.trim();
 
-    if (emit && currentSocket && currentRoom) {
-      currentSocket.emit("projectUpdate", {
-        roomId: currentRoom,
-        type: "addVariable",
-        data: newName,
-      });
-    }
+  if (!isValidIdentifier(name)) {
+    alert("Invalid variable name");
+    return;
+  }
+
+  const finalName = makeUniqueName(name);
+  projectVariables[finalName] = 0;
+
+  if (emit && currentSocket && currentRoom) {
+    currentSocket.emit("projectUpdate", {
+      roomId: currentRoom,
+      type: "addVariable",
+      data: finalName,
+    });
   }
 }
 
@@ -368,6 +383,7 @@ function renderSpritesList(renderOthers = false) {
 
 function renderSpriteInfo() {
   const infoEl = document.getElementById("sprite-info");
+  infoEl.innerHTML = "";
 
   if (!activeSprite) {
     infoEl.innerHTML = "<p>Select a sprite to see its properties.</p>";
@@ -376,13 +392,30 @@ function renderSpriteInfo() {
 
   const sprite = activeSprite.pixiSprite;
 
-  infoEl.innerHTML = `
-    <p>${activeSprite.name ?? "Sprite"}</p>
+  const nameRow = document.createElement("div");
+  nameRow.className = "name";
+
+  const nameEl = createRenameableLabel(
+    activeSprite.name ?? "Sprite",
+    newName => {
+      activeSprite.name = newName;
+    }
+  );
+
+  nameRow.appendChild(nameEl);
+
+  const infoRow = document.createElement("div");
+  infoRow.className = "info";
+
+  infoRow.innerHTML = `
     <p>${Math.round(sprite.x)}, ${Math.round(-sprite.y)}</p>
     <p>${Math.round(sprite.angle)}º</p>
     <p>size: ${Math.round(((sprite.scale.x + sprite.scale.y) / 2) * 100)}</p>
     <p><i class="fa-solid fa-${sprite.visible ? "eye" : "eye-slash"}"></i></p>
   `;
+
+  infoEl.appendChild(nameRow);
+  infoEl.appendChild(infoRow);
 }
 
 function createRenameableLabel(initialName, onRename) {
@@ -640,11 +673,13 @@ export function calculateBubblePosition(
   return { x: bubbleX, y: bubbleY };
 }
 
+export const vm = new VM();
+
 export const keysPressed = {};
 export const mouseButtonsPressed = {};
 export const playingSounds = new Map();
 
-export let currentRunController = null;
+let currentRunController = null;
 
 export const eventRegistry = {
   flag: [],
@@ -657,7 +692,7 @@ export const eventRegistry = {
 };
 
 let _activeEventThreadsCount = 0;
-export const activeEventThreads = {};
+const activeEventThreads = {};
 
 Object.defineProperty(activeEventThreads, "count", {
   get() {
@@ -677,34 +712,29 @@ function updateRunButtonState() {
   }
 }
 
-const runningScripts = [];
+export const runningScripts = [];
 
 function stopAllScripts() {
-  spriteManager
-    .getOriginals()
-    .forEach(s => s.clones.forEach(c => spriteManager.remove(c)));
+  vm.stopAll();
+  accumulator = 0;
 
   if (currentRunController) {
-    try {
-      currentRunController.abort();
-    } finally {
-      currentRunController = null;
-    }
+    currentRunController.abort();
+    currentRunController = null;
   }
 
-  for (const i of runningScripts) {
-    if (i.type === "timeout") clearTimeout(i.id);
-    else if (i.type === "interval") clearInterval(i.id);
-    else if (i.type === "raf") cancelAnimationFrame(i.id);
-  }
+  runningScripts.forEach(script => {
+    if (script.type === "timeout") clearTimeout(script.id);
+    else if (script.type === "interval") clearInterval(script.id);
+    else if (script.type === "raf") cancelAnimationFrame(script.id);
+  });
   runningScripts.length = 0;
 
   for (const spriteSounds of playingSounds.values()) {
     for (const audio of spriteSounds.values()) {
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-      } catch (e) {}
+      audio.pause();
+      audio.src = "";
+      audio.load();
     }
   }
   playingSounds.clear();
@@ -712,39 +742,39 @@ function stopAllScripts() {
   for (const k in keysPressed) delete keysPressed[k];
   for (const k in mouseButtonsPressed) delete mouseButtonsPressed[k];
 
-  for (const type in eventRegistry) {
-    if (Array.isArray(eventRegistry[type])) {
-      eventRegistry[type].length = 0;
-    } else if (eventRegistry[type] instanceof Map) {
-      eventRegistry[type].clear();
-    }
-  }
+  Object.values(eventRegistry).forEach(registry => {
+    if (registry instanceof Map) registry.clear();
+    else if (Array.isArray(registry)) registry.length = 0;
+  });
 
-  Thread.resetAll();
+  spriteManager.getOriginals().forEach(sprite => {
+    sprite.clones.forEach(clone => {
+      spriteManager.remove(clone);
+    });
+
+    if (sprite.currentBubble) {
+      sprite.currentBubble.destroy({ children: true });
+      sprite.currentBubble = null;
+    }
+    if (sprite.sayTimeout) {
+      clearTimeout(sprite.sayTimeout);
+      sprite.sayTimeout = null;
+    }
+  });
+
   activeEventThreads.count = 0;
 
-  for (const spriteData of spriteManager.getAll()) {
-    const bubble = spriteData.currentBubble;
-    if (bubble) {
-      if (bubble.destroy) bubble.destroy({ children: true });
-      spriteData.currentBubble = null;
-    }
-
-    if (spriteData.sayTimeout) {
-      clearTimeout(spriteData.sayTimeout);
-      spriteData.sayTimeout = null;
-    }
-  }
+  updateRunButtonState();
 }
 
 async function runCode() {
   stopAllScripts();
-
   await new Promise(r => requestAnimationFrame(r));
 
   runButton.classList.add("active");
 
   const controller = new AbortController();
+  const signal = controller.signal;
   currentRunController = controller;
 
   let projectStartedTime = Date.now();
@@ -758,77 +788,58 @@ async function runCode() {
         },
       });
 
-      const xmlText = spriteData.code || "<xml></xml>";
-      const xmlDom = Blockly.utils.xml.textToDom(xmlText);
+      const xmlDom = Blockly.utils.xml.textToDom(spriteData.code || "<xml></xml>");
       Blockly.Xml.domToWorkspace(xmlDom, tempWorkspace);
 
       const code = BlocklyJS.javascriptGenerator.workspaceToCode(tempWorkspace);
       tempWorkspace.dispose();
 
-      try {
-        runCodeWithFunctions({
-          code,
-          projectStartedTime,
-          spriteData,
-          abort: () => controller.abort(),
-        });
-      } catch (e) {
-        console.error(`Error processing code for sprite ${spriteData.id}:`, e);
-      }
+      runCodeWithFunctions({
+        code,
+        projectStartedTime,
+        spriteData,
+        signal
+      });
     }
 
-    for (const spriteData of spriteManager.getAll()) {
-      for (const entry of eventRegistry.flag) {
-        if (entry.spriteId === spriteData.id || entry.spriteId === spriteData.root?.id) {
-          runEventForSprite(entry, spriteData, currentRunController.signal);
-        }
-      }
-    }
+    eventRegistry.flag.forEach(entry => entry.trigger());
 
     for (const entry of eventRegistry.timer) {
-      const id = setTimeout(() => {
-        for (const spriteData of spriteManager.getAll()) {
-          if (
-            entry.spriteId === spriteData.id ||
-            entry.spriteId === spriteData.root?.id
-          ) {
-            runEventForSprite(entry, spriteData, currentRunController.signal);
-          }
-        }
-      }, entry.value * 1000);
-
+      const id = setTimeout(() => entry.trigger(), entry.value * 1000);
       runningScripts.push({ type: "timeout", id });
     }
 
     for (const entry of eventRegistry.interval) {
-      const id = setInterval(() => {
-        for (const spriteData of spriteManager.getAll()) {
-          if (
-            entry.spriteId === spriteData.id ||
-            entry.spriteId === spriteData.root?.id
-          ) {
-            runEventForSprite(entry, spriteData, currentRunController.signal);
-          }
-        }
-      }, entry.seconds * 1000);
-
+      const id = setInterval(() => entry.trigger(), entry.seconds * 1000);
       runningScripts.push({ type: "interval", id });
     }
+
   } catch (err) {
     console.error("Error running project:", err);
     stopAllScripts();
-  } finally {
-    updateRunButtonState();
   }
 }
 
+let accumulator = 0;
+const FPS_LIMIT = 60;
+const STEP_TIME = 1000 / FPS_LIMIT; // ~16.67ms
+
+app.ticker.add(() => {
+  if (!currentRunController || currentRunController.signal.aborted) return;
+
+  accumulator += app.ticker.deltaMS;
+
+  while (accumulator >= STEP_TIME) {
+    vm.step();
+    accumulator -= STEP_TIME;
+  }
+
+  updateRunButtonState();
+});
+
 app.view.addEventListener("click", () => {
-  for (const spriteData of spriteManager.getAll()) {
-    for (const entry of eventRegistry.stageClick) {
-      if (entry.spriteId === spriteData.id || entry.spriteId === spriteData.root?.id) {
-        runEventForSprite(entry, spriteData, currentRunController.signal);
-      }
-    }
+  for (const entry of eventRegistry.stageClick) {
+    entry.trigger();
   }
 });
 
@@ -848,30 +859,22 @@ window.addEventListener("keydown", e => {
 
   keysPressed[key] = true;
 
-  const entries = [
-    ...(eventRegistry.key.get(key) ?? []),
-    ...(eventRegistry.key.get("any") ?? []),
-  ];
+  if (eventRegistry.key.has("any")) {
+    eventRegistry.key.get("any").forEach(entry => entry.trigger());
+  }
 
-  for (const spriteData of spriteManager.getAll()) {
-    for (const entry of entries) {
-      if (entry.spriteId === spriteData.id || entry.spriteId === spriteData.root?.id) {
-        runEventForSprite(entry, spriteData, currentRunController.signal);
-      }
-    }
+  if (eventRegistry.key.has(key)) {
+    eventRegistry.key.get(key).forEach(entry => entry.trigger());
   }
 });
 
 window.addEventListener("keyup", e => {
-  const key = e.key;
-  if (allowedKeys.has(key)) {
-    keysPressed[key] = false;
-  }
+  delete keysPressed[e.key];
 });
 
 window.addEventListener("blur", () => {
   for (const key in keysPressed) {
-    keysPressed[key] = false;
+    delete keysPressed[key];
   }
 });
 
@@ -1451,9 +1454,8 @@ const stageDiv = document.getElementById("stage-div");
 
 fullscreenButton.addEventListener("click", () => {
   const isFull = stageDiv.classList.toggle("fullscreen");
-  fullscreenButton.innerHTML = `<img src="icons/${
-    isFull ? "smallscreen.svg" : "fullscreen.svg"
-  }">`;
+  fullscreenButton.innerHTML = `<img src="icons/${isFull ? "smallscreen.svg" : "fullscreen.svg"
+    }">`;
   resizeCanvas();
 });
 
@@ -1762,13 +1764,12 @@ function updateUsersList() {
         <div>
           <img src="${config.apiUrl}/users/${u.id}/avatar">
           <b>${u.isHost ? "👑 " : ""}${u.username}</b>
-          ${
-            canKick
-              ? `<button class="kick-btn danger" data-id="${u.id}">
+          ${canKick
+          ? `<button class="kick-btn danger" data-id="${u.id}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>`
-              : ""
-          }
+          : ""
+        }
         </div>`;
     })
     .join("");
@@ -1801,17 +1802,17 @@ liveShare.addEventListener("click", async () => {
     const buttons = [
       amHost
         ? {
-            type: "button",
-            label: invitesLabel,
-            onClick: () => {
-              const newStatus = !invitesEnabled;
-              invitesEnabled = newStatus;
-              currentSocket.emit("toggleInvites", {
-                roomId: currentRoom,
-                enabled: newStatus,
-              });
-            },
-          }
+          type: "button",
+          label: invitesLabel,
+          onClick: () => {
+            const newStatus = !invitesEnabled;
+            invitesEnabled = newStatus;
+            currentSocket.emit("toggleInvites", {
+              roomId: currentRoom,
+              enabled: newStatus,
+            });
+          },
+        }
         : invitesLabel,
       {
         type: "button",

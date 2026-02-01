@@ -22,7 +22,7 @@ BlocklyJS.javascriptGenerator.forBlock["when_flag_clicked"] = function (
   generator
 ) {
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("flag", null, async () => {\n${branch}});\n`;
+  return `registerEvent("flag", null, function* (sprite) {\n${branch}});\n`;
 };
 
 const normalKeys = [
@@ -61,7 +61,7 @@ BlocklyJS.javascriptGenerator.forBlock["when_key_clicked"] = function (
   const key = block.getFieldValue("KEY");
   const safeKey = generator.quote_(key);
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("key", ${safeKey}, async () => {\n${branch}});\n`;
+  return `registerEvent("key", ${safeKey}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["when_stage_clicked"] = {
@@ -78,7 +78,7 @@ BlocklyJS.javascriptGenerator.forBlock["when_stage_clicked"] = function (
   generator
 ) {
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("stageClick", null, async () => {\n${branch}});\n`;
+  return `registerEvent("stageClick", null, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["project_timer"] = {
@@ -110,7 +110,7 @@ BlocklyJS.javascriptGenerator.forBlock["when_timer_reaches"] = function (
 ) {
   const value = block.getFieldValue("VALUE");
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("timer", ${value}, async () => {\n${branch}});\n`;
+  return `registerEvent("timer", ${value}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["every_seconds"] = {
@@ -130,7 +130,7 @@ BlocklyJS.javascriptGenerator.forBlock["every_seconds"] = function (
 ) {
   const seconds = block.getFieldValue("SECONDS");
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("interval", ${seconds}, async () => {\n${branch}});\n`;
+  return `registerEvent("interval", ${seconds}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["when_custom_event_triggered"] = {
@@ -150,7 +150,7 @@ BlocklyJS.javascriptGenerator.forBlock["when_custom_event_triggered"] = function
 ) {
   const event = generator.quote_(block.getFieldValue("EVENT"));
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("custom", ${event}, async () => {\n${branch}});\n`;
+  return `registerEvent("custom", ${event}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["trigger_custom_event"] = {

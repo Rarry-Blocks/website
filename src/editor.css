@@ -145,17 +145,42 @@ html.dark #fullscreen-button img {
 #sprite-info {
   padding: 0.5rem;
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#sprite-info .name {
+  display: flex;
+  max-width: 100%;
+}
+
+#sprite-info .info {
+  display: flex;
   flex-direction: row;
   gap: 5px;
+}
+
+#sprite-info .info > *:not(:last-child) {
+  padding-right: 5px;
+  border-right: 2px solid var(--color2);
 }
 
 #sprite-info p {
   color: var(--dark);
 }
 
-#sprite-info p:not(:last-child) {
-  padding-right: 5px;
-  border-right: 2px solid var(--color2);
+#sprite-info input {
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  width: 100%;
+}
+
+#sprite-info * {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #sprites-section {

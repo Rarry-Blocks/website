@@ -159,8 +159,8 @@ BlocklyJS.javascriptGenerator.forBlock["change_position"] = function (
   const amount =
     generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
-  if (menu === "y") return `sprite["${menu}"] -= ${amount};\n`;
-  else return `sprite["${menu}"] += ${amount};\n`;
+  if (menu === "y") return `getTarget().${menu} -= ${amount};\n`;
+  else return `getTarget().${menu} += ${amount};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["set_position"] = function (
@@ -170,8 +170,8 @@ BlocklyJS.javascriptGenerator.forBlock["set_position"] = function (
   const amount =
     generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
-  if (menu === "y") return `sprite["${menu}"] = -${amount};\n`;
-  else return `sprite["${menu}"] = ${amount};\n`;
+  if (menu === "y") return `getTarget().${menu} = -${amount};\n`;
+  else return `getTarget().${menu} = ${amount};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["goto_position"] = function (
@@ -180,7 +180,7 @@ BlocklyJS.javascriptGenerator.forBlock["goto_position"] = function (
 ) {
   const x = generator.valueToCode(block, "x", BlocklyJS.Order.ATOMIC) || 0;
   const y = generator.valueToCode(block, "y", BlocklyJS.Order.ATOMIC) || 0;
-  return `sprite.x = ${x};\nsprite.y = -${y};\n`;
+  return `getTarget().x = ${x};\ngetTarget().y = -${y};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["point_towards"] = function (

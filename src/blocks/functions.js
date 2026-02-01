@@ -772,7 +772,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
     .filter(Boolean);
 
   const body = BlocklyJS.javascriptGenerator.statementToCode(block, "BODY");
-  return `MyFunctions[${generator.quote_(String(block.functionId_))}] = async (${params.join(", ")}) => {\n${body}};\n`;
+  return `MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) => {\n${body}};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
@@ -789,14 +789,14 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
     if (type === "label") continue;
 
     if (type === "statement")
-      args.push(`async () => {${generator.statementToCode(block, key)}}`);
+      args.push(`function* (sprite) {${generator.statementToCode(block, key)}}`);
     else
       args.push(
         generator.valueToCode(block, key, BlocklyJS.Order.NONE) || "null",
       );
   }
 
-  return `await MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
+  return `yield* MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
     ", ",
   )});\n`;
 };

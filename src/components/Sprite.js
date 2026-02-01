@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js-legacy";
+import { vm } from "../scripts/editor";
 import { triggerCloneEvents } from "../functions/runCode";
 
 export class Costume {
@@ -184,36 +185,37 @@ export class SpriteManager {
   clone(sprite) {
     const clone = sprite.createClone();
     this.add(clone);
-    this.onClone(clone);
+    triggerCloneEvents(clone);
     return clone;
   }
 
-  onClone(clone) {
-    triggerCloneEvents(clone);
-  };
+  remove(sprite) {
+    vm.stopForTarget(sprite);
 
-  remove(sprite, deleteFromClonesRoot = true) {
     this.app.stage.removeChild(sprite.pixiSprite);
     this.sprites.delete(sprite.id);
 
-    if (deleteFromClonesRoot && sprite.clone && sprite.root) {
-      sprite.root.clones = sprite.root.clones.filter(c => c !== sprite);
+    if (sprite.clone && sprite.root) {
+      sprite.root.clones = sprite.root.clones.filter(c => c.id !== sprite.id);
     }
 
-    if (!sprite.clone) this.removeClones(sprite);
+    if (!sprite.clone) {
+      this.removeClones(sprite);
+    }
+
+    if (sprite.currentBubble) {
+      sprite.currentBubble.destroy({ children: true });
+      sprite.currentBubble = null;
+    }
   }
 
   removeClones(sprite) {
-    if (sprite.clones.length > 0) {
-      for (const clone of sprite.clones) {
-        this.remove(clone, false);
-      }
-      sprite.clones.length = 0;
-    }
+    sprite.clones.forEach(c => this.remove(c));
   }
 
-  get(id) {
-    return this.sprites.get(id);
+  get(value) {
+    if (value instanceof Sprite) return value;
+    return this.sprites.get(value);
   }
 
   getAll() {
@@ -236,8 +238,8 @@ export class SpriteManager {
   }
 
   clear() {
-    for (const s of this.getAll()) {
-      this.app.stage.removeChild(s.pixiSprite);
+    for (const sprite of this.getAll()) {
+      this.remove(sprite);
     }
     this.sprites.clear();
   }

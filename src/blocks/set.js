@@ -443,7 +443,7 @@ BlocklyJS.javascriptGenerator.forBlock["sets_foreach"] = function (
 ) {
   const set = generator.valueToCode(block, "SET", BlocklyJS.Order.NONE) || "[]";
   const branch = generator.statementToCode(block, "DO");
-  const code = `${set}.forEach(async (setsForEachItem) => {\n${branch}});\n`;
+  const code = `${set}.forEach(function* (setsForEachItem) => {\n${branch}});\n`;
   return code;
 };
 
