@@ -212,11 +212,11 @@ export function runCodeWithFunctions({
     }
   }
 
-  function switchCostume(name) {
-    const sprite = getTarget();
-    const found = costumeMap.get(name);
+  function switchCostume(value) {
+    const costumes = getTargetData().costumes;
+    const found = costumes.find(i => i.id === value) || costumes.find(i => i.name === value)
     if (found) {
-      sprite.texture = found.texture;
+      getTarget().texture = found.texture;
     }
   }
 

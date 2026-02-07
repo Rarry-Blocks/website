@@ -3,19 +3,21 @@ import { vm } from "../scripts/editor";
 import { triggerCloneEvents } from "../functions/runCode";
 
 export class Costume {
-  constructor({ name, texture }) {
+  constructor({ id, name, texture }) {
     if (!(texture instanceof PIXI.Texture)) {
       throw new Error(
         `Costume "${name}" created with invalid texture`
       );
     }
 
+    this.id = id ?? `costume-${crypto.randomUUID()}`;
     this.name = name;
     this.texture = texture;
   }
 
   toJSON() {
     return {
+      id: this.id,
       name: this.name,
       texture: this.texture?.baseTexture?.resource?.url ?? null,
     };
@@ -33,6 +35,7 @@ export class Costume {
     }
 
     return new Costume({
+      id: json.id ?? `costume-${crypto.randomUUID()}`,
       name: json.name,
       texture: PIXI.Texture.from(source),
     });
@@ -148,7 +151,7 @@ export class Sprite {
     const costumes = json.costumes.map(Costume.fromJSON);
 
     return new Sprite({
-      id: json.id,
+      id: json.id ?? `sprite-${crypto.randomUUID()}`,
       name: json.name,
       code: json.code,
       x: json.x ?? 0,

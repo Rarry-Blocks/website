@@ -1,6 +1,6 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
-import { spriteManager } from "../scripts/editor";
+import { activeSprite, spriteManager } from "../scripts/editor";
 
 Blockly.Blocks["wait_one_frame"] = {
   init: function () {
@@ -171,41 +171,89 @@ Blockly.Blocks["controls_stopblock"] = {
       .appendField(
         new Blockly.FieldDropdown([
           ["this script", "script"],
-          ["myself", "sprite"],
+          ["my other scripts", "others"],
+          ["every other sprite", "othersprites"],
           ["the project", "project"],
-        ]),
+        ], function (selection) {
+          this.getSourceBlock().updateShape_(selection);
+        }),
         "MODE",
       );
     this.setPreviousStatement(true, "default");
     this.setStyle("control_blocks");
   },
+  updateShape_: function (newMode) {
+    const isTerminal = ["sprite", "project"].includes(newMode);
+
+    const hasNext = !!this.nextConnection;
+
+    if (isTerminal && hasNext) {
+      if (this.nextConnection.isConnected()) {
+        this.nextConnection.disconnect();
+      }
+      this.setNextStatement(false);
+    } else if (!isTerminal && !hasNext) {
+      this.setNextStatement(true, "default");
+    }
+  },
+  mutationToDom: function () {
+    const container = Blockly.utils.xml.createElement("mutation");
+    container.setAttribute("has_next", !!this.nextConnection);
+    return container;
+  },
+  domToMutation: function (xmlElement) {
+    const hasNext = xmlElement.getAttribute("has_next") === "true";
+    this.setNextStatement(hasNext, "default");
+  },
+  saveExtraState: function () {
+    return { "hasNext": !!this.nextConnection };
+  },
+  loadExtraState: function (state) {
+    this.setNextStatement(state["hasNext"], "default");
+  }
 };
 
 BlocklyJS.javascriptGenerator.forBlock["controls_stopblock"] = block => {
   const mode = block.getFieldValue("MODE");
+
   if (mode === "script") return "return;\n";
-  if (mode === "myself") return "vm.stopForTarget(getTargetData());\n";
-  else if (mode === "project") return "stopProject();\n";
+  if (mode === "others") return "vm.stopOtherScriptsForTarget(getTargetData());\n";
+  if (mode === "othersprites") return "vm.stopAllExceptTarget(getTargetData());\n";
+  if (mode === "project") return "stopProject();\n";
+
+  return "";
 };
 
-Blockly.Extensions.register("dynamic_sprites_menu", function () {
-  this.getField("MENU").setOptions(function () {
-    const sprites = spriteManager.getOriginals();
-    const options =
-      sprites.length < 1 ? [["No sprites.", ""]] : sprites.map(i => [i.name, i.id]);
-    return options;
-  });
-});
+Blockly.Blocks["controls_stop_sprite"] = {
+  init: function () {
+    this.appendValueInput("ID")
+      .setCheck("String")
+      .appendField("stop sprite");
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setStyle("control_blocks");
+    this.setTooltip("Stops all scripts for the specified sprite.");
+  }
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_stop_sprite"] = function (block, generator) {
+  const spriteId = generator.valueToCode(block, 'ID', BlocklyJS.Order.ATOMIC) || "''";
+  return `vm.stopForTarget(vm.runtime.getTargetById(${spriteId}));\n`;
+};
 
 Blockly.Blocks["controls_sprites_menu"] = {
   init: function () {
     this.appendDummyInput().appendField(
-      new Blockly.FieldDropdown([["No sprites.", ""]]),
+      new Blockly.FieldDropdown(() => {
+        const sprites = spriteManager.getOriginals();
+        return sprites.length < 1
+          ? [["No sprites.", ""]]
+          : sprites.map(i => [i.name, i.id]);
+      }),
       "MENU",
     );
     this.setOutput(true, "String");
     this.setStyle("control_blocks");
-    Blockly.Extensions.apply("dynamic_sprites_menu", this, false);
   },
 };
 

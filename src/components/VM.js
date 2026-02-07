@@ -50,4 +50,23 @@ export class VM {
       }
     }
   }
+
+  stopOtherScriptsForTarget(target) {
+    for (const thread of this.threads) {
+      if (
+        thread.target === target &&
+        thread !== this.currentThread
+      ) {
+        thread.status = "stopped";
+      }
+    }
+  }
+
+  stopAllExceptTarget(target) {
+    for (const thread of this.threads) {
+      if (thread.target !== target) {
+        thread.status = "stopped";
+      }
+    }
+  }
 }

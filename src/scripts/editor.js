@@ -25,9 +25,7 @@ import builtInExtensions from "../functions/builtInExtensions.js";
 import config from "../config";
 import { VM } from "../components/VM.js";
 
-BlocklyJS.javascriptGenerator.addReservedWords(
-  [...config.reservedWords.all].join(",")
-);
+BlocklyJS.javascriptGenerator.addReservedWords([...config.reservedWords.all].join(","));
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
@@ -181,10 +179,7 @@ function makeUniqueName(base) {
   let name = base;
   let count = 0;
 
-  while (
-    name in projectVariables ||
-    config.reservedWords.all.has(name)
-  ) {
+  while (name in projectVariables || config.reservedWords.all.has(name)) {
     count++;
     name = `${base}${count}`;
   }
@@ -341,6 +336,8 @@ function setActiveSprite(sprite) {
   Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
 
   Blockly.Events.enable();
+
+  resetSpriteInfo();
 }
 
 function renderSpritesList(renderOthers = false) {
@@ -385,39 +382,66 @@ function renderSpritesList(renderOthers = false) {
 
 function renderSpriteInfo() {
   const infoEl = document.getElementById("sprite-info");
-  infoEl.innerHTML = "";
 
   if (!activeSprite) {
     infoEl.innerHTML = "<p>Select a sprite to see its properties.</p>";
     return;
   }
 
+  let nameInput = infoEl.querySelector(".sprite-name-input");
+
+  if (!nameInput) {
+    infoEl.innerHTML = "";
+
+    const nameRow = document.createElement("div");
+    nameRow.className = "name";
+
+    nameInput = createInput(activeSprite.name ?? "Sprite", newValue => {
+      activeSprite.name = newValue;
+    });
+    nameInput.classList.add("sprite-name-input");
+
+    nameRow.appendChild(nameInput);
+
+    const infoRow = document.createElement("div");
+    infoRow.className = "info";
+    infoRow.innerHTML = `
+      <p class="pos"></p>
+      <p class="angle"></p>
+      <p class="size"></p>
+      <p class="vis"></p>
+    `;
+
+    infoEl.appendChild(nameRow);
+    infoEl.appendChild(infoRow);
+  }
+
+  updateSpriteInfoValues();
+}
+
+function updateSpriteInfoValues() {
+  if (!activeSprite) return;
+
   const sprite = activeSprite.pixiSprite;
+  const infoEl = document.getElementById("sprite-info");
 
-  const nameRow = document.createElement("div");
-  nameRow.className = "name";
+  infoEl.querySelector(".pos").textContent =
+    `${Math.round(sprite.x)}, ${Math.round(-sprite.y)}`;
 
-  const nameEl = createRenameableLabel(
-    activeSprite.name ?? "Sprite",
-    newName => {
-      activeSprite.name = newName;
-    }
-  );
+  infoEl.querySelector(".angle").textContent =
+    `${Math.round(sprite.angle)}º`;
 
-  nameRow.appendChild(nameEl);
+  infoEl.querySelector(".size").textContent =
+    `size: ${Math.round(((sprite.scale.x + sprite.scale.y) / 2) * 100)}`;
 
-  const infoRow = document.createElement("div");
-  infoRow.className = "info";
+  infoEl.querySelector(".vis").innerHTML =
+    `<i class="fa-solid fa-${sprite.visible ? "eye" : "eye-slash"}"></i>`;
+}
 
-  infoRow.innerHTML = `
-    <p>${Math.round(sprite.x)}, ${Math.round(-sprite.y)}</p>
-    <p>${Math.round(sprite.angle)}º</p>
-    <p>size: ${Math.round(((sprite.scale.x + sprite.scale.y) / 2) * 100)}</p>
-    <p><i class="fa-solid fa-${sprite.visible ? "eye" : "eye-slash"}"></i></p>
-  `;
-
-  infoEl.appendChild(nameRow);
-  infoEl.appendChild(infoRow);
+function resetSpriteInfo() {
+  const infoEl = document.getElementById("sprite-info");
+  infoEl.innerHTML = "";
+  renderSpriteInfo();
 }
 
 function createRenameableLabel(initialName, onRename) {
@@ -468,6 +492,39 @@ function createRenameableLabel(initialName, onRename) {
   container.appendChild(nameLabel);
 
   return container;
+}
+
+function createInput(initialValue = "", onChange) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = initialValue.trim();
+
+  input.focus();
+  input.select();
+
+  let canceled = false;
+
+  function commit() {
+    if (canceled) return;
+
+    const newName = input.value.trim();
+    onChange(newName);
+  }
+
+  input.addEventListener("blur", commit);
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      input.blur();
+    }
+
+    if (e.key === "Escape") {
+      canceled = true;
+      input.value = initialValue;
+      input.blur();
+    }
+  });
+
+  return input;
 }
 
 function createDeleteButton(onDelete) {
@@ -800,7 +857,7 @@ async function runCode() {
         code,
         projectStartedTime,
         spriteData,
-        signal
+        signal,
       });
     }
 
@@ -815,7 +872,6 @@ async function runCode() {
       const id = setInterval(() => entry.trigger(), entry.seconds * 1000);
       runningScripts.push({ type: "interval", id });
     }
-
   } catch (err) {
     console.error("Error running project:", err);
     stopAllScripts();
@@ -1343,11 +1399,11 @@ window.addEventListener("beforeunload", e => {
 });
 
 SpriteChangeEvents.on("scaleChanged", sprite => {
-  if (activeSprite?.pixiSprite === sprite) renderSpriteInfo();
+  if (activeSprite?.pixiSprite === sprite) updateSpriteInfoValues();
 });
 
 SpriteChangeEvents.on("positionChanged", sprite => {
-  if (activeSprite?.pixiSprite === sprite) renderSpriteInfo();
+  if (activeSprite?.pixiSprite === sprite) updateSpriteInfoValues();
 
   const spriteData = spriteManager.getAll().find(s => s?.pixiSprite === sprite);
   if (!spriteData) return;
@@ -1631,7 +1687,7 @@ function createSession() {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
         const texture = PIXI.Texture.from(data.texture);
-        target.costumes.push(new Costume({ name: data.name, texture }));
+        target.costumes.push(new Costume({ name: data.name, texture, id: data.id }));
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
       }

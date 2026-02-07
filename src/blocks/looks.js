@@ -1,5 +1,6 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { activeSprite } from "../scripts/editor";
 
 Blockly.Blocks["say_message"] = {
   init: function () {
@@ -196,3 +197,26 @@ BlocklyJS.javascriptGenerator.forBlock["looks_isVisible"] = () => [
   "sprite.visible",
   BlocklyJS.Order.NONE,
 ];
+
+Blockly.Blocks["looks_costumes_menu"] = {
+  init: function () {
+    this.appendDummyInput().appendField(
+      new Blockly.FieldDropdown(() => {
+        const costumes = activeSprite.costumes;
+        return costumes.length < 1
+          ? [["No costumes.", ""]]
+          : costumes.map(i => [i.name, i.id]);
+      }),
+      "MENU",
+    );
+    this.setOutput(true, "String");
+    this.setStyle("looks_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["looks_costumes_menu"] = function (
+  block,
+  generator,
+) {
+  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+};

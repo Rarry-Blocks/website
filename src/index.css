@@ -45,6 +45,11 @@ h2,
 h3,
 input {
   color: var(--dark);
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--dark) !important;
 }
 
 body,
