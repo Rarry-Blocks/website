@@ -183,8 +183,7 @@ Blockly.Blocks["controls_stopblock"] = {
     this.setStyle("control_blocks");
   },
   updateShape_: function (newMode) {
-    const isTerminal = ["sprite", "project"].includes(newMode);
-
+    const isTerminal = newMode === "script" || newMode === "project";
     const hasNext = !!this.nextConnection;
 
     if (isTerminal && hasNext) {
