@@ -58,7 +58,7 @@ div#app {
   background-color: var(--color1);
   overscroll-behavior: none;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -126,7 +126,7 @@ input[type="file"] {
   color: var(--color1);
   cursor: pointer;
   will-change: background-color, scale;
-  transition: background-color 0.1s, scale 0.1s;
+  transition: background-color 0.15s, scale 0.15s;
 }
 
 input[type="text"],
@@ -425,6 +425,39 @@ footer {
 
 .dropdown-content button:hover {
   background-color: var(--dark-light);
+}
+
+#userTagAvatar {
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.userTagAvatarWrapper, #userTagAvatar {
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: block;
+}
+
+.userTagAvatarWrapper::after {
+  font-size: 1.2em;
+  opacity: 0;
+  inset: 0;
+  content: "✏️";
+  position: absolute;
+  display: flex;
+  place-content: center;
+  place-items: center;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.userTagAvatarWrapper:hover #userTagAvatar {
+  filter: brightness(70%);
+}
+
+.userTagAvatarWrapper:hover::after {
+  opacity: 1;
 }
 
 ::-webkit-scrollbar {

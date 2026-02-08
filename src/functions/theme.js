@@ -3,6 +3,7 @@ import * as Blockly from "blockly";
 import config from "../config";
 import { cache } from "../cache";
 import { showPopup } from "./utils";
+import { attachAvatarChanger } from "./avatar";
 
 const root = document.documentElement;
 const theme = localStorage.getItem("theme") === "dark" ?? false;
@@ -209,31 +210,31 @@ export function setupThemeButton(workspace) {
           ],
           ...(workspace
             ? [
-                [
-                  "Renderer (applies after refresh):",
-                  {
-                    type: "menu",
-                    value: localStorage.getItem("renderer"),
-                    options: [
-                      { label: "Zelos (default)", value: "custom_zelos" },
-                      { label: "Thrasos", value: "thrasos" },
-                      { label: "Geras", value: "geras" },
-                    ],
-                    onChange: value => localStorage.setItem("renderer", value),
+              [
+                "Renderer (applies after refresh):",
+                {
+                  type: "menu",
+                  value: localStorage.getItem("renderer"),
+                  options: [
+                    { label: "Zelos (default)", value: "custom_zelos" },
+                    { label: "Thrasos", value: "thrasos" },
+                    { label: "Geras", value: "geras" },
+                  ],
+                  onChange: value => localStorage.setItem("renderer", value),
+                },
+              ],
+              [
+                "Stage on left:",
+                {
+                  type: "checkbox",
+                  checked:
+                    document.documentElement.classList.contains("stageLeft"),
+                  onChange: checked => {
+                    toggleStageLeft(checked);
                   },
-                ],
-                [
-                  "Stage on left:",
-                  {
-                    type: "checkbox",
-                    checked:
-                      document.documentElement.classList.contains("stageLeft"),
-                    onChange: checked => {
-                      toggleStageLeft(checked);
-                    },
-                  },
-                ],
-              ]
+                },
+              ],
+            ]
             : []),
         ],
       })
@@ -248,11 +249,18 @@ export function setupUserTag() {
     }
 
     login.parentElement.innerHTML = `
-    <div class="userTag">
-      <img src="${config.apiUrl}/users/${user.id}/avatar" />
-      <a href="/user?id=${user.id}">${user.username}</a>
-    </div>
-  `;
+      <div class="userTag">
+        <div class="userTagAvatarWrapper">
+          <img id="userTagAvatar" src="${config.apiUrl}/users/${user.id}/avatar" />
+        </div>
+        <a href="/user?id=${user.id}">${user.username}</a>
+      </div>
+    `;
+
+    if (cache.user && cache.user.id === user.id) {
+      const img = document.getElementById("userTagAvatar");
+      attachAvatarChanger(img);
+    }
   }
 
   const login = document.getElementById("login-button");

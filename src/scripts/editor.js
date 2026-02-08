@@ -331,7 +331,7 @@ function setActiveSprite(sprite) {
   Blockly.Events.disable();
 
   const xmlText =
-    activeSprite.code || '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
+    activeSprite?.code || '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
   const xmlDom = Blockly.utils.xml.textToDom(xmlText);
   Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
 
@@ -396,7 +396,7 @@ function renderSpriteInfo() {
     const nameRow = document.createElement("div");
     nameRow.className = "name";
 
-    nameInput = createInput(activeSprite.name ?? "Sprite", newValue => {
+    nameInput = createInput(activeSprite?.name ?? "Sprite", newValue => {
       activeSprite.name = newValue;
     });
     nameInput.classList.add("sprite-name-input");
@@ -1745,7 +1745,7 @@ function createSession() {
     let _workspace,
       temp = false;
 
-    if (activeSprite.id === spriteId) {
+    if (activeSprite?.id === spriteId) {
       _workspace = workspace;
     } else {
       temp = true;
