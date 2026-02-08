@@ -21,14 +21,9 @@ if (profileDiv && identifier) {
     .then((response) => response.json())
     .then((response) => {
       profileDiv.innerHTML = `
-        <img src="${config.apiUrl}/users/${response.id}/avatar" id="profileAvatar" />
+        <img id="profileAvatar" src="${config.apiUrl}/users/${response.id}/avatar" />
         ${response.username}
       `;
-
-      if (cache.user && cache.user.id === response.id) {
-        const avatarEl = document.getElementById("profileAvatar");
-        attachAvatarChanger(avatarEl);
-      }
     })
     .catch((err) => {
       console.error(err);
