@@ -8,7 +8,8 @@ import {
   penGraphics,
   app,
   spriteManager,
-  vm
+  vm,
+  projectVariables
 } from "../scripts/editor";
 import { tweenEasing } from "./utils";
 
@@ -476,7 +477,8 @@ export function runCodeWithFunctions({
     stopped,
     getTarget,
     getTargetData,
-    spriteManager
+    spriteManager,
+    projectVariables
   };
 
   console.info('Compiling code:\n', code);
