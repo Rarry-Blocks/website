@@ -16,7 +16,7 @@ import {
   showPopup,
 } from "../functions/utils.js";
 
-import { Costume, Sprite, SpriteManager } from "../components/Sprite.js";
+import { Costume, Sound, Sprite, SpriteManager } from "../components/Sprite.js";
 import { SpriteChangeEvents } from "../functions/patches.js";
 import { registerExtension } from "../functions/extensionManager.js";
 import { runCodeWithFunctions } from "../functions/runCode.js";
@@ -32,6 +32,7 @@ import.meta.glob("../blocks/**/*.js", { eager: true });
 window.Blockly = Blockly;
 
 let currentSocket = null;
+let currentSocketPromise = null;
 let currentRoom = null;
 let amHost = false;
 let invitesEnabled = true;
@@ -210,6 +211,21 @@ function addGlobalVariable(name, emit = false) {
   }
 }
 
+export function deleteVariable(name, emit = false) {
+  if (!projectVariables[name]) return;
+
+  delete projectVariables[name];
+  workspace.refreshToolboxSelection();
+
+  if (emit && currentSocket && currentRoom) {
+    currentSocket.emit("projectUpdate", {
+      roomId: currentRoom,
+      type: "removeVariable",
+      data: name,
+    });
+  }
+}
+
 workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", () =>
   addGlobalVariable(null, true),
 );
@@ -276,6 +292,8 @@ function addSprite(id, emit = false) {
     id,
     costumes: [new Costume({ name: "default", texture })],
   });
+
+  if (!activeSprite) setActiveSprite(sprite);
 
   if (emit && currentSocket && currentRoom) {
     currentSocket.emit("projectUpdate", {
@@ -397,7 +415,19 @@ function renderSpriteInfo() {
     nameRow.className = "name";
 
     nameInput = createInput(activeSprite?.name ?? "Sprite", newValue => {
+      const oldName = activeSprite.name;
       activeSprite.name = newValue;
+
+      if (currentSocket && currentRoom && newValue !== oldName) {
+        currentSocket.emit("projectUpdate", {
+          roomId: currentRoom,
+          type: "renameSprite",
+          data: {
+            spriteId: activeSprite.id,
+            newName: newValue
+          },
+        });
+      }
     });
     nameInput.classList.add("sprite-name-input");
 
@@ -414,6 +444,8 @@ function renderSpriteInfo() {
 
     infoEl.appendChild(nameRow);
     infoEl.appendChild(infoRow);
+  } else {
+    nameInput.value = activeSprite.name;
   }
 
   updateSpriteInfoValues();
@@ -553,13 +585,13 @@ function renderCostumesList() {
       const oldName = costume.name;
       costume.name = newName;
 
-      if (currentSocket && currentRoom) {
+      if (currentSocket && currentRoom && oldName !== newName) {
         currentSocket.emit("projectUpdate", {
           roomId: currentRoom,
           type: "renameCostume",
           data: {
             spriteId: activeSprite.id,
-            oldName,
+            id: costume.id,
             newName,
           },
         });
@@ -580,11 +612,16 @@ function renderCostumesList() {
 
     const deleteBtn = createDeleteButton(() => {
       const deleted = activeSprite.costumes[index];
+      const wasCurrentCostumeDeleted = activeSprite.currentCostume === index;
+
       activeSprite.costumes.splice(index, 1);
-      if (activeSprite.costumes.length > 0) {
-        activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
-      } else {
-        activeSprite.pixiSprite.texture = PIXI.Texture.EMPTY;
+
+      if (wasCurrentCostumeDeleted) {
+        if (activeSprite.costumes.length > 0) {
+          activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
+        } else {
+          activeSprite.pixiSprite.texture = PIXI.Texture.EMPTY;
+        }
       }
       renderCostumesList();
 
@@ -594,7 +631,7 @@ function renderCostumesList() {
           type: "deleteCostume",
           data: {
             spriteId: activeSprite.id,
-            name: deleted.name,
+            id: deleted.id,
           },
         });
       }
@@ -609,6 +646,7 @@ function renderCostumesList() {
   });
 }
 
+const playingAudios = {};
 function renderSoundsList() {
   const soundsList = document.getElementById("sounds-list");
   soundsList.innerHTML = "";
@@ -629,13 +667,13 @@ function renderSoundsList() {
       const oldName = sound.name;
       sound.name = newName;
 
-      if (currentSocket && currentRoom) {
+      if (currentSocket && currentRoom && oldName !== newName) {
         currentSocket.emit("projectUpdate", {
           roomId: currentRoom,
           type: "renameSound",
           data: {
             spriteId: activeSprite.id,
-            oldName,
+            id: sound.id,
             newName,
           },
         });
@@ -656,25 +694,30 @@ function renderSoundsList() {
     }
 
     const playButton = document.createElement("img");
-    playButton.src = "icons/play.svg";
+    playButton.src = playingAudios[sound.id] ? "icons/stopAudio.svg" : "icons/play.svg";
     playButton.className = "button";
     playButton.draggable = false;
+
     playButton.onclick = () => {
-      if (playButton.audio) {
-        playButton.audio.pause();
-        playButton.audio.currentTime = 0;
+      if (playingAudios[sound.id]) {
+        playingAudios[sound.id].pause();
+        playingAudios[sound.id].currentTime = 0;
+        delete playingAudios[sound.id];
         playButton.src = "icons/play.svg";
-        playButton.audio = null;
       } else {
+        for (const key in playingAudios) {
+          playingAudios[key].pause();
+          playingAudios[key].currentTime = 0;
+        }
+        Object.keys(playingAudios).forEach(k => delete playingAudios[k]);
+
         const audio = new Audio(sound.dataURL);
-        playButton.audio = audio;
+        playingAudios[sound.id] = audio;
         playButton.src = "icons/stopAudio.svg";
 
         audio.addEventListener("ended", () => {
-          if (playButton.audio === audio) {
-            playButton.src = "icons/play.svg";
-            playButton.audio = null;
-          }
+          delete playingAudios[sound.id];
+          playButton.src = "icons/play.svg";
         });
 
         audio.play();
@@ -682,22 +725,23 @@ function renderSoundsList() {
     };
 
     const deleteBtn = createDeleteButton(() => {
+      const deleted = activeSprite.sounds[index];
       activeSprite.sounds.splice(index, 1);
 
-      if (playButton.audio) {
-        playButton.audio.pause();
-        playButton.audio.currentTime = 0;
-        playButton.audio = null;
+      if (playingAudios[sound.id]) {
+        playingAudios[sound.id].pause();
+        delete playingAudios[sound.id];
       }
+
       renderSoundsList();
 
-      if (currentSocket && currentRoom) {
+      if (currentSocket && currentRoom && deleted) {
         currentSocket.emit("projectUpdate", {
           roomId: currentRoom,
           type: "deleteSound",
           data: {
             spriteId: activeSprite.id,
-            name: deleted.name,
+            id: deleted.id
           },
         });
       }
@@ -987,7 +1031,7 @@ tabButtons.forEach(button => {
   });
 });
 
-export async function getProject() {
+function getProject() {
   return {
     sprites: spriteManager.toJSON(),
     extensions: activeExtensions,
@@ -1291,21 +1335,27 @@ document.getElementById("costume-upload").addEventListener("change", e => {
       uniqueName = `${baseName}_${counter}`;
     }
 
-    activeSprite.costumes.push(new Costume({ name: uniqueName, texture }));
+    const newCostume = new Costume({ name: uniqueName, texture })
+    activeSprite.costumes.push(newCostume);
 
     if (activeSprite.pixiSprite.texture === PIXI.Texture.EMPTY) {
       activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
     }
 
     if (currentSocket && currentRoom) {
+      const payload = {
+        spriteId: activeSprite.id,
+        name: newCostume.name,
+        id: newCostume.id,
+        texture: reader.result,
+      };
+
+      const compressedData = pako.deflate(JSON.stringify(payload));
+
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
         type: "addCostume",
-        data: {
-          spriteId: activeSprite.id,
-          name: uniqueName,
-          texture: reader.result,
-        },
+        data: compressedData,
       });
     }
 
@@ -1328,19 +1378,6 @@ document.getElementById("sound-upload").addEventListener("change", async e => {
     let dataURL = reader.result;
     dataURL = await compressAudio(dataURL);
 
-    if (currentSocket && currentRoom) {
-      const base64 = dataURL.substring(dataURL.indexOf(",") + 1);
-      const estimatedBytes = base64.length * 0.75;
-      if (estimatedBytes >= MAX_HTTP_BUFFER) {
-        showNotification({
-          message:
-            "❌ This audio file may be too large to upload. Try compressing it to avoid this.",
-        });
-        e.target.value = "";
-        return;
-      }
-    }
-
     let baseName = file.name.split(".")[0];
     let uniqueName = baseName;
     let counter = 1;
@@ -1352,20 +1389,23 @@ document.getElementById("sound-upload").addEventListener("change", async e => {
       uniqueName = `${baseName}_${counter}`;
     }
 
-    activeSprite.sounds.push({
-      name: uniqueName,
-      dataURL,
-    });
+    const newSound = new Sound({ name: uniqueName, dataURL });
+    activeSprite.sounds.push(newSound);
 
     if (currentSocket && currentRoom) {
+      const payload = {
+        spriteId: activeSprite.id,
+        name: newSound.name,
+        id: newSound.id,
+        dataURL,
+      };
+
+      const compressedData = pako.deflate(JSON.stringify(payload));
+
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
         type: "addSound",
-        data: {
-          spriteId: activeSprite.id,
-          name: uniqueName,
-          dataURL,
-        },
+        data: compressedData,
       });
     }
 
@@ -1617,61 +1657,89 @@ function getToken() {
   return localStorage.getItem("tooken");
 }
 
-function serializeWorkspace(workspace) {
-  const xmlDom = Blockly.Xml.workspaceToDom(workspace, true);
-  return Blockly.Xml.domToText(xmlDom);
-}
-
 function createSession() {
-  if (currentSocket && currentSocket.connected) return currentSocket;
+  if (currentSocketPromise) return currentSocketPromise;
 
   currentSocket = io(`${config.apiUrl}/live`);
 
-  currentSocket.on("connect", () => {
-    console.log("connected to liveshare");
-  });
+  currentSocketPromise = new Promise((resolve, reject) => {
+    currentSocket.on("connect", () => {
+      console.log("connected to liveshare");
+      resolve(currentSocket);
+    });
 
-  currentSocket.on("disconnect", () => {
-    console.log("disconnected from liveshare");
+    currentSocket.on("connect_error", (err) => {
+      console.error("Liveshare connection error:", err);
+      currentSocketPromise = null;
+      reject(err);
+    });
 
-    currentSocket = null;
-    currentRoom = null;
-    amHost = false;
-    connectedUsers = [];
-
-    updateUsersList();
+    currentSocket.on("disconnect", () => {
+      console.log("disconnected from liveshare");
+      currentSocket = null;
+      currentSocketPromise = null;
+    });
   });
 
   currentSocket.on("userList", users => {
     connectedUsers = users;
     updateUsersList();
   });
-
-  currentSocket.on("userJoined", async ({ username, socketId }) => {
+  currentSocket.on("userJoined", ({ username, socketId }) => {
     console.log(`${username} joined to room`);
     if (amHost) {
+      const compressedData = pako.deflate(JSON.stringify(getProject()));
       currentSocket.emit("sendProjectData", {
         to: socketId,
-        data: await getProject(),
+        data: compressedData,
       });
     }
     updateUsersList();
   });
 
+  function optionalDecompressData(data) {
+    if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
+      try {
+        const decompressed = pako.inflate(new Uint8Array(data), { to: 'string' });
+        return JSON.parse(decompressed);
+      } catch (err) {
+        throw new Error("Failed to decompress data: " + err);
+      }
+    }
+    return data;
+  }
+
   currentSocket.on("projectData", async data => {
     console.log("received project data from host");
+
+    data = optionalDecompressData(data);
     await handleProjectData(data);
   });
 
   currentSocket.on("projectUpdate", ({ type, data }) => {
+    data = optionalDecompressData(data);
+
     switch (type) {
       case "addVariable": {
         projectVariables[data] = 0;
         break;
       }
+      case "removeVariable": {
+        deleteVariable(data, false);
+        break;
+      }
       case "addSprite": {
         addSprite(data, false);
         renderSpritesList(true);
+        break;
+      }
+      case "renameSprite": {
+        const { spriteId, newName } = data;
+        const sprite = spriteManager.get(spriteId);
+        if (sprite) {
+          sprite.name = newName;
+          renderSpriteInfo();
+        }
         break;
       }
       case "removeSprite": {
@@ -1686,45 +1754,74 @@ function createSession() {
       case "addCostume": {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
+
         const texture = PIXI.Texture.from(data.texture);
         target.costumes.push(new Costume({ name: data.name, texture, id: data.id }));
+
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
       }
       case "addSound": {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        target.sounds.push({ name: data.name, dataURL: data.dataURL });
+
+        target.sounds.push(new Sound({
+          name: data.name,
+          dataURL: data.dataURL,
+          id: data.id
+        }));
+
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
       }
       case "renameCostume": {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        const costume = target.costumes.find(c => c.name === data.oldName);
+
+        const costume = target.costumes.find(c => c.id === data.id);
         if (costume) costume.name = data.newName;
+
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
       }
       case "deleteCostume": {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        target.costumes = target.costumes.filter(c => c.name !== data.name);
+
+        const index = target.costumes.findIndex(c => c.id === data.id);
+        if (index === -1) return;
+
+        const wasCurrentCostumeDeleted = target.currentCostume === index;
+
+        target.costumes.splice(index, 1);
+
+        if (wasCurrentCostumeDeleted) {
+          if (target.costumes.length > 0) {
+            target.pixiSprite.texture = target.costumes[0].texture;
+          } else {
+            target.pixiSprite.texture = PIXI.Texture.EMPTY;
+          }
+        }
+
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
       }
       case "renameSound": {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        const sound = target.sounds.find(s => s.name === data.oldName);
+
+        const sound = target.sounds.find(s => s.id === data.id);
         if (sound) sound.name = data.newName;
+
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
       }
       case "deleteSound": {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
-        target.sounds = target.sounds.filter(s => s.name !== data.name);
+
+        target.sounds = target.sounds.filter(s => s.id !== data.id);
+
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
       }
@@ -1797,7 +1894,7 @@ function createSession() {
     showNotification({ message: "You were kicked from the room" });
   });
 
-  return currentSocket;
+  return currentSocketPromise;
 }
 
 function updateUsersList() {
@@ -1823,7 +1920,7 @@ function updateUsersList() {
           <img src="${config.apiUrl}/users/${u.id}/avatar">
           <b>${u.isHost ? "👑 " : ""}${u.username}</b>
           ${canKick
-          ? `<button class="kick-btn danger" data-id="${u.id}">
+          ? `<button class="kick-button danger" data-id="${u.id}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>`
           : ""
@@ -1838,7 +1935,7 @@ function updateUsersList() {
   `;
 
   if (amHost) {
-    container.querySelectorAll(".kick-btn").forEach(btn =>
+    container.querySelectorAll(".kick-button").forEach(btn =>
       btn.addEventListener("click", e => {
         const targetUserId = e.target.dataset.id;
         if (confirm("Kick this user?"))
@@ -1851,6 +1948,8 @@ function updateUsersList() {
 const liveShare = document.getElementById("liveshare-button");
 liveShare.addEventListener("click", async () => {
   let roomExisted = currentSocket !== null && currentRoom !== null;
+
+  await createSession();
 
   function showRoomPopup() {
     const shareUrl =
@@ -1871,7 +1970,7 @@ liveShare.addEventListener("click", async () => {
             });
           },
         }
-        : invitesLabel,
+        : null,
       {
         type: "button",
         className: "primary",
@@ -1904,7 +2003,7 @@ liveShare.addEventListener("click", async () => {
           amHost = false;
         },
       },
-    ];
+    ].filter(Boolean);
 
     const rows = [
       [
@@ -1925,27 +2024,28 @@ liveShare.addEventListener("click", async () => {
     updateUsersList();
   }
 
-  createSession();
-
   if (!roomExisted) {
     const token = getToken();
     if (!token) {
       showNotification({
         message: "You must be logged in to create a shared room",
       });
-    } else {
-      currentSocket.emit("createRoom", { token }, res => {
-        if (res?.error) {
-          console.error(res.error);
-          showNotification({ message: `Error: ${res.error}` });
-          return;
-        }
-        amHost = true;
-        currentRoom = res.roomId;
-        showRoomPopup();
-      });
+      return;
     }
-  } else showRoomPopup();
+
+    currentSocket.emit("createRoom", { token }, (res) => {
+      if (res?.error) {
+        console.error(res.error);
+        showNotification({ message: `Error: ${res.error}` });
+        return;
+      }
+      amHost = true;
+      currentRoom = res.roomId;
+      showRoomPopup();
+    });
+  } else {
+    showRoomPopup();
+  }
 });
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -1956,12 +2056,14 @@ if (roomId) {
     showNotification({
       message: "You must be logged in to join a shared room",
     });
+    setActiveSprite(addSprite());
   } else {
     createSession();
 
     currentSocket.emit("joinRoom", { token, roomId }, res => {
       if (res?.error) {
         showNotification({ message: `Error: ${res.error}` });
+        setActiveSprite(addSprite());
         return;
       }
 

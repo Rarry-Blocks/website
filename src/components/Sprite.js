@@ -42,6 +42,40 @@ export class Costume {
   }
 }
 
+export class Sound {
+  constructor({ id, name, dataURL }) {
+    this.id = id ?? `sound-${crypto.randomUUID()}`;
+    this.name = name;
+    this.dataURL = dataURL;
+  }
+
+  toJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      dataURL: this.dataURL,
+    };
+  }
+
+  static fromJSON(json) {
+    if (!json || typeof json !== "object") {
+      throw new Error("Invalid sound JSON");
+    }
+
+    const source = json.dataURL ?? json.data ?? json.path;
+
+    if (typeof source !== "string") {
+      throw new Error(`Sound "${json.name}" is missing source`);
+    }
+
+    return new Sound({
+      id: json.id ?? `sound-${crypto.randomUUID()}`,
+      name: json.name,
+      dataURL: source,
+    });
+  }
+}
+
 function assertValidSprite(sprite, index) {
   if (!sprite || typeof sprite !== "object") {
     throw new Error(`Sprite #${index} is not an object`);
@@ -92,7 +126,9 @@ export class Sprite {
     this.costumes = costumes.map(c =>
       c instanceof Costume ? c : new Costume(c)
     );
-    this.sounds = sounds;
+    this.sounds = sounds.map(s =>
+      s instanceof Sound ? s : new Sound(s)
+    );
     this.currentCostume = currentCostume;
 
     this.pixiSprite = new PIXI.Sprite(
@@ -132,6 +168,7 @@ export class Sprite {
 
   toJSON() {
     const costumes = this.costumes.map(c => c?.toJSON());
+const sounds = this.sounds.map(s => s?.toJSON());
 
     return {
       id: this.id,
@@ -143,12 +180,13 @@ export class Sprite {
       rotation: this.pixiSprite.rotation,
       currentCostume: this.currentCostume,
       costumes,
-      sounds: this.sounds,
+      sounds,
     };
   }
 
   static fromJSON(json) {
-    const costumes = json.costumes.map(Costume.fromJSON);
+    const costumes = (json.costumes || []).map(Costume.fromJSON);
+    const sounds = (json.sounds || []).map(Sound.fromJSON);
 
     return new Sprite({
       id: json.id ?? `sprite-${crypto.randomUUID()}`,
@@ -160,7 +198,7 @@ export class Sprite {
       rotation: json.rotation ?? 0,
       currentCostume: json.currentCostume ?? 0,
       costumes,
-      sounds: json.sounds ?? []
+      sounds
     });
   }
 

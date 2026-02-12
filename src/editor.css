@@ -369,8 +369,9 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
 }
 
 #room-users div {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  flex-direction: row;
+  place-items: center;
   gap: 0.3rem;
 }
 
@@ -378,6 +379,11 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   width: 2rem;
   height: 2rem;
   border-radius: 20%;
+}
+
+.kick-button {
+  padding: 0.4rem;
+  font-size: 1rem;
 }
 
 .smallLabel {

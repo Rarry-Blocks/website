@@ -146,8 +146,7 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  justify-content: center;
-  align-items: center;
+  place-content: center;
   gap: 0.3rem;
   background-color: var(--dark);
 }
@@ -221,10 +220,6 @@ button.large {
 
 html.dark header button {
   color: var(--color1);
-}
-
-html:not(.removeIcons) button:has(i:not(.stay)) {
-  padding-left: 0.7rem;
 }
 
 html.removeIcons button i:not(.stay) {
@@ -302,11 +297,12 @@ html.removeIcons button i:not(.stay) {
 
 .popup-row {
   flex-direction: row;
-  align-items: center;
+  place-items: center;
 }
 
 .popup-close {
   margin-left: auto;
+  place-content: center;
   font-size: 1.2rem;
   padding: 0.5rem;
 }

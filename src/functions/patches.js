@@ -15,7 +15,7 @@ Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
   Blockly.Blocks[type].init = (function (original) {
     return function () {
       original.call(this);
-      this.setColour("#FFAB19");
+      this.setStyle("control_blocks");
     };
   })(Blockly.Blocks[type].init);
 });
@@ -23,7 +23,7 @@ Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 Blockly.Blocks["controls_forEach"].init = (function (original) {
   return function () {
     original.call(this);
-    this.setColour("#e35340");
+    this.setStyle("list_blocks");
   };
 })(Blockly.Blocks["controls_forEach"].init);
 
