@@ -250,7 +250,7 @@ export async function registerExtension(extClass) {
         ([k, v]) => `${JSON.stringify(k)}:${v}`
       );
       const args = `{${argsParts.join(",")}}`;
-      const callCode = `extensions["${fullType}"](${args},Thread)`;
+      const callCode = `extensions["${fullType}"](${args})`;
 
       const finalCode = def.promise ? `await ${callCode}` : callCode;
 
