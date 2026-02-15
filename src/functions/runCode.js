@@ -12,6 +12,7 @@ import {
   projectVariables
 } from "../scripts/editor";
 import { tweenEasing } from "./utils";
+import { extensions } from "./extensionManager";
 
 const BUBBLE_PADDING = 10;
 const BUBBLE_TAIL_HEIGHT = 15;
@@ -478,7 +479,8 @@ export function runCodeWithFunctions({
     getTarget,
     getTargetData,
     spriteManager,
-    projectVariables
+    projectVariables,
+    extensions
   };
 
   console.info('Compiling code:\n', code);
