@@ -4,15 +4,15 @@
     <loc>https://rarry.vercel.app/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/editor</loc>
+    <loc>https://rarry.vercel.app/editor/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/login</loc>
+    <loc>https://rarry.vercel.app/login/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/signup</loc>
+    <loc>https://rarry.vercel.app/signup/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/user</loc>
+    <loc>https://rarry.vercel.app/user/</loc>
   </url>
 </urlset>
