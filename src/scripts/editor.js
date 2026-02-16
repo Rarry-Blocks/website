@@ -7,6 +7,7 @@ import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
 
+import Toolbox from "../components/Toolbox.js";
 import CustomRenderer from "../functions/render.js";
 import { setupThemeButton } from "../functions/theme.js";
 import {
@@ -103,6 +104,7 @@ if (!renderer) {
 
 const blocklyDiv = document.getElementById("blocklyDiv");
 const toolbox = document.getElementById("toolbox");
+toolbox.innerHTML = Toolbox;
 export const workspace = Blockly.inject(blocklyDiv, {
   toolbox: toolbox,
   scrollbars: true,
@@ -1509,12 +1511,11 @@ function addExtension(id, emit = false) {
 
   const parser = new DOMParser();
   const extDoc = parser.parseFromString(extension.xml, "text/xml");
-  const coreDom = document.getElementById("toolbox");
-
+  
   const category = extDoc.querySelector("category");
-  coreDom.appendChild(category.cloneNode(true));
+  toolbox.appendChild(category.cloneNode(true));
 
-  workspace.updateToolbox(coreDom);
+  workspace.updateToolbox(toolbox);
 
   activeExtensions.push(id);
   document.querySelector(`button[data-extension-id="${id}"]`).disabled = true;
