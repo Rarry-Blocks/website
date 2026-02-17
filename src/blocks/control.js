@@ -1,6 +1,6 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
-import { activeSprite, spriteManager } from "../scripts/editor";
+import { spriteManager } from "../scripts/editor";
 
 Blockly.Blocks["wait_one_frame"] = {
   init: function () {
@@ -375,4 +375,22 @@ BlocklyJS.javascriptGenerator.forBlock["controls_as_sprite"] = function (
   const code = generator.statementToCode(block, "DO");
 
   return `vm.execute(function* () {\n${code}}, spriteManager.get(${target}));\n`;
+};
+
+Blockly.Blocks["controls_forever"] = {
+  init: function () {
+    this.appendDummyInput().appendField("forever");
+    this.appendStatementInput("DO").setCheck("default");
+    this.setPreviousStatement(true, "default");
+    this.setStyle("control_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_forever"] = function (
+  block,
+  generator,
+) {
+  const branch = generator.statementToCode(block, "DO");
+  const loopTrap = generator.addLoopTrap(branch, block);
+  return `while (true) {\n${loopTrap}}\n`;
 };

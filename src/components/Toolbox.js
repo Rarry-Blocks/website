@@ -15,6 +15,9 @@ function shadowNumber(value = 10) {
 function shadowText(value = "ABC") {
   return `<shadow type="text"><field name="TEXT">${value}</field></shadow>`;
 }
+function shadowBoolean(value = true) {
+  return `<shadow type="logic_boolean"><field name="BOOL">${value ? "TRUE" : "FALSE"}</field></shadow>`;
+}
 
 const Toolbox = `
   <category name="Events" colour="#ffc400">
@@ -44,7 +47,12 @@ const Toolbox = `
         ${shadowNumber(3)}
       </value>
     </block>
-    ${block("controls_whileUntil")}
+    ${block("controls_forever")}
+    <block type="controls_whileUntil">
+      <value name="BOOL">
+        ${shadowBoolean(true)}
+      </value>
+    </block>
     ${block("controls_flow_statements")}
     ${block("controls_stopblock")}
     <block type="controls_stop_sprite">
@@ -134,7 +142,7 @@ const Toolbox = `
   <category name="Looks" colour="#9966FF">
     <block type="looks_setVisibility_sprite">
       <value name="VISIBLE">
-        ${shadow("logic_boolean")}
+        ${shadowBoolean(true)}
       </value>
     </block>
     ${block("looks_isVisible")}

@@ -1,4 +1,6 @@
 import * as Blockly from "blockly";
+import { ConnectionType } from "blockly/core";
+const svgPaths = Blockly.utils.svgPaths;
 
 class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   init() {
@@ -11,22 +13,54 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   makeBowl() {
     const maxW = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
     const maxH = maxW * 2;
-    const roundedCopy = this.ROUNDED;
 
-    function makeMainPath(blockHeight, up, right) {
-      const extra = blockHeight > maxH ? blockHeight - maxH : 0;
-      const h_ = Math.min(blockHeight, maxH);
-      const h = h_ + extra;
-      const radius = h / 2;
-      const radiusH = Math.min(h_ / 2, maxH);
+    function makeRoundPath(
+      blockHeight,
+      up,
+      right,
+    ) {
+      const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
+      const height = blockHeight > maxH ? maxH : blockHeight;
+      const radius = height / 2;
+      const sweep = right === up ? '0' : '1';
+      return (
+        svgPaths.arc(
+          'a',
+          '0 0,' + sweep,
+          radius,
+          svgPaths.point((right ? 1 : -1) * radius, (up ? -1 : 1) * radius),
+        ) +
+        svgPaths.lineOnAxis('v', (up ? -1 : 1) * remainingHeight) +
+        svgPaths.arc(
+          'a',
+          '0 0,' + sweep,
+          radius,
+          svgPaths.point((right ? -1 : 1) * radius, (up ? -1 : 1) * radius),
+        )
+      );
+    }
+
+    function makeMainPath(
+      blockHeight,
+      up,
+      right,
+    ) {
+      const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
+      const height = blockHeight > maxH ? maxH : blockHeight;
+      const radius = height / 2;
       const dirR = right ? 1 : -1;
       const dirU = up ? -1 : 1;
 
-      return `
-        h ${radiusH * dirR}
-        q ${((h_ - extra) / 4) * -dirR} ${radius * dirU} 0 ${h * dirU}
-        h ${radiusH * -dirR}
-      `;
+      const totalHeight = height + remainingHeight;
+
+      return (
+        svgPaths.lineOnAxis('h', radius * dirR) +
+        svgPaths.curve('q', [
+          svgPaths.point((radius / 2) * -dirR, dirU * (totalHeight / 2)),
+          svgPaths.point(0, totalHeight * dirU),
+        ]) +
+        svgPaths.lineOnAxis('h', radius * -dirR)
+      );
     }
 
     return {
@@ -52,10 +86,10 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
         return makeMainPath(h, true, false);
       },
       pathRightDown(h) {
-        return roundedCopy.pathRightDown(h);
+        return makeRoundPath(h, false, true);
       },
       pathRightUp(h) {
-        return roundedCopy.pathRightUp(h);
+        return makeRoundPath(h, false, true);
       },
     };
   }
@@ -64,10 +98,10 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     const maxWidth = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
     const maxHeight = maxWidth * 2;
 
-    function makeMainPath(blockHeight, up, right) {
-      const extra = blockHeight > maxHeight ? blockHeight - maxHeight : 0;
-      const height = blockHeight > maxHeight ? maxHeight : blockHeight;
-      const radius = height / 8;
+    function makeMainPath(height, up, right) {
+      const extra = height > maxHeight ? height - maxHeight : 0;
+      const _height = height > maxHeight ? maxHeight : height;
+      const radius = _height / 8;
 
       const dirRight = right ? 1 : -1;
       const dirUp = up ? -1 : 1;
@@ -75,17 +109,35 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       const radiusW = radius * dirRight;
       const radiusH = radius * dirUp;
 
-      return `
-        h ${radiusW}
-        q ${radiusW} 0 ${radiusW} ${radiusH}
-        q 0 ${radiusH} ${radiusW} ${radiusH}
-        q ${radiusW} 0 ${radiusW} ${radiusH}
-        v ${(extra + height - radius * 6) * dirUp}
-        q 0 ${radiusH} ${-radiusW} ${radiusH}
-        q ${-radiusW} 0 ${-radiusW} ${radiusH}
-        q 0 ${radiusH} ${-radiusW} ${radiusH}
-        h ${-radiusW}
-      `;
+      return (
+        svgPaths.lineOnAxis('h', radiusW) +
+        svgPaths.curve('q', [
+          svgPaths.point(radiusW, 0),
+          svgPaths.point(radiusW, radiusH),
+        ]) +
+        svgPaths.curve('q', [
+          svgPaths.point(0, radiusH),
+          svgPaths.point(radiusW, radiusH),
+        ]) +
+        svgPaths.curve('q', [
+          svgPaths.point(radiusW, 0),
+          svgPaths.point(radiusW, radiusH),
+        ]) +
+        svgPaths.lineOnAxis('v', (extra + _height - radius * 6) * dirUp) +
+        svgPaths.curve('q', [
+          svgPaths.point(0, radiusH),
+          svgPaths.point(-radiusW, radiusH),
+        ]) +
+        svgPaths.curve('q', [
+          svgPaths.point(-radiusW, 0),
+          svgPaths.point(-radiusW, radiusH),
+        ]) +
+        svgPaths.curve('q', [
+          svgPaths.point(0, radiusH),
+          svgPaths.point(-radiusW, radiusH),
+        ]) +
+        svgPaths.lineOnAxis('h', -radiusW)
+      );
     }
 
     return {
