@@ -772,7 +772,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
     .filter(Boolean);
 
   const body = BlocklyJS.javascriptGenerator.statementToCode(block, "BODY");
-  return `MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) => {\n${body}};\n`;
+  return `MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) {\n${body}};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (

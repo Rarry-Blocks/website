@@ -444,6 +444,7 @@ export function runCodeWithFunctions({
     if (data.currentBubble) data.currentBubble.visible = bool;
   }
 
+  const MyFunctions = {};
   const VM_FUNCTIONS = {
     registerEvent,
     triggerCustomEvent,
@@ -480,7 +481,8 @@ export function runCodeWithFunctions({
     getTargetData,
     spriteManager,
     projectVariables,
-    extensions
+    extensions,
+    MyFunctions
   };
 
   console.info('Compiling code:\n', code);
