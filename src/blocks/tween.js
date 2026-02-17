@@ -69,9 +69,7 @@ BlocklyJS.javascriptGenerator.forBlock["tween_block"] = function (block, generat
     generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) ||
     "1";
   const waitMode = block.getFieldValue("WAIT_MODE");
-
-  let branch = BlocklyJS.javascriptGenerator.statementToCode(block, "DO");
-  branch = BlocklyJS.javascriptGenerator.addLoopTrap(branch, block);
+  const branch = BlocklyJS.javascriptGenerator.statementToCode(block, "DO");
 
   const code = `yield* startTween({
   from: ${from},
@@ -79,7 +77,7 @@ BlocklyJS.javascriptGenerator.forBlock["tween_block"] = function (block, generat
   duration: ${duration},
   easing: "${easingMode + easingType}",
   wait: ${waitMode === "WAIT"},
-  onUpdate: function* (tweenValue) => {
+  onUpdate: function (tweenValue) {
     ${branch}  }
 });\n`;
 
@@ -158,21 +156,19 @@ BlocklyJS.javascriptGenerator.forBlock["tween_sprite_property"] = function (
     fromGetter = "getSpriteScale()";
     setter = `setSize(tweenValue, false)`;
   } else if (prop === "angle") {
-    fromGetter = `sprite.angle`;
+    fromGetter = `getTarget().angle`;
     setter = `setAngle(tweenValue, false)`;
   } else {
-    fromGetter = `sprite["${prop}"]`;
-    setter = `sprite["${prop}"] = tweenValue`;
+    fromGetter = `getTarget().${prop}`;
+    setter = `getTarget().${prop} = tweenValue`;
   }
-
-  setter = generator.addLoopTrap(setter, block);
 
   const code = `yield* startTween({
   from: ${fromGetter},
   to: ${to},
   duration: ${duration},
   easing: "${easingMode + easingType}",
-  onUpdate: function* (tweenValue) => {
+  onUpdate: function (tweenValue) {
     ${setter};
   }
 });\n`;

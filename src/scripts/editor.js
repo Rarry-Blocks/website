@@ -26,7 +26,7 @@ import builtInExtensions from "../functions/builtInExtensions.js";
 import config from "../config";
 import { VM } from "../components/VM.js";
 
-BlocklyJS.javascriptGenerator.addReservedWords([...config.reservedWords.all].join(","));
+BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
