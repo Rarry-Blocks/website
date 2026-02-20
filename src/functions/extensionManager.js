@@ -119,6 +119,10 @@ export async function registerExtension(extClass) {
       console.warn("Skipped registration of block with no ID");
       return;
     }
+    if (typeof blockDef !== "object") {
+      console.warn("Invalid block definition:", blockDef);
+      return;
+    }
 
     const blockType = `${id}_${blockDef.id}`;
     blockDefs[blockType] = blockDef;
@@ -147,9 +151,9 @@ export async function registerExtension(extClass) {
         if (blockDef.cloneOnDrag === true)
           this.setDragStrategy(new DuplicateOnDrag(this));
 
-        this.setColour(blockDef?.color || category.color);
+        this.setColour(blockDef.color || category.color);
 
-        this.setInputsInline(true);
+        this.setInputsInline(Boolean(blockDef.inlineInputs ?? false));
       },
     };
 

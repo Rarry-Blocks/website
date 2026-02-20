@@ -101,16 +101,18 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     function makeMainPath(height, up, right) {
       const extra = height > maxHeight ? height - maxHeight : 0;
       const _height = height > maxHeight ? maxHeight : height;
-      const radius = _height / 8;
+      const radius = _height / 10;
+      const widthUnit = _height / 8;
 
       const dirRight = right ? 1 : -1;
       const dirUp = up ? -1 : 1;
 
       const radiusW = radius * dirRight;
       const radiusH = radius * dirUp;
+      const widthW = widthUnit * dirRight;
 
       return (
-        svgPaths.lineOnAxis('h', radiusW) +
+        svgPaths.lineOnAxis('h', widthW) +
         svgPaths.curve('q', [
           svgPaths.point(radiusW, 0),
           svgPaths.point(radiusW, radiusH),
@@ -136,7 +138,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
           svgPaths.point(0, radiusH),
           svgPaths.point(-radiusW, radiusH),
         ]) +
-        svgPaths.lineOnAxis('h', -radiusW)
+        svgPaths.lineOnAxis('h', -widthW)
       );
     }
 

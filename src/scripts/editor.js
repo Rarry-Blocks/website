@@ -182,7 +182,7 @@ function makeUniqueName(base) {
   let name = base;
   let count = 0;
 
-  while (name in projectVariables || config.reservedWords.all.has(name)) {
+  while (name in projectVariables || config.reservedWords.all.includes(name)) {
     count++;
     name = `${base}${count}`;
   }
@@ -214,7 +214,7 @@ function addGlobalVariable(name, emit = false) {
 }
 
 export function deleteVariable(name, emit = false) {
-  if (!projectVariables[name]) return;
+  if (!Object.hasOwn(projectVariables, name)) return;
 
   delete projectVariables[name];
   workspace.refreshToolboxSelection();

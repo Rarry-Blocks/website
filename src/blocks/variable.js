@@ -19,11 +19,11 @@ Blockly.Blocks["get_global_var"] = {
     this.setStyle("variable_blocks");
     this.customContextMenu = function (options) {
       options.push({
-        text: `Delete "${varName}" variable`,
+        text: `Delete this variable`,
         enabled: true,
         callback: () => {
           const varName = this.getFieldValue("VAR");
-          if (varName) deleteVariable(varName, true);
+          if (typeof varName === "string") deleteVariable(varName, true);
         },
       });
     };
