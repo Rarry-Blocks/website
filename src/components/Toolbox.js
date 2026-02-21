@@ -296,9 +296,7 @@ const Toolbox = `
   </category>
 
   <category name="Lists" colour="#e35340">
-    <block type="lists_create_with">
-      <mutation items="2"></mutation>
-    </block>
+    ${block("lists_extendable")}
     <block type="lists_repeat">
       <value name="NUM">
         ${shadowNumber(5)}

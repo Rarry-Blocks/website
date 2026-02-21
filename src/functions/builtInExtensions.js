@@ -58,9 +58,7 @@ export default [
     id: "sets",
     name: "Sets",
     xml: `<category name="Sets" colour="#2cc2a9">
-        <block type="sets_create_with">
-          <mutation items="2"></mutation>
-        </block>
+        <block type="sets_create_extendable"></block>
         <sep gap="50"></sep>
         <block type="sets_size"></block>
         <block type="sets_isEmpty"></block>

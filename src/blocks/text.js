@@ -27,20 +27,14 @@ Blockly.Blocks["text_join_extendable"] = {
   },
 
   updateShape_: function () {
-    if (!this.getInput("LABEL")) {
-      this.appendDummyInput("LABEL").appendField("join");
-    }
-
-    if (this.getInput("DECREASE")) {
-      this.removeInput("DECREASE");
-    }
-
-    if (this.getInput("INCREASE")) {
-      this.removeInput("INCREASE");
+    if (this.getInput("ARROWS")) {
+      this.removeInput("ARROWS");
     }
 
     for (let i = 0; i < this.itemCount_; i++) {
-      if (!this.getInput("ADD" + i)) {
+      let input = this.getInput("ADD" + i);
+
+      if (!input) {
         const shadow = document.createElement("shadow");
         shadow.setAttribute("type", "text");
 
@@ -49,32 +43,42 @@ Blockly.Blocks["text_join_extendable"] = {
         field.textContent = this.messageList[i] || "..";
         shadow.append(field);
 
-        this.appendValueInput("ADD" + i).connection.setShadowDom(shadow);
+        input = this.appendValueInput("ADD" + i);
+        input.setAlign(Blockly.inputs.Align.RIGHT);
+        input.connection.setShadowDom(shadow);
+      }
+
+      if (i === 0) {
+        if (!input.fieldRow.length) {
+          input.appendField("join");
+        }
       }
     }
+
     for (let i = this.itemCount_; this.getInput("ADD" + i); i++) {
       this.removeInput("ADD" + i);
     }
 
-    this.appendDummyInput("DECREASE").appendField(
-      new Blockly.FieldImage(
-        "/icons/caretLeft.svg",
-        18,
-        25,
-        "add an input",
-        this.decrease_.bind(this),
-      ),
-    );
-
-    this.appendDummyInput("INCREASE").appendField(
-      new Blockly.FieldImage(
-        "/icons/caretRight.svg",
-        18,
-        25,
-        "remove an input",
-        this.increase_.bind(this),
-      ),
-    );
+    this.appendDummyInput("ARROWS")
+      .setAlign(Blockly.inputs.Align.RIGHT)
+      .appendField(
+        new Blockly.FieldImage(
+          "/icons/caretLeft.svg",
+          18,
+          25,
+          "remove an input",
+          this.decrease_.bind(this),
+        ),
+      )
+      .appendField(
+        new Blockly.FieldImage(
+          "/icons/caretRight.svg",
+          18,
+          25,
+          "add an input",
+          this.increase_.bind(this),
+        ),
+      );
   },
 
   increase_: function () {
@@ -94,7 +98,7 @@ BlocklyJS.javascriptGenerator.forBlock["text_join_extendable"] = function (block
   const parts = [];
 
   for (let i = 0; i < block.itemCount_; i++) {
-    const value = generator.valueToCode(block, "ADD" + i, generator.ORDER_NONE) || "''";
+    const value = generator.valueToCode(block, "ADD" + i, BlocklyJS.Order.NONE) || "''";
     parts.push(value);
   }
 
@@ -104,6 +108,6 @@ BlocklyJS.javascriptGenerator.forBlock["text_join_extendable"] = function (block
   } else {
     code = `[${parts.join(", ")}].join("")`
   }
-  
+
   return [code, BlocklyJS.Order.NONE];
 };
