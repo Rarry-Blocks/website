@@ -204,7 +204,7 @@ Blockly.Blocks["looks_costumes_menu"] = {
       new Blockly.FieldDropdown(() => {
         const costumes = activeSprite.costumes;
         return costumes.length < 1
-          ? [["No costumes.", ""]]
+          ? [["...", ""]]
           : costumes.map(i => [i.name, i.id]);
       }),
       "MENU",

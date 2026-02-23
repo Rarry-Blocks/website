@@ -125,7 +125,7 @@ export function runCodeWithFunctions({
     sprite.x += Math.cos(a) * steps;
     sprite.y += Math.sin(a) * steps;
   }
-
+  
   function getMousePosition(menu) {
     const mouse = renderer.events.pointer.global;
     if (menu === "x") return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
@@ -317,30 +317,35 @@ export function runCodeWithFunctions({
     soundProperties[property] = value;
   }
 
-  function* playSound(name, wait = false) {
+  function* playSound(value, wait = false) {
     const targetData = getTargetData();
-    const sound = soundMap.get(name);
-    if (!sound) return;
+    const sounds = getTargetData().sounds;
+    const found = sounds.find(i => i.id === value) || sounds.find(i => i.name === value)
+    if (!found) return;
 
     if (!playingSounds.has(targetData.id))
       playingSounds.set(targetData.id, new Map());
 
     const spriteSounds = playingSounds.get(targetData.id);
-
-    const oldAudio = spriteSounds.get(name);
+    const oldAudio = spriteSounds.get(found.id);
     if (oldAudio) {
       oldAudio.pause();
       oldAudio.currentTime = 0;
     }
 
-    const audio = new Audio(sound.dataURL);
-    spriteSounds.set(name, audio);
+    const audio = new Audio(found.dataURL);
+    spriteSounds.set(found.id, audio);
 
     audio.volume = soundProperties.volume / 100;
     audio.playbackRate = soundProperties.speed / 100;
 
     let finished = false;
-    const onEnd = () => { finished = true; };
+    const onEnd = () => {
+      if (spriteSounds.get(value) === audio) {
+        spriteSounds.delete(value);
+      }
+      finished = true;
+    };
 
     audio.addEventListener("ended", onEnd);
     audio.addEventListener("pause", onEnd);
@@ -348,20 +353,14 @@ export function runCodeWithFunctions({
 
     audio.play().catch(e => {
       console.warn("Audio play failed", e);
-      finished = true;
+      onEnd();
     });
-
-    const cleanup = () => {
-      if (spriteSounds.get(name) === audio) {
-        spriteSounds.delete(name);
-      }
-    };
-    audio.addEventListener("ended", cleanup);
 
     if (wait) {
       while (!finished) {
         if (stopped()) {
           audio.pause();
+          onEnd();
           return;
         }
         yield;
@@ -369,15 +368,21 @@ export function runCodeWithFunctions({
     }
   }
 
-  function stopSound(name) {
+  function stopSound(value) {
     const targetData = getTargetData();
     const spriteSounds = playingSounds.get(targetData.id);
-    if (!spriteSounds || !spriteSounds.has(name)) return;
+    if (!spriteSounds) return;
 
-    const audio = spriteSounds.get(name);
+    const sounds = targetData.sounds;
+    const found = sounds.find(i => i.id === value) || sounds.find(i => i.name === value);
+    if (!found) return;
+
+    const audio = spriteSounds.get(found.id);
+    if (!audio) return;
+
     audio.pause();
     audio.currentTime = 0;
-    spriteSounds.delete(name);
+    spriteSounds.delete(found.id);
   }
 
   function stopAllSounds(thisSprite = false) {

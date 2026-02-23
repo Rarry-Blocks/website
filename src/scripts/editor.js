@@ -9,7 +9,7 @@ import { io } from "socket.io-client";
 
 import Toolbox from "../components/Toolbox.js";
 import CustomRenderer from "../functions/render.js";
-import { setupThemeButton } from "../functions/theme.js";
+import { setupSettingsButton } from "../functions/theme.js";
 import {
   compressAudio,
   compressImage,
@@ -59,6 +59,8 @@ export const app = new PIXI.Application({
   height: BASE_HEIGHT,
   backgroundColor: 0xffffff,
   powerPreference: "high-performance",
+  autoDensity: true,
+  antialias: true,
 });
 app.stageWidth = BASE_WIDTH;
 app.stageHeight = BASE_HEIGHT;
@@ -72,9 +74,7 @@ export function resizeCanvas() {
   app.renderer.resize(w, h);
 
   const scale = Math.min(w / BASE_WIDTH, h / BASE_HEIGHT);
-
   app.stage.scale.set(scale);
-
   app.stage.x = w / 2;
   app.stage.y = h / 2;
 }
@@ -118,6 +118,12 @@ export const workspace = Blockly.inject(blocklyDiv, {
     minScale: 0.3,
     scaleSpeed: 1.2,
   },
+  grid: {
+    spacing: 20,
+    length: 3,
+    colour: "#7e7e7e40",
+    snap: false,
+  },
   plugins: {
     connectionChecker: "CustomChecker",
   },
@@ -129,7 +135,7 @@ const observer = new ResizeObserver(() => {
 
 observer.observe(blocklyDiv);
 
-setupThemeButton(workspace);
+setupSettingsButton(workspace);
 
 workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (_) {
   const xmlList = [];
@@ -1511,7 +1517,7 @@ function addExtension(id, emit = false) {
 
   const parser = new DOMParser();
   const extDoc = parser.parseFromString(extension.xml, "text/xml");
-  
+
   const category = extDoc.querySelector("category");
   toolbox.appendChild(category.cloneNode(true));
 

@@ -184,12 +184,12 @@ const Toolbox = `
   <category name="Sounds" colour="#ff66ba">
     <block type="play_sound">
       <value name="name">
-        ${shadowText("pop")}
+        ${shadow("sound_sounds_menu")}
       </value>
     </block>
     <block type="stop_sound">
       <value name="name">
-        ${shadowText("pop")}
+        ${shadow("sound_sounds_menu")}
       </value>
     </block>
     ${block("stop_all_sounds")}
@@ -293,6 +293,7 @@ const Toolbox = `
     ${block("get_mouse_position")}
     ${sep("50")}
     ${block("window_size")}
+    ${block("system_current_time")}
   </category>
 
   <category name="Lists" colour="#e35340">

@@ -1,10 +1,10 @@
 import config from "../config";
-import { setupThemeButton, setupUserTag } from "../functions/theme";
+import { setupSettingsButton, setupUserTag } from "../functions/theme";
 
 const urlParams = new URLSearchParams(window.location.search);
 const identifier = urlParams.get("id") || urlParams.get("username");
 
-setupThemeButton();
+setupSettingsButton();
 setupUserTag();
 
 const profileDiv = document.getElementById("userProfile");

@@ -1,5 +1,29 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { activeSprite } from "../scripts/editor";
+
+Blockly.Blocks["sound_sounds_menu"] = {
+  init: function () {
+    this.appendDummyInput().appendField(
+      new Blockly.FieldDropdown(() => {
+        const sounds = activeSprite.sounds;
+        return sounds.length < 1
+          ? [["...", ""]]
+          : sounds.map(i => [i.name, i.id]);
+      }),
+      "MENU",
+    );
+    this.setOutput(true, "String");
+    this.setStyle("sound_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["sound_sounds_menu"] = function (
+  block,
+  generator,
+) {
+  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+};
 
 Blockly.Blocks["play_sound"] = {
   init: function () {
@@ -11,7 +35,7 @@ Blockly.Blocks["play_sound"] = {
       ]),
       "wait"
     );
-    this.setColour("#ff66ba");
+    this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
@@ -30,7 +54,7 @@ BlocklyJS.javascriptGenerator.forBlock["play_sound"] = function (block, generato
 Blockly.Blocks["stop_sound"] = {
   init: function () {
     this.appendValueInput("name").setCheck("String").appendField("stop sound");
-    this.setColour("#ff66ba");
+    this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
@@ -57,7 +81,7 @@ Blockly.Blocks["stop_all_sounds"] = {
         "who"
       )
       .appendField("sounds");
-    this.setColour("#ff66ba");
+    this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
@@ -83,7 +107,7 @@ Blockly.Blocks["set_sound_property"] = {
       )
       .appendField("to");
     this.appendDummyInput().appendField("%");
-    this.setColour("#ff66ba");
+    this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
@@ -111,7 +135,7 @@ Blockly.Blocks["get_sound_property"] = {
       ]),
       "property"
     );
-    this.setColour("#ff66ba");
+    this.setStyle("sound_blocks");
     this.setOutput(true, "Number");
   },
 };

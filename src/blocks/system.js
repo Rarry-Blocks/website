@@ -135,3 +135,41 @@ BlocklyJS.javascriptGenerator.forBlock["window_size"] = function (block) {
     BlocklyJS.Order.NONE,
   ];
 };
+
+Blockly.Blocks["system_current_time"] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("current")
+      .appendField(
+        new Blockly.FieldDropdown([
+          ["year", "year"],
+          ["month", "month"],
+          ["date", "date"],
+          ["day of week", "day"],
+          ["hour", "hour"],
+          ["minute", "minute"],
+          ["second", "second"],
+        ]),
+        "UNIT"
+      );
+    this.setOutput(true, "Number");
+    this.setColour("#5CB1D6");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["system_current_time"] = function (block) {
+  const getResult = () => {
+    const unit = block.getFieldValue("UNIT");
+    switch (unit) {
+      case "year": return "new Date().getFullYear()";
+      case "month": return "new Date().getMonth() + 1";
+      case "date": return "new Date().getDate()";
+      case "day": return "new Date().getDay()";
+      case "hour": return "new Date().getHours()";
+      case "minute": return "new Date().getMinutes()";
+      case "second": return "new Date().getSeconds()";
+      default: return "0";
+    }
+  };
+  return [getResult(), BlocklyJS.Order.NONE];
+};

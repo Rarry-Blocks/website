@@ -43,6 +43,9 @@ const blockStyles = {
   looks_blocks: {
     colourPrimary: "#9966FF",
   },
+  sound_blocks: {
+    colourPrimary: "#ff66ba"
+  },
   events_blocks: {
     colourPrimary: "#e9c600",
   },
@@ -130,7 +133,7 @@ export function toggleStageLeft(left) {
   else root.classList.remove("stageLeft");
 }
 
-export function setupThemeButton(workspace) {
+export function setupSettingsButton(workspace) {
   toggleTheme(theme, workspace);
   toggleIcons(icons);
   toggleRarryToolbar(rarryToolbar);
@@ -138,78 +141,84 @@ export function setupThemeButton(workspace) {
   setToolboxPosition(toolboxPosition);
   setHeaderColor(headerColor);
 
-  const themeButton = document.getElementById("theme-button");
-  if (themeButton)
-    themeButton.addEventListener("click", () =>
+  const settingsButton = document.getElementById("settings-button");
+  if (settingsButton)
+    settingsButton.addEventListener("click", () =>
       showPopup({
-        title: "Appearance",
-        rows: [
-          [
-            "Theme:",
-            {
-              type: "button",
-              label: '<i class="fa-solid fa-sun"></i> Light',
-              onClick: () => toggleTheme(false, workspace),
-            },
-            {
-              type: "button",
-              label: '<i class="fa-solid fa-moon"></i> Dark',
-              onClick: () => toggleTheme(true, workspace),
-            },
-          ],
-          [
-            "Show icon on buttons:",
-            {
-              type: "checkbox",
-              checked:
-                !document.documentElement.classList.contains("removeIcons"),
-              onChange: checked => {
-                toggleIcons(!checked);
-              },
-            },
-          ],
-          [
-            "Show Rarry logo on toolbar:",
-            {
-              type: "checkbox",
-              checked:
-                !document.documentElement.classList.contains(
-                  "removeRarryToolbar"
-                ),
-              onChange: checked => {
-                toggleRarryToolbar(!checked);
-              },
-            },
-          ],
-          [
-            "Toolbar color:",
-            {
-              type: "color",
-              value: localStorage.getItem("headerColor") || "",
-              onChange: value => setHeaderColor(value),
-            },
-            {
-              type: "button",
-              label: "Reset",
-              onClick: () => setHeaderColor(""),
-            },
-          ],
-          [
-            "Toolbar position:",
-            {
-              type: "menu",
-              value: localStorage.getItem("toolboxPosition") || "default",
-              options: [
-                { label: "Space Between (default)", value: "default" },
-                { label: "Left", value: "left" },
-                { label: "Center", value: "center" },
-                { label: "Right", value: "right" },
+        title: "Settings",
+        tabs: [
+          {
+            label: "Appearance",
+            rows: [
+              [
+                "Theme:",
+                {
+                  type: "button",
+                  label: '<i class="fa-solid fa-sun"></i> Light',
+                  onClick: () => toggleTheme(false, workspace),
+                },
+                {
+                  type: "button",
+                  label: '<i class="fa-solid fa-moon"></i> Dark',
+                  onClick: () => toggleTheme(true, workspace),
+                },
               ],
-              onChange: value => setToolboxPosition(value),
-            },
-          ],
-          ...(workspace
-            ? [
+              [
+                "Show icon on buttons:",
+                {
+                  type: "checkbox",
+                  checked:
+                    !document.documentElement.classList.contains("removeIcons"),
+                  onChange: checked => {
+                    toggleIcons(!checked);
+                  },
+                },
+              ],
+              [
+                "Show Rarry logo on toolbar:",
+                {
+                  type: "checkbox",
+                  checked:
+                    !document.documentElement.classList.contains(
+                      "removeRarryToolbar"
+                    ),
+                  onChange: checked => {
+                    toggleRarryToolbar(!checked);
+                  },
+                },
+              ],
+              [
+                "Toolbar color:",
+                {
+                  type: "color",
+                  value: localStorage.getItem("headerColor") || "",
+                  onChange: value => setHeaderColor(value),
+                },
+                {
+                  type: "button",
+                  label: "Reset",
+                  onClick: () => setHeaderColor(""),
+                },
+              ],
+              [
+                "Toolbar position:",
+                {
+                  type: "menu",
+                  value: localStorage.getItem("toolboxPosition") || "default",
+                  options: [
+                    { label: "Space Between (default)", value: "default" },
+                    { label: "Left", value: "left" },
+                    { label: "Center", value: "center" },
+                    { label: "Right", value: "right" },
+                  ],
+                  onChange: value => setToolboxPosition(value),
+                },
+              ],
+            ],
+          },
+          {
+            label: "Editor",
+            rows: [
               [
                 "Renderer (applies after refresh):",
                 {
@@ -235,7 +244,7 @@ export function setupThemeButton(workspace) {
                 },
               ],
             ]
-            : []),
+          }
         ],
       })
     );

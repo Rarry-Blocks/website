@@ -1,4 +1,4 @@
-import { setupThemeButton, setupUserTag } from "../functions/theme";
+import { setupSettingsButton, setupUserTag } from "../functions/theme";
 
-setupThemeButton();
+setupSettingsButton();
 setupUserTag();
