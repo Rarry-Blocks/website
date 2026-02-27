@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-:root {
+html {
   --font: "Inter", sans-serif;
   --dark: #2b323b;
   --dark-light: #424c5a;
@@ -12,6 +12,7 @@
   --color2: #e4e5e7;
   --color3: #cbcdcf;
   --color4: #b9bbbd;
+  --header-color: var(--primary);
 }
 
 html.dark {
@@ -25,6 +26,7 @@ html.dark {
   --color2: #2f3741;
   --color3: #3d4552;
   --color4: #464f5e;
+  --header-color: var(--color4);
 }
 
 * {
@@ -43,6 +45,11 @@ h2,
 h3,
 input {
   color: var(--dark);
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--dark) !important;
 }
 
 body,
@@ -51,7 +58,7 @@ div#app {
   background-color: var(--color1);
   overscroll-behavior: none;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -62,17 +69,25 @@ div#stage {
 }
 
 header {
-  background-color: var(--primary);
+  background: var(--header-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.3rem 0.5rem;
   z-index: 10;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-html.dark header {
-  background-color: var(--color4);
+html.toolbox-left header {
+  justify-content: flex-start;
+}
+
+html.toolbox-center header {
+  justify-content: center;
+}
+
+html.toolbox-right header {
+  justify-content: flex-end;
 }
 
 header h2,
@@ -95,7 +110,8 @@ header div {
   gap: 0.5rem;
 }
 
-.hidden {
+.hidden,
+html.removeRarryToolbar header img.logo {
   display: none !important;
 }
 
@@ -110,7 +126,7 @@ input[type="file"] {
   color: var(--color1);
   cursor: pointer;
   will-change: background-color, scale;
-  transition: background-color 0.1s, scale 0.1s;
+  transition: background-color 0.15s, scale 0.15s;
 }
 
 input[type="text"],
@@ -130,8 +146,7 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  justify-content: center;
-  align-items: center;
+  place-content: center;
   gap: 0.3rem;
   background-color: var(--dark);
 }
@@ -207,10 +222,6 @@ html.dark header button {
   color: var(--color1);
 }
 
-html:not(.removeIcons) button:has(i) {
-  padding-left: 0.7rem;
-}
-
 html.removeIcons button i:not(.stay) {
   display: none;
 }
@@ -249,14 +260,14 @@ html.removeIcons button i:not(.stay) {
 }
 
 .popup-content {
-  position: relative;
-  border-radius: 0.5rem;
-  width: max(300px, 50%);
-  height: max(300px, 50%);
   background: var(--color2);
   color: var(--dark);
+  position: relative;
+  min-width: 70%;
+  height: max(300px, 70%);
+  border-radius: 0.5rem;
   animation: scaleIn 0.3s ease;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .popup-content header {
@@ -286,12 +297,69 @@ html.removeIcons button i:not(.stay) {
 
 .popup-row {
   flex-direction: row;
-  align-items: center;
+  place-items: center;
 }
 
 .popup-close {
   margin-left: auto;
+  place-content: center;
   font-size: 1.2rem;
+  padding: 0.5rem;
+}
+
+.popup-tabs {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.popup-tab-buttons {
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-tab-button {
+  background-color: var(--color1);
+  color: var(--dark);
+  border: none;
+  border-radius: 0;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.9rem;
+  transition: background-color 0.15s ease;
+}
+
+.popup-tab-button:first-child {
+  border-top-left-radius: 0.4rem;
+  border-top-right-radius: 0.4rem;
+}
+
+.popup-tab-button:last-child {
+  border-bottom-left-radius: 0.4rem;
+  border-bottom-right-radius: 0.4rem;
+}
+
+.popup-tab-button:hover {
+  background: var(--color3);
+}
+
+.popup-tab-button:active {
+  scale: 1 !important;
+}
+
+.popup-tab-button.active {
+  background: var(--color3);
+}
+
+.popup-tab-content {
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.popup-tab-content.active {
+  display: flex;
 }
 
 .notification-container {
@@ -365,6 +433,17 @@ input[type="checkbox"]:checked::after {
   transform: translate(-50%, -50%) rotate(45deg);
 }
 
+input[type="color"] {
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
 .userTag {
   padding: 0.5rem;
   border-radius: 0.5rem;
@@ -397,6 +476,39 @@ footer {
 
 .dropdown-content button:hover {
   background-color: var(--dark-light);
+}
+
+#userTagAvatar {
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.userTagAvatarWrapper, #userTagAvatar {
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: block;
+}
+
+.userTagAvatarWrapper::after {
+  font-size: 1.2em;
+  opacity: 0;
+  inset: 0;
+  content: "✏️";
+  position: absolute;
+  display: flex;
+  place-content: center;
+  place-items: center;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.userTagAvatarWrapper:hover #userTagAvatar {
+  filter: brightness(70%);
+}
+
+.userTagAvatarWrapper:hover::after {
+  opacity: 1;
 }
 
 ::-webkit-scrollbar {

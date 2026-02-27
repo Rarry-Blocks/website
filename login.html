@@ -1,51 +1,47 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Rarry</title>
 
-    <link href="src/index.css" rel="stylesheet" />
-    <link href="src/login.css" rel="stylesheet" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Rarry</title>
 
-    <meta name="author" content="ddededodediamante" />
-    <meta name="description" content="Login to Rarry" />
-    <meta
-      name="keywords"
-      content="Rarry, block coding, Scratch, visual programming, game maker, coding for kids, online coding"
-    />
-    <meta name="theme-color" content="#3b82f6" />
-    <meta property="og:title" content="Rarry" />
-    <meta property="og:image" content="icons/Rarry.svg" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Rarry" />
-    <meta name="twitter:description" content="Login to Rarry" />
-    <meta name="twitter:image" content="icons/Rarry.svg" />
-  </head>
+  <link href="src/index.css" rel="stylesheet" />
+  <link href="src/login.css" rel="stylesheet" />
 
-  <body>
-    <div class="info">
-      <img
-        src="icons/Rarry.svg"
-        alt="Rarry logo"
-        onclick="location.href='/'"
-        style="cursor: pointer"
-      />
-      <a href="/signup">Create an account</a>
+  <meta name="author" content="ddededodediamante" />
+  <meta name="description" content="Login to Rarry" />
+  <meta name="keywords"
+    content="Rarry, block coding, Scratch, visual programming, game maker, online coding" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta property="og:title" content="Rarry" />
+  <meta property="og:image" content="icons/Rarry.svg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rarry" />
+  <meta name="twitter:description" content="Login to Rarry" />
+  <meta name="twitter:image" content="icons/Rarry.svg" />
+</head>
 
-      <p>Username</p>
-      <input type="text" id="username" />
+<body>
+  <div class="info">
+    <img src="icons/Rarry.svg" alt="Rarry logo" onclick="location.href='/'" style="cursor: pointer" />
+    <h2>Login to your account</h2>
+    <a href="/signup" style="text-decoration: underline;">Or create an account</a>
 
-      <p>Password</p>
-      <input type="password" id="password" />
+    <p>Username</p>
+    <input type="text" id="username" />
 
-      <button id="login">
-        <i class="fa-solid fa-right-to-bracket"></i>
-        Login
-      </button>
-    </div>
+    <p>Password</p>
+    <input type="password" id="password" />
 
-    <script type="module" src="src/scripts/login.js"></script>
-  </body>
+    <button id="login">
+      <i class="fa-solid fa-right-to-bracket"></i>
+      Login
+    </button>
+  </div>
+
+  <script type="module" src="src/scripts/login.js"></script>
+</body>
+
 </html>

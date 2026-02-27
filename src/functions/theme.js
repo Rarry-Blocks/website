@@ -3,10 +3,17 @@ import * as Blockly from "blockly";
 import config from "../config";
 import { cache } from "../cache";
 import { showPopup } from "./utils";
+import { attachAvatarChanger } from "./avatar";
 
 const root = document.documentElement;
 const theme = localStorage.getItem("theme") === "dark" ?? false;
 const icons = localStorage.getItem("removeIcons") === "true" ?? false;
+const rarryToolbar =
+  localStorage.getItem("removeRarryToolbar") === "true" ?? false;
+const toolboxPosition =
+  localStorage.getItem("toolboxPosition") || "space-between";
+const headerColor = localStorage.getItem("headerColor") || "";
+const stageLeft = localStorage.getItem("stageLeft") === "true" ?? false;
 
 const blockStyles = {
   logic_blocks: {
@@ -35,6 +42,9 @@ const blockStyles = {
   },
   looks_blocks: {
     colourPrimary: "#9966FF",
+  },
+  sound_blocks: {
+    colourPrimary: "#ff66ba"
   },
   events_blocks: {
     colourPrimary: "#e9c600",
@@ -73,58 +83,143 @@ const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
   },
 });
 
-export function toggleTheme(dark = theme, workspace) {
+export function toggleTheme(dark, workspace) {
+  localStorage.setItem("theme", dark ? "dark" : "light");
+
   if (dark) root.classList.add("dark");
   else root.classList.remove("dark");
-
-  localStorage.setItem("theme", dark ? "dark" : "light");
 
   if (workspace) workspace.setTheme(dark ? darkTheme : lightTheme);
 }
 
-export function toggleIcons(removeIcons = icons) {
+export function toggleIcons(removeIcons) {
+  localStorage.setItem("removeIcons", String(removeIcons));
+
   if (removeIcons) root.classList.add("removeIcons");
   else root.classList.remove("removeIcons");
-
-  localStorage.setItem("removeIcons", String(removeIcons));
 }
 
-export function setupThemeButton(workspace) {
+export function toggleRarryToolbar(removeIcon) {
+  localStorage.setItem("removeRarryToolbar", String(removeIcon));
+
+  if (removeIcon) root.classList.add("removeRarryToolbar");
+  else root.classList.remove("removeRarryToolbar");
+}
+
+export function setToolboxPosition(pos) {
+  localStorage.setItem("toolboxPosition", pos);
+
+  const header = document.querySelector("header");
+  if (!header) return;
+
+  root.classList.remove("toolbox-left", "toolbox-center", "toolbox-right");
+
+  if (pos === "default") return;
+
+  root.classList.add(`toolbox-${pos}`);
+}
+
+export function setHeaderColor(color) {
+  localStorage.setItem("headerColor", color);
+
+  if (!color) root.style.removeProperty("--header-color");
+  else root.style.setProperty("--header-color", color);
+}
+
+export function toggleStageLeft(left) {
+  localStorage.setItem("stageLeft", String(left));
+
+  if (left) root.classList.add("stageLeft");
+  else root.classList.remove("stageLeft");
+}
+
+export function setupSettingsButton(workspace) {
   toggleTheme(theme, workspace);
   toggleIcons(icons);
+  toggleRarryToolbar(rarryToolbar);
+  toggleStageLeft(stageLeft);
+  setToolboxPosition(toolboxPosition);
+  setHeaderColor(headerColor);
 
-  const themeButton = document.getElementById("theme-button");
-  if (themeButton)
-    themeButton.addEventListener("click", () =>
+  const settingsButton = document.getElementById("settings-button");
+  if (settingsButton)
+    settingsButton.addEventListener("click", () =>
       showPopup({
-        title: "Appearance",
-        rows: [
-          [
-            "Theme:",
-            {
-              type: "button",
-              label: '<i class="fa-solid fa-sun"></i> Light',
-              onClick: () => toggleTheme(false, workspace),
-            },
-            {
-              type: "button",
-              label: '<i class="fa-solid fa-moon"></i> Dark',
-              onClick: () => toggleTheme(true, workspace),
-            },
-          ],
-          [
-            "Show icon on buttons:",
-            {
-              type: "checkbox",
-              checked:
-                !document.documentElement.classList.contains("removeIcons"),
-              onChange: (checked) => {
-                toggleIcons(!checked);
-              },
-            },
-          ],
-          workspace
-            ? [
+        title: "Settings",
+        tabs: [
+          {
+            label: "Appearance",
+            rows: [
+              [
+                "Theme:",
+                {
+                  type: "button",
+                  label: '<i class="fa-solid fa-sun"></i> Light',
+                  onClick: () => toggleTheme(false, workspace),
+                },
+                {
+                  type: "button",
+                  label: '<i class="fa-solid fa-moon"></i> Dark',
+                  onClick: () => toggleTheme(true, workspace),
+                },
+              ],
+              [
+                "Show icon on buttons:",
+                {
+                  type: "checkbox",
+                  checked:
+                    !document.documentElement.classList.contains("removeIcons"),
+                  onChange: checked => {
+                    toggleIcons(!checked);
+                  },
+                },
+              ],
+              [
+                "Show Rarry logo on toolbar:",
+                {
+                  type: "checkbox",
+                  checked:
+                    !document.documentElement.classList.contains(
+                      "removeRarryToolbar"
+                    ),
+                  onChange: checked => {
+                    toggleRarryToolbar(!checked);
+                  },
+                },
+              ],
+              [
+                "Toolbar color:",
+                {
+                  type: "color",
+                  value: localStorage.getItem("headerColor") || "",
+                  onChange: value => setHeaderColor(value),
+                },
+                {
+                  type: "button",
+                  label: "Reset",
+                  onClick: () => setHeaderColor(""),
+                },
+              ],
+              [
+                "Toolbar position:",
+                {
+                  type: "menu",
+                  value: localStorage.getItem("toolboxPosition") || "default",
+                  options: [
+                    { label: "Space Between (default)", value: "default" },
+                    { label: "Left", value: "left" },
+                    { label: "Center", value: "center" },
+                    { label: "Right", value: "right" },
+                  ],
+                  onChange: value => setToolboxPosition(value),
+                },
+              ],
+            ],
+          },
+          {
+            label: "Editor",
+            rows: [
+              [
                 "Renderer (applies after refresh):",
                 {
                   type: "menu",
@@ -134,10 +229,22 @@ export function setupThemeButton(workspace) {
                     { label: "Thrasos", value: "thrasos" },
                     { label: "Geras", value: "geras" },
                   ],
-                  onChange: (value) => localStorage.setItem("renderer", value),
+                  onChange: value => localStorage.setItem("renderer", value),
                 },
-              ]
-            : [],
+              ],
+              [
+                "Stage on left:",
+                {
+                  type: "checkbox",
+                  checked:
+                    document.documentElement.classList.contains("stageLeft"),
+                  onChange: checked => {
+                    toggleStageLeft(checked);
+                  },
+                },
+              ],
+            ]
+          }
         ],
       })
     );
@@ -151,11 +258,18 @@ export function setupUserTag() {
     }
 
     login.parentElement.innerHTML = `
-    <div class="userTag">
-      <img src="${config.apiUrl}/users/${user.id}/avatar" />
-      <a href="/user?id=${user.id}">${user.username}</a>
-    </div>
-  `;
+      <div class="userTag">
+        <div class="userTagAvatarWrapper">
+          <img id="userTagAvatar" src="${config.apiUrl}/users/${user.id}/avatar" />
+        </div>
+        <a href="/user?id=${user.id}">${user.username}</a>
+      </div>
+    `;
+
+    if (cache.user && cache.user.id === user.id) {
+      const img = document.getElementById("userTagAvatar");
+      attachAvatarChanger(img);
+    }
   }
 
   const login = document.getElementById("login-button");
@@ -168,14 +282,14 @@ export function setupUserTag() {
           Authorization: localStorage.getItem("tooken"),
         },
       })
-        .then((response) => {
+        .then(response => {
           if (!response.ok)
             throw new Error(
               "Failed to fetch user data: " + response.statusText
             );
           return response.json();
         })
-        .then((data) => {
+        .then(data => {
           cache.user = data;
           setUserTag(data);
         })

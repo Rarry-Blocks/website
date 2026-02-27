@@ -1,98 +1,99 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home - Rarry</title>
 
-    <link href="src/index.css" rel="stylesheet" />
-    <link href="src/home.css" rel="stylesheet" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home - Rarry</title>
 
-    <meta name="author" content="ddededodediamante" />
-    <meta
-      name="description"
-      content="Create and share games using visual block-coding, inspired by Scratch."
-    />
-    <meta
-      name="keywords"
-      content="Rarry, block coding, Scratch, visual programming, game maker, coding for kids, online coding"
-    />
-    <meta name="theme-color" content="#3b82f6" />
-    <meta property="og:title" content="Rarry" />
-    <meta property="og:image" content="icons/Rarry.svg" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Rarry" />
-    <meta
-      name="twitter:description"
-      content="Create and share games using visual block-coding, inspired by Scratch."
-    />
-    <meta name="twitter:image" content="icons/Rarry.svg" />
-  </head>
+  <meta name="google-site-verification" content="OT5ycCTdL47u2TMrA5WeNJ7a21uZSTKZWt9VY_FE27k" />
 
-  <body>
-    <header>
-      <div>
-        <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" />
-        <button onclick="location.href='/editor'">
-          <i class="fa-solid fa-code"></i>
-          Editor
-        </button>
-        <button id="theme-button">
-          <i class="fa-solid fa-paintbrush"></i>
-          Appearance
-        </button>
-      </div>
-      <div>
-        <button onclick="location.href='/login'" id="login-button">
-          <i class="fa-solid fa-right-to-bracket"></i>
-          Login
-        </button>
-      </div>
-    </header>
+  <link href="src/index.css" rel="stylesheet" />
+  <link href="src/home.css" rel="stylesheet" />
 
-    <section class="about">
-      <h2>What is Rarry?</h2>
-      <p>
-        Rarry is a web-based platform that allows to create games or projects
-        using visual block-coding, inspired by Scratch.
-      </p>
+  <meta name="author" content="ddededodediamante" />
+  <meta name="description" content="Create and share games using visual block-coding, powered by Blockly." />
+  <meta name="keywords" content="Rarry, block coding, Scratch, visual programming, game maker, online coding" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta property="og:title" content="Rarry" />
+  <meta property="og:image" content="icons/Rarry.svg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rarry" />
+  <meta name="twitter:description" content="Create and share games using visual block-coding, powered by Blockly." />
+  <meta name="twitter:image" content="icons/Rarry.svg" />
+</head>
 
-      <h2>Features</h2>
-      <div class="feature-cards">
-        <div class="feature-card">
-          <h3>Visual Block Editor</h3>
-          <p>Write code by snapping blocks together, no typing required.</p>
-        </div>
-        <div class="feature-card">
-          <h3>Custom Extensions</h3>
-          <p>
-            Extend your projects with custom blocks, new categories, and
-            powerful features.
-          </p>
-        </div>
-        <div class="feature-card">
-          <h3>Themes</h3>
-          <p>Switch between light and dark modes to match your style.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="cta-section">
-      <h2>Ready to build your first project?</h2>
-      <button class="orange large" onclick="location.href='/editor'">
+<body>
+  <header>
+    <div>
+      <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" />
+      <button onclick="location.href='/editor'">
         <i class="fa-solid fa-code"></i>
-        Launch the Editor
+        Editor
       </button>
-    </section>
+      <button id="settings-button">
+        <i class="fa-solid fa-gear"></i>
+        Settings
+      </button>
+    </div>
+    <div>
+      <button onclick="location.href='/login'" id="login-button">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        Login
+      </button>
+    </div>
+  </header>
 
-    <footer>
-      <p>
-        &copy; 2025 Rarry. Made with ❤️ by
-        <a href="https://github.com/ddededodediamante">ddededodediamante</a>.
-      </p>
-    </footer>
+  <section class="about">
+    <h2>What is Rarry?</h2>
+    <p>
+      Rarry is a web-based platform that allows to create games or projects
+      using visual block-coding, powered by Blockly.
+    </p>
 
-    <script type="module" src="src/scripts/index.js"></script>
-  </body>
+    <h2>Features</h2>
+    <div class="feature-cards">
+      <div class="feature-card">
+        <h3>Visual Block Editor</h3>
+        <p>Write code by snapping blocks together, no typing required.</p>
+        <img src="/icons/home/visual_block_editor_icon.png" style="transform: rotate(-5deg);">
+      </div>
+      <div class="feature-card">
+        <h3>Custom Extensions</h3>
+        <p>
+          Extend your projects with custom blocks, new categories, and
+          powerful features.
+        </p>
+        <img src="/icons/home/extensions_icon.png" style="transform: rotate(5deg);">
+      </div>
+      <div class="feature-card">
+        <h3>Themes</h3>
+        <p>Switch between light and dark modes to match your style.</p>
+        <img src="/icons/home/themes_icon.svg">
+      </div>
+    </div>
+  </section>
+
+  <section class="editor-preview">
+    <h2>Build projects visually</h2>
+    <p>
+      Snap blocks together, press run, and watch your project come to life! All in your browser.
+    </p>
+
+    <div class="editor-mockup">
+      <img src="/icons/home/example_project.jpg" alt="Rarry editor preview">
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      &copy; 2026 Rarry. Made with ❤️ by
+      <a href="https://github.com/ddededodediamante">ddededodediamante</a>.
+    </p>
+  </footer>
+
+  <script type="module" src="src/scripts/index.js"></script>
+</body>
+
 </html>

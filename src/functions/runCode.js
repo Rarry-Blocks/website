@@ -1,7 +1,18 @@
 import * as PIXI from "pixi.js-legacy";
-import { calculateBubblePosition, projectVariables } from "../scripts/editor";
-import { Thread } from "./threads";
-import { promiseWithAbort } from "./utils";
+import {
+  calculateBubblePosition,
+  keysPressed,
+  mouseButtonsPressed,
+  playingSounds,
+  eventRegistry,
+  penGraphics,
+  app,
+  spriteManager,
+  vm,
+  projectVariables
+} from "../scripts/editor";
+import { tweenEasing } from "./utils";
+import { extensions } from "./extensionManager";
 
 const BUBBLE_PADDING = 10;
 const BUBBLE_TAIL_HEIGHT = 15;
@@ -10,61 +21,67 @@ const BUBBLE_COLOR = 0xffffff;
 const BUBBLE_TEXTSTYLE = new PIXI.TextStyle({ fill: 0x000000, fontSize: 24 });
 const LINE_COLOR = 0xbdc1c7;
 
+export function triggerCloneEvents(clone) {
+  const rootId = clone.root ? clone.root.id : clone.id;
+
+  const entries = eventRegistry.clone.filter(entry => {
+    return entry.spriteId === rootId;
+  });
+
+  entries.forEach(entry => {
+    vm.execute(entry.generatorFunc, clone);
+  });
+}
+
 export function runCodeWithFunctions({
   code,
   projectStartedTime,
   spriteData,
-  app,
-  eventRegistry,
-  mouseButtonsPressed,
-  keysPressed,
-  playingSounds,
-  runningScripts,
-  signal,
-  penGraphics,
-  activeEventThreads,
+  signal
 }) {
-  Thread.resetAll();
-  let fastExecution = false;
-
-  const sprite = spriteData.pixiSprite;
   const renderer = app.renderer;
   const stage = app.stage;
-  const costumeMap = new Map(
-    (spriteData.costumes || []).map((c) => [c.name, c])
-  );
+
+  const costumeMap = new Map((spriteData.costumes || []).map((c) => [c.name, c]));
   const soundMap = new Map((spriteData.sounds || []).map((s) => [s.name, s]));
-  const extensions = window.extensions;
+
+  function getTarget() {
+    if (vm.currentThread && vm.currentThread.target) {
+      return vm.currentThread.target.pixiSprite;
+    }
+    return spriteData.pixiSprite;
+  }
+
+  function getTargetData() {
+    if (vm.currentThread && vm.currentThread.target) {
+      return vm.currentThread.target;
+    }
+    return spriteData;
+  }
 
   function stopped() {
     return signal.aborted === true;
   }
 
-  function registerEvent(type, key, callback) {
+  function registerEvent(type, key, generatorFunc) {
     if (stopped()) return;
 
     const entry = {
       type,
-      cb: async () => {
-        if (stopped()) return;
+      spriteId: spriteData.id,
+      generatorFunc,
+      trigger: () => {
+        const rootSprite = spriteManager.get(spriteData.id);
+        if (!rootSprite) return;
 
-        const threadId = Thread.create();
-        Thread.enter(threadId);
-        activeEventThreads.count++;
+        vm.execute(generatorFunc, rootSprite);
 
-        try {
-          const result = await promiseWithAbort(
-            () => callback(Thread.getCurrentContext()),
-            signal
-          );
-          if (result === "shouldStop" || stopped()) return;
-        } catch (err) {
-          if (err.message !== "shouldStop") console.error(err);
-        } finally {
-          Thread.exit();
-          activeEventThreads.count--;
+        if (rootSprite.clones) {
+          rootSprite.clones.forEach(clone => {
+            vm.execute(generatorFunc, clone);
+          });
         }
-      },
+      }
     };
 
     switch (type) {
@@ -88,6 +105,9 @@ export function runCodeWithFunctions({
         if (!eventRegistry.custom.has(key)) eventRegistry.custom.set(key, []);
         eventRegistry.custom.get(key).push(entry);
         break;
+      case "clone":
+        eventRegistry.clone.push(entry);
+        break;
     }
   }
 
@@ -95,31 +115,37 @@ export function runCodeWithFunctions({
     const entries = eventRegistry.custom.get(eventName);
     if (!entries) return;
     for (const entry of entries) {
-      entry.cb();
+      entry.trigger();
     }
   }
 
   function moveSteps(steps = 0) {
+    const sprite = getTarget();
     const { rotation: a } = sprite;
     sprite.x += Math.cos(a) * steps;
     sprite.y += Math.sin(a) * steps;
   }
-
+  
   function getMousePosition(menu) {
     const mouse = renderer.events.pointer.global;
-    if (menu === "x")
-      return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
-    else if (menu === "y")
-      return -Math.round((mouse.y - renderer.height / 2) / stage.scale.y);
+    if (menu === "x") return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
+    else if (menu === "y") return -Math.round((mouse.y - renderer.height / 2) / stage.scale.y);
   }
 
   function sayMessage(message, seconds) {
-    if (stopped()) return;
+    const targetData = getTargetData();
+    const sprite = targetData.pixiSprite;
 
     message = String(message ?? "");
-    if (!message) return;
 
-    if (!spriteData.currentBubble) {
+    if (!message) {
+      if (targetData.currentBubble) {
+        targetData.currentBubble.visible = false;
+      }
+      return;
+    }
+
+    if (!targetData.currentBubble) {
       const bubble = new PIXI.Graphics();
       const text = new PIXI.Text("", BUBBLE_TEXTSTYLE);
       text.x = BUBBLE_PADDING;
@@ -131,21 +157,20 @@ export function runCodeWithFunctions({
       container.bubble = bubble;
       container.text = text;
 
-      spriteData.currentBubble = container;
+      targetData.currentBubble = container;
       stage.addChild(container);
     }
 
-    const container = spriteData.currentBubble;
+    const container = targetData.currentBubble;
     const { bubble, text } = container;
 
-    if (spriteData.sayTimeout !== null) {
-      clearTimeout(spriteData.sayTimeout);
-      spriteData.sayTimeout = null;
+    if (targetData.sayTimeout) {
+      clearTimeout(targetData.sayTimeout);
+      targetData.sayTimeout = null;
     }
 
     if (text.text !== message) {
       text.text = message;
-
       const bubbleWidth = text.width + BUBBLE_PADDING * 2;
       const bubbleHeight = text.height + BUBBLE_PADDING * 2;
 
@@ -153,7 +178,6 @@ export function runCodeWithFunctions({
       bubble.beginFill(BUBBLE_COLOR);
       bubble.lineStyle(2, LINE_COLOR);
       bubble.drawRoundedRect(0, 0, bubbleWidth, bubbleHeight, 10);
-
       bubble.moveTo(bubbleWidth / 2 - BUBBLE_TAIL_WIDTH / 2, bubbleHeight);
       bubble.lineTo(bubbleWidth / 2, bubbleHeight + BUBBLE_TAIL_HEIGHT);
       bubble.lineTo(bubbleWidth / 2 + BUBBLE_TAIL_WIDTH / 2, bubbleHeight);
@@ -169,57 +193,37 @@ export function runCodeWithFunctions({
     );
     container.x = pos.x;
     container.y = pos.y;
-
     container.visible = true;
 
-    if (typeof seconds === "number" && seconds > 0) {
-      spriteData.sayTimeout = setTimeout(() => {
+    if (seconds > 0) {
+      targetData.sayTimeout = setTimeout(() => {
         container.visible = false;
-        spriteData.sayTimeout = null;
-      }, Math.min(seconds * 1000, 2147483647));
+      }, seconds * 1000);
     }
   }
 
-  function waitOneFrame() {
-    return new Promise((res, rej) => {
-      if (stopped()) return rej("stopped");
-
-      const id = requestAnimationFrame(() => {
-        if (stopped()) return rej("stopped");
-        runningScripts.splice(
-          runningScripts.findIndex((t) => t.id === id),
-          1
-        );
-        res();
-      });
-      runningScripts.push({ type: "raf", id });
-    });
+  function* waitOneFrame() {
+    yield;
   }
 
-  function wait(ms) {
-    return new Promise((res, rej) => {
-      if (stopped()) return rej("stopped");
-
-      const id = setTimeout(() => {
-        if (stopped()) return rej("stopped");
-        runningScripts.splice(
-          runningScripts.findIndex((t) => t.id === id),
-          1
-        );
-        res();
-      }, ms);
-      runningScripts.push({ type: "timeout", id });
-    });
+  function* wait(ms) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < ms) {
+      if (stopped()) return;
+      yield;
+    }
   }
 
-  function switchCostume(name) {
-    const found = costumeMap.get(name);
+  function switchCostume(value) {
+    const costumes = getTargetData().costumes;
+    const found = costumes.find(i => i.id === value) || costumes.find(i => i.name === value)
     if (found) {
-      sprite.texture = found.texture;
+      getTarget().texture = found.texture;
     }
   }
 
   function setSize(amount = 0, additive) {
+    const sprite = getTarget();
     let amountN = amount / 100;
     if (additive)
       sprite.scale.set(sprite.scale.x + amountN, sprite.scale.y + amountN);
@@ -227,14 +231,16 @@ export function runCodeWithFunctions({
   }
 
   function setAngle(amount, additive) {
-    let angle = additive ? sprite.angle + amount : amount
+    const sprite = getTarget();
+    let angle = additive ? sprite.angle + amount : amount;
     angle = ((angle % 360) + 360) % 360;
     sprite.angle = angle;
   }
 
   function pointsTowards(x, y) {
-    const { width, height } = renderer
-    const targetX = width / 2 + x * stage.scale.x;
+    const sprite = getTarget();
+    const { width, height } = renderer;
+    const targetX = width / 2 + (-x) * stage.scale.x;
     const targetY = height / 2 - y * stage.scale.y;
     const spriteX = width / 2 + sprite.x * stage.scale.x;
     const spriteY = height / 2 - sprite.y * stage.scale.y;
@@ -249,73 +255,60 @@ export function runCodeWithFunctions({
   }
 
   function isKeyPressed(key) {
-    if (key === "any") {
-      return Object.values(keysPressed).some((pressed) => pressed);
-    }
-
+    if (key === "any") return Object.values(keysPressed).some((p) => p);
     return !!keysPressed[key];
   }
 
   function isMouseButtonPressed(button) {
-    if (button === "any") {
-      return Object.values(mouseButtonsPressed).some((pressed) => pressed);
-    }
-
+    if (button === "any") return Object.values(mouseButtonsPressed).some((p) => p);
     return !!mouseButtonsPressed[button];
   }
 
   function getCostumeSize(type) {
+    const sprite = getTarget();
     const frame = sprite?.texture?.frame;
     if (!frame) return 0;
-
-    if (type === "width") return frame.width;
-    else if (type === "height") return frame.height;
-    else return 0;
+    return type === "width" ? frame.width : frame.height;
   }
 
   function getSpriteScale() {
-    const scaleX = sprite.scale.x;
-    const scaleY = sprite.scale.y;
-    return ((scaleX + scaleY) / 2) * 100;
+    const sprite = getTarget();
+    return ((sprite.scale.x + sprite.scale.y) / 2) * 100;
   }
 
-  function startTween({ from, to, duration, easing, onUpdate, wait = true }) {
+  function* startTween({ from, to, duration, easing, onUpdate, wait = true }) {
     if (stopped()) return;
 
-    const tweenPromise = new Promise((resolve) => {
-      const start = performance.now();
-      const change = to - from;
-      const easeFn = window.TweenEasing[easing] || window.TweenEasing.linear;
+    const easeFn = tweenEasing[easing] || tweenEasing.linear;
+    const change = to - from;
+    const startTime = performance.now();
+    const durationMs = duration * 1000;
 
-      function tick(now) {
-        if (stopped()) return resolve("shouldStop");
+    function* tweenRoutine() {
+      while (true) {
+        if (stopped()) return;
 
-        const t = Math.min((now - start) / (duration * 1000), 1);
+        const now = performance.now();
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / durationMs, 1);
+
         const value = from + change * easeFn(t);
 
-        if (onUpdate) {
-          const result = onUpdate(value);
-          if (result === "shouldStop") return resolve("shouldStop");
-        }
+        if (onUpdate) onUpdate(value);
 
-        if (t < 1) {
-          requestAnimationFrame(tick);
-        } else {
-          resolve();
-        }
+        if (t >= 1) break;
+        yield;
       }
+    }
 
-      const id = requestAnimationFrame(tick);
-      runningScripts.push({ type: "raf", id });
-    });
-
-    return wait ? tweenPromise : undefined;
+    if (wait) {
+      yield* tweenRoutine();
+    } else {
+      vm.execute(tweenRoutine, getTargetData());
+    }
   }
 
-  let soundProperties = {
-    volume: 100,
-    speed: 100,
-  };
+  let soundProperties = { volume: 100, speed: 100 };
 
   function setSoundProperty(property, value) {
     if (!soundProperties[property]) return;
@@ -324,65 +317,85 @@ export function runCodeWithFunctions({
     soundProperties[property] = value;
   }
 
-  async function playSound(name, wait = false) {
-    const sound = soundMap.get(name);
-    if (!sound) return;
+  function* playSound(value, wait = false) {
+    const targetData = getTargetData();
+    const sounds = getTargetData().sounds;
+    const found = sounds.find(i => i.id === value) || sounds.find(i => i.name === value)
+    if (!found) return;
 
-    if (!playingSounds.has(spriteData.id))
-      playingSounds.set(spriteData.id, new Map());
+    if (!playingSounds.has(targetData.id))
+      playingSounds.set(targetData.id, new Map());
 
-    const spriteSounds = playingSounds.get(spriteData.id);
-
-    const oldAudio = spriteSounds.get(name);
+    const spriteSounds = playingSounds.get(targetData.id);
+    const oldAudio = spriteSounds.get(found.id);
     if (oldAudio) {
       oldAudio.pause();
       oldAudio.currentTime = 0;
     }
 
-    const audio = new Audio(sound.dataURL);
-    spriteSounds.set(name, audio);
+    const audio = new Audio(found.dataURL);
+    spriteSounds.set(found.id, audio);
 
     audio.volume = soundProperties.volume / 100;
     audio.playbackRate = soundProperties.speed / 100;
-    audio.play();
 
-    const cleanup = () => {
-      if (spriteSounds.get(name) === audio) {
-        spriteSounds.delete(name);
+    let finished = false;
+    const onEnd = () => {
+      if (spriteSounds.get(value) === audio) {
+        spriteSounds.delete(value);
       }
+      finished = true;
     };
 
-    audio.addEventListener("ended", cleanup);
-    audio.addEventListener("pause", cleanup);
+    audio.addEventListener("ended", onEnd);
+    audio.addEventListener("pause", onEnd);
+    audio.addEventListener("error", onEnd);
+
+    audio.play().catch(e => {
+      console.warn("Audio play failed", e);
+      onEnd();
+    });
 
     if (wait) {
-      return new Promise((res) => {
-        audio.addEventListener("ended", () => res());
-      });
+      while (!finished) {
+        if (stopped()) {
+          audio.pause();
+          onEnd();
+          return;
+        }
+        yield;
+      }
     }
   }
 
-  function stopSound(name) {
-    const spriteSounds = playingSounds.get(spriteData.id);
-    if (!spriteSounds || !spriteSounds.has(name)) return;
+  function stopSound(value) {
+    const targetData = getTargetData();
+    const spriteSounds = playingSounds.get(targetData.id);
+    if (!spriteSounds) return;
 
-    const audio = spriteSounds.get(name);
+    const sounds = targetData.sounds;
+    const found = sounds.find(i => i.id === value) || sounds.find(i => i.name === value);
+    if (!found) return;
+
+    const audio = spriteSounds.get(found.id);
+    if (!audio) return;
+
     audio.pause();
     audio.currentTime = 0;
-    spriteSounds.delete(name);
+    spriteSounds.delete(found.id);
   }
 
   function stopAllSounds(thisSprite = false) {
     if (thisSprite) {
-      const spriteSounds = playingSounds.get(spriteData.id);
+      const targetData = getTargetData();
+      const spriteSounds = playingSounds.get(targetData.id);
       if (!spriteSounds) return;
 
       for (const audio of spriteSounds.values()) {
         audio.pause();
         audio.currentTime = 0;
       }
-
-      playingSounds.delete(spriteData.id);
+      playingSounds.delete(targetData.id);
     } else {
       for (const spriteSounds of playingSounds.values()) {
         for (const audio of spriteSounds.values()) {
@@ -395,36 +408,35 @@ export function runCodeWithFunctions({
   }
 
   function isMouseTouchingSprite() {
+    const sprite = getTarget();
     const mouse = renderer.events.pointer.global;
     const bounds = sprite.getBounds();
     return bounds.contains(mouse.x, mouse.y);
   }
 
   function setPenStatus(active) {
-    spriteData.penDown = !!active;
+    getTargetData().penDown = !!active;
   }
 
   function setPenColor(r, g, b) {
     if (typeof r === "string") {
       const [r_, g_, b_] = r.split(",");
-      r = +r_;
-      g = +g_;
-      b = +b_;
+      r = +r_; g = +g_; b = +b_;
     }
-    spriteData.penColor = (r << 16) | (g << 8) | b;
+    getTargetData().penColor = (r << 16) | (g << 8) | b;
   }
 
   function setPenColorHex(value) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(value);
-    spriteData.penColor = result
+    getTargetData().penColor = result
       ? (parseInt(result[1], 16) << 16) |
-        (parseInt(result[2], 16) << 8) |
-        parseInt(result[3], 16)
+      (parseInt(result[2], 16) << 8) |
+      parseInt(result[3], 16)
       : 0x000000;
   }
 
   function setPenSize(size = 0) {
-    spriteData.penSize = Math.max(1, size);
+    getTargetData().penSize = Math.max(1, size);
   }
 
   function clearPen() {
@@ -432,9 +444,63 @@ export function runCodeWithFunctions({
   }
 
   function toggleVisibility(bool = true) {
-    sprite.visible = bool;
-    if (spriteData.currentBubble) spriteData.currentBubble.visible = bool;
+    const data = getTargetData();
+    data.pixiSprite.visible = bool;
+    if (data.currentBubble) data.currentBubble.visible = bool;
   }
 
-  eval(code);
+  const MyFunctions = {};
+  const VM_FUNCTIONS = {
+    registerEvent,
+    triggerCustomEvent,
+    moveSteps,
+    getMousePosition,
+    sayMessage,
+    waitOneFrame,
+    wait,
+    switchCostume,
+    setSize,
+    setAngle,
+    pointsTowards,
+    projectTime,
+    isKeyPressed,
+    isMouseButtonPressed,
+    getCostumeSize,
+    getSpriteScale,
+    startTween,
+    setSoundProperty,
+    playSound,
+    stopSound,
+    stopAllSounds,
+    isMouseTouchingSprite,
+    setPenStatus,
+    setPenColor,
+    setPenColorHex,
+    setPenSize,
+    clearPen,
+    toggleVisibility,
+
+    vm,
+    stopped,
+    getTarget,
+    getTargetData,
+    spriteManager,
+    projectVariables,
+    extensions,
+    MyFunctions
+  };
+
+  console.info('Compiling code:\n', code);
+  try {
+    const factory = new Function('VM_FUNCTIONS', `
+      with (VM_FUNCTIONS) {
+        var fastExecution = false;
+        ${code}
+      }
+    `);
+
+    factory(VM_FUNCTIONS);
+  } catch (err) {
+    console.error("Error compiling sprite code:", err);
+  }
 }

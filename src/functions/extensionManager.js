@@ -1,10 +1,56 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import { activeExtensions } from "../scripts/editor";
-import { Thread } from "./threads";
-import { minify } from "terser";
 
-Thread.resetAll();
+export const extensions = {};
+
+class DuplicateOnDrag {
+  constructor(block) {
+    this.block = block;
+  }
+
+  isMovable() {
+    return true;
+  }
+
+  startDrag(e) {
+    if (!this.block.isShadow()) return;
+
+    const ws = this.block.workspace;
+    const data = this.block.toCopyData();
+
+    data.blockState = {
+      ...(data.blockState ?? {}),
+      type: this.block.type,
+    };
+
+    if (this.block.saveExtraState) {
+      data.blockState.extraState = this.block.saveExtraState();
+    }
+
+    this.copy = Blockly.clipboard.paste(data, ws);
+    this.copy.setShadow(false);
+    this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.copy);
+    this.copy.setDragStrategy(this.baseStrat);
+    this.baseStrat.startDrag(e);
+  }
+
+  drag(e) {
+    this.block.workspace
+      .getGesture(e)
+      .getCurrentDragger()
+      .setDraggable(this.copy);
+    this.baseStrat.drag(e);
+  }
+
+  endDrag(e) {
+    this.baseStrat?.endDrag(e);
+  }
+
+  revertDrag(e) {
+    this.copy?.dispose();
+  }
+}
 
 function textToBlock(block, text, fields) {
   const regex = /\[([^\]]+)\]/g;
@@ -45,50 +91,6 @@ function textToBlock(block, text, fields) {
   }
 }
 
-export function setupExtensions() {
-  if (!window.extensions) {
-    const backing = {};
-
-    const proxy = new Proxy(backing, {
-      defineProperty(target, prop, descriptor) {
-        if (prop in target)
-          throw new Error(`Extension "${prop}" already defined`);
-        return Reflect.defineProperty(target, prop, {
-          ...descriptor,
-          writable: false,
-          configurable: false,
-        });
-      },
-      set(target, prop, value) {
-        if (prop in target)
-          throw new Error(`Extension "${prop}" is already defined and locked`);
-        return Reflect.defineProperty(target, prop, {
-          value,
-          writable: false,
-          configurable: false,
-          enumerable: true,
-        });
-      },
-      deleteProperty() {
-        throw new Error("Extensions cannot be removed");
-      },
-      get(target, prop, receiver) {
-        return Reflect.get(target, prop, receiver);
-      },
-      ownKeys(target) {
-        return Reflect.ownKeys(target);
-      },
-    });
-
-    Object.defineProperty(window, "extensions", {
-      value: proxy,
-      writable: false,
-      configurable: false,
-      enumerable: true,
-    });
-  }
-}
-
 export async function registerExtension(extClass) {
   const ext = new extClass();
   const id = ext.id || ext.constructor.name;
@@ -117,6 +119,10 @@ export async function registerExtension(extClass) {
       console.warn("Skipped registration of block with no ID");
       return;
     }
+    if (typeof blockDef !== "object") {
+      console.warn("Invalid block definition:", blockDef);
+      return;
+    }
 
     const blockType = `${id}_${blockDef.id}`;
     blockDefs[blockType] = blockDef;
@@ -132,10 +138,22 @@ export async function registerExtension(extClass) {
         } else if (blockDef.type === "output") {
           this.setOutput(true, blockDef.outputType);
           if (blockDef.outputShape) this.setOutputShape(blockDef.outputShape);
+        } else {
+          console.warn(
+            `Invalid block type for ${blockDef}, using statement instead`
+          );
+          this.setPreviousStatement(true, blockDef.statementType || "default");
+          this.setNextStatement(true, blockDef.statementType || "default");
         }
+
         if (blockDef.tooltip) this.setTooltip(blockDef.tooltip);
-        this.setInputsInline(true);
-        this.setColour(blockDef?.color || category.color);
+
+        if (blockDef.cloneOnDrag === true)
+          this.setDragStrategy(new DuplicateOnDrag(this));
+
+        this.setColour(blockDef.color || category.color);
+
+        this.setInputsInline(Boolean(blockDef.inlineInputs ?? false));
       },
     };
 
@@ -199,7 +217,7 @@ export async function registerExtension(extClass) {
   Object.entries(codeGen).forEach(([blockType, fn]) => {
     const fullType = `${id}_${blockType}`;
 
-    window.extensions[fullType] = fn;
+    extensions[fullType] = fn;
     const def = blockDefs[fullType] || {};
     BlocklyJS.javascriptGenerator.forBlock[fullType] = function (block) {
       const inputs = {};
@@ -236,7 +254,7 @@ export async function registerExtension(extClass) {
         ([k, v]) => `${JSON.stringify(k)}:${v}`
       );
       const args = `{${argsParts.join(",")}}`;
-      const callCode = `extensions["${fullType}"](${args},Thread)`;
+      const callCode = `extensions["${fullType}"](${args})`;
 
       const finalCode = def.promise ? `await ${callCode}` : callCode;
 
@@ -245,5 +263,5 @@ export async function registerExtension(extClass) {
     };
   });
 
-  activeExtensions.push({ id, code: (await minify(extClass.toString())).code });
+  activeExtensions.push({ id, code: extClass.toString() });
 }

@@ -1,4 +1,6 @@
 import * as Blockly from "blockly";
+import { ConnectionType } from "blockly/core";
+const svgPaths = Blockly.utils.svgPaths;
 
 class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   init() {
@@ -11,90 +13,108 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   makeBowl() {
     const maxW = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
     const maxH = maxW * 2;
-    const roundedCopy = this.ROUNDED;
+
+    function makeRoundPath(blockHeight, up, right) {
+      const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
+      const height = blockHeight > maxH ? maxH : blockHeight;
+      const radius = height / 2;
+      const sweep = right === up ? '0' : '1';
+      return (
+        svgPaths.arc(
+          'a',
+          '0 0,' + sweep,
+          radius,
+          svgPaths.point((right ? 1 : -1) * radius, (up ? -1 : 1) * radius),
+        ) +
+        svgPaths.lineOnAxis('v', (up ? -1 : 1) * remainingHeight) +
+        svgPaths.arc(
+          'a',
+          '0 0,' + sweep,
+          radius,
+          svgPaths.point((right ? -1 : 1) * radius, (up ? -1 : 1) * radius),
+        )
+      );
+    }
 
     function makeMainPath(blockHeight, up, right) {
-      const extra = blockHeight > maxH ? blockHeight - maxH : 0;
-      const h_ = Math.min(blockHeight, maxH);
-      const h = h_ + extra;
-      const radius = h / 2;
-      const radiusH = Math.min(h_ / 2, maxH);
+      const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
+      const height = blockHeight > maxH ? maxH : blockHeight;
+      const radius = height / 2;
       const dirR = right ? 1 : -1;
       const dirU = up ? -1 : 1;
 
+      const totalHeight = height + remainingHeight;
+
+      return (
+        svgPaths.lineOnAxis('h', radius * dirR) +
+        svgPaths.curve('q', [
+          svgPaths.point((radius / 2) * -dirR, dirU * (totalHeight / 2)),
+          svgPaths.point(0, totalHeight * dirU),
+        ]) +
+        svgPaths.lineOnAxis('h', radius * -dirR)
+      );
+    }
+
+    return {
+      type: this.SHAPES.ROUND,
+      isDynamic: true,
+      width(height) {
+        const half = height / 2;
+        return half > maxW ? maxW : half;
+      },
+      height(height) {
+        return height;
+      },
+      connectionOffsetY(height) {
+        return height / 2;
+      },
+      connectionOffsetX(width) {
+        return -width;
+      },
+      pathDown(height) {
+        return makeMainPath(height, false, false);
+      },
+      pathUp(height) {
+        return makeMainPath(height, true, false);
+      },
+      pathRightDown(height) {
+        return makeRoundPath(height, false, true);
+      },
+      pathRightUp(height) {
+        return makeRoundPath(height, false, true);
+      },
+    };
+  }
+
+  makePillow() {
+    const maxW = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
+    const maxH = maxW * 2;
+
+    function makeMainPath(blockHeight, up, right) {
+      const dirR = right ? 1 : -1;
+      const dirU = up ? -1 : 1;
+      
+      const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
+      const height = blockHeight > maxH ? maxH : blockHeight;
+      const totalHeight = height + remainingHeight;
+      const radius = (height / 4) * dirR;
+      const radiusHeight = (totalHeight / 3) * dirU;
+
       return `
-        h ${radiusH * dirR}
-        q ${(h_ / 4) * -dirR} ${radius * dirU} 0 ${h * dirU}
-        h ${radiusH * -dirR}
+        h ${radius}
+        q 0 ${radiusHeight} ${radius} ${radiusHeight}
+        v ${radiusHeight}
+        q ${-radius} 0 ${-radius} ${radiusHeight}
+        h ${-radius}
       `;
     }
 
     return {
       type: this.SHAPES.ROUND,
       isDynamic: true,
-      width(h) {
-        const half = h / 2;
-        return half > maxW ? maxW : half;
-      },
-      height(h) {
-        return h;
-      },
-      connectionOffsetY(h) {
-        return h / 2;
-      },
-      connectionOffsetX(w) {
-        return -w;
-      },
-      pathDown(h) {
-        return makeMainPath(h, false, false);
-      },
-      pathUp(h) {
-        return makeMainPath(h, true, false);
-      },
-      pathRightDown(h) {
-        return roundedCopy.pathRightDown(h);
-      },
-      pathRightUp(h) {
-        return roundedCopy.pathRightUp(h);
-      },
-    };
-  }
-
-  makePillow() {
-    const maxWidth = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
-    const maxHeight = maxWidth * 2;
-
-    function makeMainPath(blockHeight, up, right) {
-      const remainingHeight =
-        blockHeight > maxHeight ? blockHeight - maxHeight : 0;
-      const height = blockHeight > maxHeight ? maxHeight : blockHeight;
-      const radius = height / 8;
-
-      const dirRight = right ? 1 : -1;
-      const dirUp = up ? -1 : 1;
-
-      const radiusW = radius * dirRight;
-      const radiusH = radius * dirUp;
-
-      return `
-        h ${radiusW}
-        q ${radiusW} 0 ${radiusW} ${radiusH}
-        q 0 ${radiusH} ${radiusW} ${radiusH}
-        q ${radiusW} 0 ${radiusW} ${radiusH}
-        v ${(remainingHeight + height - radius * 6) * dirUp}
-        q 0 ${radiusH} ${-radiusW} ${radiusH}
-        q ${-radiusW} 0 ${-radiusW} ${radiusH}
-        q 0 ${radiusH} ${-radiusW} ${radiusH}
-        h ${-radiusW}
-      `;
-    }
-
-    return {
-      type: this.SHAPES.HEXAGONAL,
-      isDynamic: true,
       width(height) {
-        const halfHeight = height / 2;
-        return halfHeight > maxWidth ? maxWidth : halfHeight;
+        const half = height / 2;
+        return half > maxW ? maxW : half;
       },
       height(height) {
         return height;
@@ -123,53 +143,55 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   makeSpikey() {
     const maxW = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
     const maxH = maxW * 2;
+    const roundedCopy = this.ROUNDED;
 
     function makeMainPath(blockHeight, up, right) {
       const extra = blockHeight > maxH ? blockHeight - maxH : 0;
       const h_ = Math.min(blockHeight, maxH);
       const h = h_ + extra;
       const radius = h / 4;
-      const radiusH = Math.min(h_ / 4, maxH);
+      const radiusH = Math.min(h_ / 2, maxH);
       const dirR = right ? 1 : -1;
       const dirU = up ? -1 : 1;
+      const lineWidth = (h_ - extra) / 5;
 
       return `
-        h ${2 * radiusH * dirR}
-        l ${radiusH * -dirR} ${radius * dirU}
-        l ${radiusH * dirR} ${radius * dirU}
-        l ${radiusH * -dirR} ${radius * dirU}
-        l ${radiusH * dirR} ${radius * dirU}
-        h ${2 * radiusH * -dirR}
+        h ${radiusH * dirR}
+        l ${lineWidth * -dirR} ${radius * dirU}
+        l ${lineWidth * dirR} ${radius * dirU}
+        l ${lineWidth * -dirR} ${radius * dirU}
+        l ${lineWidth * dirR} ${radius * dirU}
+        h ${radiusH * -dirR}
       `;
     }
 
     return {
-      type: this.SHAPES.HEXAGONAL,
+      type: this.SHAPES.ROUND,
       isDynamic: true,
-      width(h) {
-        const half = h / 2;
+      width(height) {
+        const half = height / 2;
         return half > maxW ? maxW : half;
       },
-      height(h) {
-        return h;
+      height(height) {
+        return height;
       },
-      connectionOffsetY(h) {
-        return h / 2;
+      connectionOffsetY(height) {
+        return height / 2;
       },
-      connectionOffsetX(w) {
-        return -w;
+      connectionOffsetX(width) {
+        return -width;
       },
-      pathDown(h) {
-        return makeMainPath(h, false, false);
+      pathDown(height) {
+        return makeMainPath(height, false, false);
       },
-      pathUp(h) {
-        return makeMainPath(h, true, false);
+      pathUp(height) {
+        return makeMainPath(height, true, false);
       },
-      pathRightDown(h) {
-        return makeMainPath(h, false, true);
+      pathRightDown(height) {
+        return roundedCopy.pathRightDown(height);
       },
-      pathRightUp(h) {
-        return makeMainPath(h, true, true);
+      pathRightUp(height) {
+        return roundedCopy.pathRightUp(height);
       },
     };
   }

@@ -1,72 +1,61 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User - Rarry</title>
 
-    <link href="src/userprofile.css" rel="stylesheet" />
-    <link href="src/index.css" rel="stylesheet" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User - Rarry</title>
 
-    <meta name="author" content="ddededodediamante" />
-    <meta
-      name="description"
-      content="Create and share games using visual block-coding, inspired by Scratch."
-    />
-    <meta
-      name="keywords"
-      content="Rarry, block coding, Scratch, visual programming, game maker, coding for kids, online coding"
-    />
-    <meta name="theme-color" content="#3b82f6" />
-    <meta property="og:title" content="Rarry" />
-    <meta property="og:image" content="icons/Rarry.svg" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Rarry" />
-    <meta
-      name="twitter:description"
-      content="Create and share games using visual block-coding, inspired by Scratch."
-    />
-    <meta name="twitter:image" content="icons/Rarry.svg" />
-  </head>
+  <link href="src/userprofile.css" rel="stylesheet" />
+  <link href="src/index.css" rel="stylesheet" />
 
-  <body>
-    <header>
-      <div>
-        <img
-          src="icons/Rarry.svg"
-          alt="Rarry logo"
-          onclick="location.href='/'"
-          style="cursor: pointer"
-        />
-        <button onclick="location.href='/editor'">
-          <i class="fa-solid fa-code"></i>
-          Editor
-        </button>
-        <button id="theme-button">
-          <i class="fa-solid fa-paintbrush"></i>
-          Appearance
-        </button>
-      </div>
-      <div>
-        <button onclick="location.href='/login'" id="login-button">
-          <i class="fa-solid fa-right-to-bracket"></i>
-          Login
-        </button>
-      </div>
-    </header>
+  <meta name="author" content="ddededodediamante" />
+  <meta name="description" content="Create and share games using visual block-coding, powered by Blockly." />
+  <meta name="keywords"
+    content="Rarry, block coding, Scratch, visual programming, game maker, online coding" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta property="og:title" content="Rarry" />
+  <meta property="og:image" content="icons/Rarry.svg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rarry" />
+  <meta name="twitter:description" content="Create and share games using visual block-coding, powered by Blockly." />
+  <meta name="twitter:image" content="icons/Rarry.svg" />
+</head>
 
-    <div class="info">
-      <div id="userProfile"></div>
+<body>
+  <header>
+    <div>
+      <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" onclick="location.href='/'" style="cursor: pointer" />
+      <button onclick="location.href='/editor'">
+        <i class="fa-solid fa-code"></i>
+        Editor
+      </button>
+      <button id="settings-button">
+        <i class="fa-solid fa-gear"></i>
+        Settings
+      </button>
     </div>
+    <div>
+      <button onclick="location.href='/login'" id="login-button">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        Login
+      </button>
+    </div>
+  </header>
 
-    <footer>
-      <p>
-        &copy; 2025 Rarry. Made with ❤️ by
-        <a href="https://github.com/ddededodediamante">ddededodediamante</a>.
-      </p>
-    </footer>
+  <div class="info">
+    <div id="userProfile"></div>
+  </div>
 
-    <script type="module" src="src/scripts/userprofile.js"></script>
-  </body>
+  <footer>
+    <p>
+      &copy; 2026 Rarry. Made with ❤️ by
+      <a href="https://github.com/ddededodediamante">ddededodediamante</a>.
+    </p>
+  </footer>
+
+  <script type="module" src="src/scripts/userprofile.js"></script>
+</body>
+
 </html>

@@ -9,16 +9,20 @@ const usernameInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
 const loginButton = document.getElementById("login");
 
+function updateLoginState() {
+  const isUsernameValid = validateUsername(false);
+  const isPasswordValid = validatePassword(false);
+
+  loginButton.disabled = !(isUsernameValid && isPasswordValid);
+}
+
 async function onSignupClick(e) {
   e.preventDefault();
 
   const username = usernameInput.value.trim();
-  const password = passwordInput.value;
+  const password = passwordInput.value.trim();
 
-  if (!username || !password) {
-    alert("Please enter both username and password.");
-    return;
-  }
+  if (!validateUsername() || !validatePassword()) return;
 
   loginButton.disabled = true;
   loginButton.dataset.origHtml = loginButton.innerHTML;
@@ -39,7 +43,7 @@ async function onSignupClick(e) {
         const errJson = await response.json();
 
         errText = errJson.message || JSON.stringify(errJson);
-      } catch (err) {}
+      } catch (err) { }
       throw new Error(errText);
     }
 
@@ -49,11 +53,101 @@ async function onSignupClick(e) {
     window.location.href = "/";
   } catch (err) {
     console.error(err);
-    alert("Login error: " + err.message);
-    
+
+    let data;
+    try {
+      data = JSON.parse(err.message).error;
+    } catch(_) {
+      data = err.message;
+    }
+
+    alert("Sign up error: " + data);
+
     loginButton.disabled = false;
     loginButton.innerHTML = loginButton.dataset.origHtml;
   }
 }
 
 loginButton.addEventListener("click", onSignupClick);
+
+const usernameError = document.getElementById("username-error");
+const passwordError = document.getElementById("password-error");
+
+function validateUsername(showError = true) {
+  const value = usernameInput.value.trim();
+
+  usernameInput.classList.remove("input-invalid", "input-valid");
+
+  if (!value) {
+    usernameError.style.display = "none";
+    return false;
+  }
+
+  if (value.length < 3 || value.length > 20) {
+    if (showError) {
+      usernameError.textContent = "Must be between 3 and 20 characters long";
+      usernameError.style.display = "block";
+    }
+    usernameInput.classList.add("input-invalid");
+    return false;
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+    if (showError) {
+      usernameError.textContent =
+        "Only letters, numbers, underscores (_) and dashes (-) are allowed";
+      usernameError.style.display = "block";
+    }
+    usernameInput.classList.add("input-invalid");
+    return false;
+  }
+
+  if (!/[a-zA-Z]/.test(value)) {
+    if (showError) {
+      usernameError.textContent =
+        "Username must contain at least one letter (a-z or A-Z)";
+      usernameError.style.display = "block";
+    }
+    usernameInput.classList.add("input-invalid");
+    return false;
+  }
+
+  usernameError.style.display = "none";
+  usernameInput.classList.add("input-valid");
+  return true;
+}
+
+function validatePassword(showError = true) {
+  const value = passwordInput.value.trim();
+
+  passwordInput.classList.remove("input-invalid", "input-valid");
+
+  if (!value) {
+    passwordError.style.display = "none";
+    return false;
+  }
+
+  if (value.length < 8 || value.length > 50) {
+    if (showError) {
+      passwordError.textContent =
+        "Must be between 8 and 50 characters long";
+      passwordError.style.display = "block";
+    }
+    passwordInput.classList.add("input-invalid");
+    return false;
+  }
+
+  passwordError.style.display = "none";
+  passwordInput.classList.add("input-valid");
+  return true;
+}
+
+usernameInput.addEventListener("input", () => {
+  validateUsername();
+  updateLoginState();
+});
+
+passwordInput.addEventListener("input", () => {
+  validatePassword();
+  updateLoginState();
+});

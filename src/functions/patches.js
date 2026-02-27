@@ -2,8 +2,7 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js-legacy";
 
-BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP =
-  'if (stopped()) throw new Error("shouldStop");\nif (!fastExecution) await new Promise(r => setTimeout(r, 16));\n';
+BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP = `yield;\n`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
@@ -16,7 +15,7 @@ Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
   Blockly.Blocks[type].init = (function (original) {
     return function () {
       original.call(this);
-      this.setColour("#FFAB19");
+      this.setStyle("control_blocks");
     };
   })(Blockly.Blocks[type].init);
 });
@@ -24,7 +23,7 @@ Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 Blockly.Blocks["controls_forEach"].init = (function (original) {
   return function () {
     original.call(this);
-    this.setColour("#e35340");
+    this.setStyle("list_blocks");
   };
 })(Blockly.Blocks["controls_forEach"].init);
 
@@ -111,7 +110,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   }
 
   let code =
-    "async function " +
+    "function* " +
     procedureName +
     "(" +
     args.join(", ") +
@@ -184,7 +183,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defreturn"] = function (
   }
 
   let code =
-    "async function " +
+    "function* " +
     procedureName +
     "(" +
     args.join(", ") +

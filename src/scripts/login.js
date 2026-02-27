@@ -49,7 +49,15 @@ async function onLoginClick(e) {
     window.location.href = "/";
   } catch (err) {
     console.error(err);
-    alert("Login error: " + err.message);
+    
+    let data;
+    try {
+      data = JSON.parse(err.message).error;
+    } catch(_) {
+      data = err.message;
+    }
+
+    alert("Login error: " + data);
 
     loginButton.disabled = false;
     loginButton.innerHTML = loginButton.dataset.origHtml;

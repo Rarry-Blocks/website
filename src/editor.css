@@ -9,6 +9,10 @@
   overflow: hidden;
 }
 
+html.stageLeft .main {
+  flex-direction: row-reverse;
+}
+
 .left-panel {
   width: 66.66%;
   display: flex;
@@ -141,17 +145,41 @@ html.dark #fullscreen-button img {
 #sprite-info {
   padding: 0.5rem;
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#sprite-info .name {
+  display: flex;
+  max-width: 100%;
+}
+
+#sprite-info .info {
+  display: flex;
   flex-direction: row;
   gap: 5px;
+}
+
+#sprite-info .info > *:not(:last-child) {
+  padding-right: 5px;
+  border-right: 2px solid var(--color2);
 }
 
 #sprite-info p {
   color: var(--dark);
 }
 
-#sprite-info p:not(:last-child) {
-  padding-right: 5px;
-  border-right: 2px solid var(--color2);
+#sprite-info input {
+  margin: 0;
+  padding: 0.3rem;
+  border-radius: 0.5rem;
+}
+
+#sprite-info * {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #sprites-section {
@@ -216,8 +244,7 @@ html.dark #fullscreen-button img {
   margin: 0 5px;
   margin-top: auto;
   background: var(--primary);
-  color: var(--dark);
-  order: 99;
+  order: 9009;
   cursor: pointer;
 }
 
@@ -313,6 +340,19 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   padding: 3px;
 }
 
+.blocklyWidgetDiv .blocklyMenu {
+  background-color: var(--color1);
+  border-color: var(--color2);
+}
+
+.blocklyMenuItem {
+  color: var(--dark);
+}
+
+.blocklyMenuItemDisabled {
+  color: var(--color4);
+}
+
 .categoryBubble {
   margin: 0;
   padding: 0;
@@ -329,8 +369,9 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
 }
 
 #room-users div {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  flex-direction: row;
+  place-items: center;
   gap: 0.3rem;
 }
 
@@ -338,6 +379,11 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   width: 2rem;
   height: 2rem;
   border-radius: 20%;
+}
+
+.kick-button {
+  padding: 0.4rem;
+  font-size: 1rem;
 }
 
 .smallLabel {
