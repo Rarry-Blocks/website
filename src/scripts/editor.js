@@ -14,7 +14,7 @@ import {
   compressAudio,
   compressImage,
   showNotification,
-  showPopup,
+  Popup,
 } from "../functions/utils.js";
 
 import { Costume, Sound, Sprite, SpriteManager } from "../components/Sprite.js";
@@ -1566,7 +1566,7 @@ fullscreenButton.addEventListener("click", () => {
 
 document.getElementById("extensions-custom-button").addEventListener("click", () => {
   const isSharing = currentSocket && currentRoom;
-  showPopup({
+  new Popup({
     title: "Custom Extensions",
     rows: [
       [
@@ -1657,7 +1657,7 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
           : "",
       ],
     ],
-  });
+  }).show();
 });
 
 function getToken() {
@@ -2023,10 +2023,10 @@ liveShare.addEventListener("click", async () => {
       buttons,
     ];
 
-    showPopup({
+    new Popup({
       title: roomExisted ? "Current Room" : "Room Created",
       rows,
-    });
+    }).show();
 
     updateUsersList();
   }
@@ -2181,7 +2181,7 @@ if (window.location.hostname === "localhost") {
   const devButton = document.createElement("button");
   devButton.innerHTML = '<img src="icons/dev-tools-icon.png">';
   devButton.addEventListener("click", e => {
-    showPopup({
+    new Popup({
       title: "Dev Tools",
       rows: [
         [
@@ -2196,7 +2196,7 @@ if (window.location.hostname === "localhost") {
           },
         ],
       ],
-    });
+    }).show();
   });
 
   stageControls.appendChild(devButton);

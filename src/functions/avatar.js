@@ -1,5 +1,5 @@
 import config from "../config";
-import { showPopup } from "./utils";
+import { Popup } from "./utils";
 
 const allowedFileFormats = ["jpeg", "png", "webp", "avif", "gif", "tiff"];
 
@@ -7,7 +7,7 @@ export function attachAvatarChanger(imgEl) {
   if (!imgEl) return;
 
   imgEl.addEventListener("click", () => {
-    showPopup({
+    new Popup({
       title: "Avatar",
       rows: [
         [
@@ -94,6 +94,6 @@ export function attachAvatarChanger(imgEl) {
           },
         ],
       ],
-    });
+    }).show();
   });
 }

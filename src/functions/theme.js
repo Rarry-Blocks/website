@@ -2,17 +2,14 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import * as Blockly from "blockly";
 import config from "../config";
 import { cache } from "../cache";
-import { showPopup } from "./utils";
+import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";
 import { attachAvatarChanger } from "./avatar";
 
 const root = document.documentElement;
 const theme = localStorage.getItem("theme") === "dark" ?? false;
 const icons = localStorage.getItem("removeIcons") === "true" ?? false;
-const rarryToolbar =
-  localStorage.getItem("removeRarryToolbar") === "true" ?? false;
-const toolboxPosition =
-  localStorage.getItem("toolboxPosition") || "space-between";
-const headerColor = localStorage.getItem("headerColor") || "";
+const rarryToolbar = localStorage.getItem("removeRarryToolbar") === "true" ?? false;
+const toolboxPosition = localStorage.getItem("toolboxPosition") || "space-between";
 const stageLeft = localStorage.getItem("stageLeft") === "true" ?? false;
 
 const blockStyles = {
@@ -44,7 +41,7 @@ const blockStyles = {
     colourPrimary: "#9966FF",
   },
   sound_blocks: {
-    colourPrimary: "#ff66ba"
+    colourPrimary: "#ff66ba",
   },
   events_blocks: {
     colourPrimary: "#e9c600",
@@ -83,6 +80,77 @@ const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
   },
 });
 
+const baseColorKeys = ["toolbar-header", "dark", "primary", "danger", "color"];
+const allColorKeys = [
+  "toolbar-header",
+  "dark", "dark-light",
+  "primary", "primary-dark",
+  "danger", "danger-dark",
+  "color1", "color2", "color3", "color4"
+];
+
+export function applyCustomColors() {
+  const savedColors = JSON.parse(localStorage.getItem("colors") || "{}");
+  if (Object.keys(savedColors).length === 0) return;
+
+  if (savedColors["toolbar-header"]) {
+    root.style.setProperty("--toolbar-header", savedColors["toolbar-header"]);
+  }
+  if (savedColors.primary) {
+    root.style.setProperty("--primary", savedColors.primary);
+    root.style.setProperty("--primary-dark", shadeColor(savedColors.primary, -0.2));
+  }
+  if (savedColors.danger) {
+    root.style.setProperty("--danger", savedColors.danger);
+    root.style.setProperty("--danger-dark", shadeColor(savedColors.danger, -0.2));
+  }
+  if (savedColors.dark) {
+    root.style.setProperty("--dark", savedColors.dark);
+    const isLight = getLuminance(savedColors.dark) > 128;
+    root.style.setProperty(
+      "--dark-light",
+      shadeColor(savedColors.dark, isLight ? -0.15 : 0.2),
+    );
+  }
+  if (savedColors.color) {
+    root.style.setProperty("--color1", savedColors.color);
+    const isLight = getLuminance(savedColors.color) > 128;
+
+    if (isLight) root.classList.remove("dark");
+    else root.classList.add("dark");
+
+    root.style.setProperty(
+      "--color2",
+      shadeColor(savedColors.color, isLight ? -0.06 : 0.08),
+    );
+    root.style.setProperty(
+      "--color3",
+      shadeColor(savedColors.color, isLight ? -0.16 : 0.18),
+    );
+    root.style.setProperty(
+      "--color4",
+      shadeColor(savedColors.color, isLight ? -0.25 : 0.25),
+    );
+  }
+}
+
+function updateCustomColor(name, value) {
+  const savedColors = JSON.parse(localStorage.getItem("colors") || "{}");
+
+  if (!value) delete savedColors[name];
+  else savedColors[name] = value;
+
+  localStorage.setItem("colors", JSON.stringify(savedColors));
+
+  allColorKeys.forEach(c => root.style.removeProperty(`--${c}`));
+
+  const isDark = localStorage.getItem("theme") === "dark";
+  if (isDark) root.classList.add("dark");
+  else root.classList.remove("dark");
+
+  applyCustomColors();
+}
+
 export function toggleTheme(dark, workspace) {
   localStorage.setItem("theme", dark ? "dark" : "light");
 
@@ -119,13 +187,6 @@ export function setToolboxPosition(pos) {
   root.classList.add(`toolbox-${pos}`);
 }
 
-export function setHeaderColor(color) {
-  localStorage.setItem("headerColor", color);
-
-  if (!color) root.style.removeProperty("--header-color");
-  else root.style.setProperty("--header-color", color);
-}
-
 export function toggleStageLeft(left) {
   localStorage.setItem("stageLeft", String(left));
 
@@ -139,36 +200,26 @@ export function setupSettingsButton(workspace) {
   toggleRarryToolbar(rarryToolbar);
   toggleStageLeft(stageLeft);
   setToolboxPosition(toolboxPosition);
-  setHeaderColor(headerColor);
 
   const settingsButton = document.getElementById("settings-button");
   if (settingsButton)
-    settingsButton.addEventListener("click", () =>
-      showPopup({
+    settingsButton.addEventListener("click", () => {
+      var currentColors;
+
+      const popup = new Popup({
         title: "Settings",
-        tabs: [
+        beforeRender: () => {
+          currentColors = JSON.parse(localStorage.getItem("colors") || "{}")
+        },
+        tabs: () => [
           {
             label: "Appearance",
             rows: [
               [
-                "Theme:",
-                {
-                  type: "button",
-                  label: '<i class="fa-solid fa-sun"></i> Light',
-                  onClick: () => toggleTheme(false, workspace),
-                },
-                {
-                  type: "button",
-                  label: '<i class="fa-solid fa-moon"></i> Dark',
-                  onClick: () => toggleTheme(true, workspace),
-                },
-              ],
-              [
                 "Show icon on buttons:",
                 {
                   type: "checkbox",
-                  checked:
-                    !document.documentElement.classList.contains("removeIcons"),
+                  checked: !document.documentElement.classList.contains("removeIcons"),
                   onChange: checked => {
                     toggleIcons(!checked);
                   },
@@ -179,25 +230,10 @@ export function setupSettingsButton(workspace) {
                 {
                   type: "checkbox",
                   checked:
-                    !document.documentElement.classList.contains(
-                      "removeRarryToolbar"
-                    ),
+                    !document.documentElement.classList.contains("removeRarryToolbar"),
                   onChange: checked => {
                     toggleRarryToolbar(!checked);
                   },
-                },
-              ],
-              [
-                "Toolbar color:",
-                {
-                  type: "color",
-                  value: localStorage.getItem("headerColor") || "",
-                  onChange: value => setHeaderColor(value),
-                },
-                {
-                  type: "button",
-                  label: "Reset",
-                  onClick: () => setHeaderColor(""),
                 },
               ],
               [
@@ -215,6 +251,53 @@ export function setupSettingsButton(workspace) {
                 },
               ],
             ],
+          },
+          {
+            label: "Colors",
+            rows: [
+              [
+                "Presets:",
+                {
+                  type: "button",
+                  label: '<i class="fa-solid fa-sun"></i> Light',
+                  onClick: (popup) => {
+                    localStorage.removeItem("colors");
+                    allColorKeys.forEach(c => root.style.removeProperty(`--${c}`));
+                    toggleTheme(false, workspace);
+                    popup.refresh();
+                  },
+                },
+                {
+                  type: "button",
+                  label: '<i class="fa-solid fa-moon"></i> Dark',
+                  onClick: (popup) => {
+                    localStorage.removeItem("colors");
+                    allColorKeys.forEach(c => root.style.removeProperty(`--${c}`));
+                    toggleTheme(true, workspace);
+                    popup.refresh();
+                  },
+                },
+              ],
+              ...baseColorKeys.map(key => {
+                let cssVar = key === 'color' ? 'color1' : key;
+                return [
+                  {
+                    type: "button",
+                    label: '<i class="fa-solid fa-arrows-rotate stay"></i>',
+                    onClick: (popup) => {
+                      updateCustomColor(key, "");
+                      popup.refresh();
+                    },
+                  },
+                  `${capitalizeFirstLetter(key).replaceAll("-", " ")}:`,
+                  {
+                    type: "color",
+                    value: currentColors?.[key] || getComputedStyle(root).getPropertyValue(`--${cssVar}`).trim(),
+                    onChange: value => updateCustomColor(key, value),
+                  },
+                ]
+              })
+            ]
           },
           {
             label: "Editor",
@@ -236,18 +319,18 @@ export function setupSettingsButton(workspace) {
                 "Stage on left:",
                 {
                   type: "checkbox",
-                  checked:
-                    document.documentElement.classList.contains("stageLeft"),
+                  checked: document.documentElement.classList.contains("stageLeft"),
                   onChange: checked => {
                     toggleStageLeft(checked);
                   },
                 },
               ],
-            ]
-          }
+            ],
+          },
         ],
-      })
-    );
+      });
+      popup.show();
+    });
 }
 
 export function setupUserTag() {
@@ -284,9 +367,7 @@ export function setupUserTag() {
       })
         .then(response => {
           if (!response.ok)
-            throw new Error(
-              "Failed to fetch user data: " + response.statusText
-            );
+            throw new Error("Failed to fetch user data: " + response.statusText);
           return response.json();
         })
         .then(data => {

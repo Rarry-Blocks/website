@@ -1,7 +1,5 @@
 import * as Blockly from "blockly";
 
-let currentPopup;
-
 export function showNotification({ message = "", duration = 5000, closable = true }) {
   const notification = document.createElement("div");
   notification.className = "notification";
@@ -36,28 +34,146 @@ export function showNotification({ message = "", duration = 5000, closable = tru
   return notification;
 }
 
-export function showPopup({
-  innerHTML = "",
-  title = "",
-  rows = [],
-  tabs = null,
-  noAnimation = false,
-}) {
-  const popup = document.createElement("div");
-  popup.className = "popup";
-  if (noAnimation) popup.classList.add("no-animation");
+export class Popup {
+  static current = null;
 
-  if (currentPopup) currentPopup.remove();
-  currentPopup = popup;
+  constructor(options = {}) {
+    this.options = {
+      title: "",
+      innerHTML: "",
+      rows: [],
+      tabs: null,
+      noAnimation: false,
+      onClose: null,
+      beforeRender: null,
+      ...options,
+    };
+    this.element = null;
+    this.currentTabIndex = 0;
+  }
 
-  function generateRowsHTML(rowsArr, tabIndex = null) {
+  show() {
+    if (Popup.current && Popup.current !== this) {
+      Popup.current.hide();
+    }
+    Popup.current = this;
+
+    if (!this.element) {
+      this.element = document.createElement("div");
+      this.element.className = "popup";
+      if (this.options.noAnimation) this.element.classList.add("no-animation");
+
+      this.element.innerHTML = `
+        <div class="popup-content">
+          <header>
+            <h2 class="popup-title"></h2>
+            <button class="popup-close danger">
+              <i class="fa-solid fa-xmark stay"></i>
+            </button>
+          </header>
+          <div class="popup-body"></div>
+        </div>
+      `;
+
+      this.element.querySelector(".popup-close").addEventListener("click", () => this.hide());
+      document.body.appendChild(this.element);
+    }
+
+    this.render();
+  }
+
+  hide() {
+    if (this.element) {
+      this.element.remove();
+      this.element = null;
+    }
+    if (Popup.current === this) Popup.current = null;
+    if (typeof this.options.onClose === "function") this.options.onClose();
+  }
+
+  refresh(newOptions = {}) {
+    this.options = { ...this.options, ...newOptions };
+    if (this.element) this.render();
+  }
+
+  _resolve(val) {
+    return typeof val === "function" ? val(this) : val;
+  }
+
+  render() {
+    if (typeof this.options.beforeRender === "function") {
+      this.options.beforeRender(this);
+    }
+
+    const title = this._resolve(this.options.title);
+    const tabs = this._resolve(this.options.tabs);
+    const rows = this._resolve(this.options.rows);
+    const innerHTML = this._resolve(this.options.innerHTML);
+
+    const titleEl = this.element.querySelector(".popup-title");
+    if (titleEl) titleEl.textContent = title;
+
+    const bodyEl = this.element.querySelector(".popup-body");
+    let bodyHTML = "";
+
+    if (Array.isArray(tabs) && tabs.length > 0) {
+      // Stay on the same tab, but don't go out of bounds if tabs changed
+      if (this.currentTabIndex >= tabs.length) this.currentTabIndex = 0;
+
+      const tabButtons = tabs
+        .map((tab, i) =>
+          `<button class="popup-tab-button ${i === this.currentTabIndex ? "active" : ""}" data-tab-btn="${i}">${tab.label}</button>`
+        )
+        .join("");
+
+      const tabContents = tabs
+        .map((tab, i) => `
+          <div class="popup-tab-content ${i === this.currentTabIndex ? "active" : ""}" data-tab-content="${i}">
+            ${this._generateRowsHTML(tab.rows || [], i)}
+            ${tab.innerHTML || ""}
+          </div>
+        `)
+        .join("");
+
+      bodyHTML = `
+        <div class="popup-tabs">
+          <div class="popup-tab-buttons">${tabButtons}</div>
+          ${tabContents}
+        </div>
+      `;
+    } else {
+      bodyHTML = `${this._generateRowsHTML(rows || [])}${innerHTML || ""}`;
+    }
+
+    bodyEl.innerHTML = bodyHTML;
+
+    if (Array.isArray(tabs) && tabs.length > 0) {
+      const buttons = bodyEl.querySelectorAll("[data-tab-btn]");
+      const contents = bodyEl.querySelectorAll("[data-tab-content]");
+
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          this.currentTabIndex = parseInt(btn.getAttribute("data-tab-btn"), 10);
+          buttons.forEach(b => b.classList.remove("active"));
+          contents.forEach(c => c.classList.remove("active"));
+          btn.classList.add("active");
+          bodyEl.querySelector(`[data-tab-content="${this.currentTabIndex}"]`).classList.add("active");
+        });
+      });
+
+      tabs.forEach((tab, tabIndex) => this._attachRowListeners(tab.rows || [], tabIndex));
+    } else {
+      this._attachRowListeners(rows || []);
+    }
+  }
+
+  _generateRowsHTML(rowsArr, tabIndex = null) {
     return rowsArr
       .map((row, rowIndex) => {
         const rowHTML = row
           .map((item, colIndex) => {
             if (typeof item === "string") {
-              if (item === "") return "";
-              return `<span class="popup-label">${item}</span>`;
+              return item === "" ? "" : `<span class="popup-label">${item}</span>`;
             }
 
             const dataAttr = tabIndex !== null ? `data-tab="${tabIndex}"` : "";
@@ -66,62 +182,21 @@ export function showPopup({
               case "custom":
                 return item.html || "";
               case "button":
-                return `<button
-                  class="${item.className || ""}"
-                  data-row="${rowIndex}" data-col="${colIndex}"
-                  ${dataAttr}
-                  ${item.disabled ? "disabled" : ""}
-                >${item.label}</button>`;
+                return `<button class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} ${item.disabled ? "disabled" : ""}>${item.label}</button>`;
               case "input":
-                return `<input
-                  type="${item.inputType || "text"}"
-                  placeholder="${item.placeholder || ""}"
-                  value="${item.value || ""}"
-                  class="${item.className || ""}"
-                  data-row="${rowIndex}" data-col="${colIndex}"
-                  ${dataAttr}
-                />`;
+                return `<input type="${item.inputType || "text"}" placeholder="${item.placeholder || ""}" value="${item.value || ""}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} />`;
               case "checkbox":
-                return `<input
-                  type="checkbox"
-                  class="${item.className || ""}"
-                  data-row="${rowIndex}" data-col="${colIndex}"
-                  ${dataAttr}
-                  ${item.checked ? "checked" : ""}
-                />`;
+                return `<input type="checkbox" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} ${item.checked ? "checked" : ""} />`;
               case "textarea":
-                return `<textarea
-                  placeholder="${item.placeholder || ""}"
-                  rows="${item.rows || 3}"
-                  cols="${item.cols || 30}"
-                  class="${item.className || ""}"
-                  data-row="${rowIndex}" data-col="${colIndex}"
-                  ${dataAttr}
-                >${item.value || ""}</textarea>`;
+                return `<textarea placeholder="${item.placeholder || ""}" rows="${item.rows || 3}" cols="${item.cols || 30}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr}>${item.value || ""}</textarea>`;
               case "label":
                 return `<span class="popup-label">${item.text}</span>`;
               case "menu":
-                return `<select
-                  class="${item.className || ""}"
-                  data-row="${rowIndex}" data-col="${colIndex}"
-                  ${dataAttr}
-                >
-                  ${item.options
-                    .map(
-                      opt =>
-                        `<option value="${opt.value}" ${opt.value === item.value ? "selected" : ""
-                        }>${opt.label}</option>`,
-                    )
-                    .join("")}
+                return `<select class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr}>
+                  ${item.options.map(opt => `<option value="${opt.value}" ${opt.value === item.value ? "selected" : ""}>${opt.label}</option>`).join("")}
                 </select>`;
               case "color":
-                return `<input
-                  type="color"
-                  value="${item.value || "#ffffff"}"
-                  class="${item.className || ""}"
-                  data-row="${rowIndex}" data-col="${colIndex}"
-                  ${dataAttr}
-                />`;
+                return `<input type="color" value="${item.value || "#ffffff"}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} />`;
               default:
                 return "";
             }
@@ -132,123 +207,36 @@ export function showPopup({
       .join("");
   }
 
-  function attachRowListeners(rowsArr, tabIndex = null) {
+  _attachRowListeners(rowsArr, tabIndex = null) {
     rowsArr.forEach((row, rowIndex) => {
       row.forEach((item, colIndex) => {
         const selectorParts = [`[data-row="${rowIndex}"]`, `[data-col="${colIndex}"]`];
+        if (tabIndex !== null) selectorParts.push(`[data-tab="${tabIndex}"]`);
 
-        if (tabIndex !== null) {
-          selectorParts.push(`[data-tab="${tabIndex}"]`);
-        }
-
-        const el = popup.querySelector(selectorParts.join(""));
+        const el = this.element.querySelector(selectorParts.join(""));
         if (!el) return;
 
         if (item.type === "button" && item.onClick) {
-          el.addEventListener("click", () => item.onClick(popup));
+          el.addEventListener("click", () => item.onClick(this));
         }
         if (item.type === "input" && item.onInput) {
-          el.addEventListener("input", e => item.onInput(e.target.value, popup));
+          el.addEventListener("input", e => item.onInput(e.target.value, this));
         }
         if (item.type === "checkbox" && item.onChange) {
-          el.addEventListener("change", e => item.onChange(e.target.checked, popup));
+          el.addEventListener("change", e => item.onChange(e.target.checked, this));
         }
         if (item.type === "textarea" && item.onInput) {
-          el.addEventListener("input", e => item.onInput(e.target.value, popup));
+          el.addEventListener("input", e => item.onInput(e.target.value, this));
         }
         if (item.type === "menu" && item.onChange) {
-          el.addEventListener("change", e => item.onChange(e.target.value, popup));
+          el.addEventListener("change", e => item.onChange(e.target.value, this));
         }
         if (item.type === "color" && item.onChange) {
-          el.addEventListener("input", e => item.onChange(e.target.value, popup));
+          el.addEventListener("input", e => item.onChange(e.target.value, this));
         }
       });
     });
   }
-
-  let bodyHTML = "";
-
-  if (Array.isArray(tabs) && tabs.length > 0) {
-    const tabButtons = tabs
-      .map(
-        (tab, i) =>
-          `<button class="popup-tab-button ${i === 0 ? "active" : ""
-          }" data-tab-btn="${i}">${tab.label}</button>`,
-      )
-      .join("");
-
-    const tabContents = tabs
-      .map((tab, i) => {
-        return `
-          <div class="popup-tab-content ${i === 0 ? "active" : ""
-          }" data-tab-content="${i}">
-            ${generateRowsHTML(tab.rows || [], i)}
-            ${tab.innerHTML || ""}
-          </div>
-        `;
-      })
-      .join("");
-
-    bodyHTML = `
-      <div class="popup-tabs">
-        <div class="popup-tab-buttons">
-          ${tabButtons}
-        </div>
-        ${tabContents}
-      </div>
-    `;
-  } else {
-    bodyHTML = `
-      ${generateRowsHTML(rows)}
-      ${innerHTML}
-    `;
-  }
-
-  popup.innerHTML = `
-    <div class="popup-content">
-      <header>
-        <h2>${title}</h2>
-        <button class="popup-close danger">
-          <i class="fa-solid fa-xmark stay"></i>
-        </button>
-      </header>
-      <div class="popup-body">
-        ${bodyHTML}
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(popup);
-
-  popup.querySelector(".popup-close").addEventListener("click", () => {
-    currentPopup = null;
-    popup.remove();
-  });
-
-  if (Array.isArray(tabs) && tabs.length > 0) {
-    const buttons = popup.querySelectorAll("[data-tab-btn]");
-    const contents = popup.querySelectorAll("[data-tab-content]");
-
-    buttons.forEach(i => {
-      i.addEventListener("click", () => {
-        const index = i.getAttribute("data-tab-btn");
-
-        buttons.forEach(b => b.classList.remove("active"));
-        contents.forEach(c => c.classList.remove("active"));
-
-        i.classList.add("active");
-        popup.querySelector(`[data-tab-content="${index}"]`).classList.add("active");
-      });
-    });
-
-    tabs.forEach((tab, tabIndex) => {
-      attachRowListeners(tab.rows || [], tabIndex);
-    });
-  } else {
-    attachRowListeners(rows);
-  }
-
-  return popup;
 }
 
 export function promiseWithAbort(promiseOrFn, signal) {
@@ -470,3 +458,47 @@ export const tweenEasing = {
       ? (1 - tweenEasing.OutBounce(1 - 2 * t)) / 2
       : (1 + tweenEasing.OutBounce(2 * t - 1)) / 2,
 };
+
+/**
+ * Blends a hex color toward white (positive percent) or black (negative percent).
+ * @param {string} color An RGB hex color 
+ * @param {number} percent The percent to blend
+ * @returns The shaded RGB hex color
+ */
+export function shadeColor(color, percent) {
+  let f = parseInt(color.slice(1), 16),
+    t = percent < 0 ? 0 : 255,
+    p = percent < 0 ? percent * -1 : percent,
+    R = f >> 16,
+    G = (f >> 8) & 0x00ff,
+    B = f & 0x0000ff;
+  return "#" + (
+    0x1000000 +
+    (Math.round((t - R) * p) + R) * 0x10000 +
+    (Math.round((t - G) * p) + G) * 0x100 +
+    (Math.round((t - B) * p) + B)
+  ).toString(16).slice(1);
+}
+
+/**
+ * Calculates brightness of a color.
+ * @param {string} color An RGB hex color 
+ * @returns A number from 0 to 255, > 128 is generally considered light
+ */
+export function getLuminance(color) {
+  let f = parseInt(color.slice(1), 16),
+    R = f >> 16,
+    G = (f >> 8) & 0x00ff,
+    B = f & 0x0000ff;
+  return (R * 299 + G * 587 + B * 114) / 1000;
+}
+
+/**
+ * Capitalize the first letter in the string.
+ * @param {string} string The string 
+ * @returns The string with the first letter capitalized
+ */
+export function capitalizeFirstLetter(string) {
+  if (string.length === 0) return "";
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}

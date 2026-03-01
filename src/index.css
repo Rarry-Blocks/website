@@ -12,7 +12,7 @@ html {
   --color2: #e4e5e7;
   --color3: #cbcdcf;
   --color4: #b9bbbd;
-  --header-color: var(--primary);
+  --toolbar-header: #3b82f6;
 }
 
 html.dark {
@@ -26,7 +26,7 @@ html.dark {
   --color2: #2f3741;
   --color3: #3d4552;
   --color4: #464f5e;
-  --header-color: var(--color4);
+  --toolbar-header: #464f5e;
 }
 
 * {
@@ -69,7 +69,7 @@ div#stage {
 }
 
 header {
-  background: var(--header-color);
+  background: var(--toolbar-header);
   display: flex;
   justify-content: space-between;
   align-items: center;
