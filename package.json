@@ -1,5 +1,5 @@
 {
-  "name": "rarry-vite",
+  "name": "rarry",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,10 +14,10 @@
   "dependencies": {
     "@blockly/plugin-strict-connection-checker": "^6.0.1",
     "@fortawesome/fontawesome-free": "^7.0.1",
-    "blockly": "^12.2.0",
     "jszip": "^3.10.1",
     "pako": "^2.1.0",
     "pixi.js-legacy": "^7.4.3",
+    "rockly": "github:Rarry-Blocks/rockly#dist",
     "socket.io-client": "^4.8.1"
   }
 }

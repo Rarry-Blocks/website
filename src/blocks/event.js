@@ -1,15 +1,12 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "rockly";
+import * as BlocklyJS from "rockly/javascript";
 
 Blockly.Blocks["when_flag_clicked"] = {
   init: function () {
     this.appendDummyInput()
       .appendField("when")
       .appendField(
-        new Blockly.FieldImage("icons/flag.svg", 25, 25, {
-          alt: "Green flag",
-          flipRtl: "FALSE",
-        })
+        new Blockly.FieldImage("icons/flag.svg", 25, 25, "Green flag", null, false)
       )
       .appendField("clicked");
     this.appendStatementInput("DO").setCheck("default");

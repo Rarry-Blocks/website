@@ -1,4 +1,4 @@
-import * as Blockly from "blockly";
+import * as Blockly from "rockly";
 
 export function showNotification({ message = "", duration = 5000, closable = true }) {
   const notification = document.createElement("div");

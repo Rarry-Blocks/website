@@ -1,14 +1,13 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "rockly";
+import * as BlocklyJS from "rockly/javascript";
 import * as PIXI from "pixi.js-legacy";
 import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
 
 import Toolbox from "../components/Toolbox.js";
-import CustomRenderer from "../functions/render.js";
 import { setupSettingsButton } from "../functions/theme.js";
 import {
   compressAudio,
@@ -94,14 +93,6 @@ createPenGraphics();
 export let projectVariables = {};
 export let activeSprite = null;
 
-Blockly.blockRendering.register("custom_zelos", CustomRenderer);
-
-let renderer = localStorage.getItem("renderer");
-if (!renderer) {
-  localStorage.setItem("renderer", "custom_zelos");
-  renderer = "custom_zelos";
-}
-
 const blocklyDiv = document.getElementById("blocklyDiv");
 const toolbox = document.getElementById("toolbox");
 toolbox.innerHTML = Toolbox;
@@ -109,7 +100,7 @@ export const workspace = Blockly.inject(blocklyDiv, {
   toolbox: toolbox,
   scrollbars: true,
   trashcan: true,
-  renderer,
+  renderer: 'zelos',
   zoom: {
     controls: true,
     wheel: true,

@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "rockly";
+import * as BlocklyJS from "rockly/javascript";
 const xmlUtils = Blockly.utils.xml;
 
 function assure(generator, code) {

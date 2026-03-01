@@ -1,5 +1,5 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import * as Blockly from "blockly";
+import * as Blockly from "rockly";
 import config from "../config";
 import { cache } from "../cache";
 import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";
@@ -302,19 +302,6 @@ export function setupSettingsButton(workspace) {
           {
             label: "Editor",
             rows: [
-              [
-                "Renderer (applies after refresh):",
-                {
-                  type: "menu",
-                  value: localStorage.getItem("renderer"),
-                  options: [
-                    { label: "Zelos (default)", value: "custom_zelos" },
-                    { label: "Thrasos", value: "thrasos" },
-                    { label: "Geras", value: "geras" },
-                  ],
-                  onChange: value => localStorage.setItem("renderer", value),
-                },
-              ],
               [
                 "Stage on left:",
                 {
