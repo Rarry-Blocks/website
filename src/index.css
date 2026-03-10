@@ -260,14 +260,16 @@ html.removeIcons button i:not(.stay) {
 }
 
 .popup-content {
+  position: relative;
+  display: flex;           
+  flex-direction: column;  
+  overflow: hidden; 
   background: var(--color2);
   color: var(--dark);
-  position: relative;
   min-width: 70%;
   height: max(300px, 70%);
   border-radius: 0.5rem;
   animation: scaleIn 0.3s ease;
-  overflow: hidden;
 }
 
 .popup-content header {
@@ -291,8 +293,11 @@ html.removeIcons button i:not(.stay) {
 }
 
 .popup-body {
-  padding: 0.5rem;
   flex-direction: column;
+  overflow-y: auto; 
+  padding: 0.5rem;
+  flex: 1;                 
+  min-height: 0;           
 }
 
 .popup-row {

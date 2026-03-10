@@ -1,4 +1,4 @@
-import * as Blockly from "rockly";
+import * as Blockly from "blockly";
 
 export function showNotification({ message = "", duration = 5000, closable = true }) {
   const notification = document.createElement("div");
@@ -117,7 +117,6 @@ export class Popup {
     let bodyHTML = "";
 
     if (Array.isArray(tabs) && tabs.length > 0) {
-      // Stay on the same tab, but don't go out of bounds if tabs changed
       if (this.currentTabIndex >= tabs.length) this.currentTabIndex = 0;
 
       const tabButtons = tabs

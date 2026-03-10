@@ -1,35 +1,7 @@
-import * as Blockly from "rockly";
-import * as BlocklyJS from "rockly/javascript";
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
 
 const ARG_BLOCK_TYPE = "FunctionsArgumentBlock";
-
-class CustomChecker extends Blockly.ConnectionChecker {
-  canConnect(a, b, isDragging, opt_distance) {
-    if (!isDragging) {
-      return super.canConnect(a, b, isDragging, opt_distance);
-    }
-
-    /** @type {Blockly.BlockSvg} */
-    const existing = b.targetConnection && b.targetConnection.getSourceBlock();
-
-    if (
-      existing &&
-      ((existing.type === "functions_argument_block" && existing.isShadow()) ||
-        existing?.outputConnection?.getCheck()?.includes("DuplicateShadowType"))
-    ) {
-      return false;
-    }
-
-    return super.canConnect(a, b, isDragging, opt_distance);
-  }
-}
-
-Blockly.registry.register(
-  Blockly.registry.Type.CONNECTION_CHECKER,
-  "CustomChecker",
-  CustomChecker,
-  true,
-);
 
 class FunctionDuplicateOnDrag {
   constructor(block) {
@@ -129,12 +101,7 @@ Blockly.Blocks["functions_argument_block"] = {
     this.setOutput(true, null);
     this.setMovable(true);
     this.setDeletable(true);
-
-    setTimeout(() => {
-      if (this.setDragStrategy && this.isShadow()) {
-        this.setDragStrategy(new FunctionDuplicateOnDrag(this));
-      }
-    });
+    this.setDuplicateOnDrag(true);
   },
 
   mutationToDom: function () {

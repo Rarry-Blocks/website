@@ -1,4 +1,4 @@
-import * as Blockly from "rockly";
+import * as Blockly from "blockly";
 const svgPaths = Blockly.utils.svgPaths;
 
 class CustomConstantProvider extends Blockly.zelos.ConstantProvider {

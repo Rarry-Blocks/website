@@ -56,7 +56,7 @@ export function attachAvatarChanger(imgEl) {
                   console.error(err);
                   alert("Error uploading: " + err.message);
                 } finally {
-                  popup.remove();
+                  popup.hide();
                   input.remove();
                 }
               };
@@ -88,7 +88,7 @@ export function attachAvatarChanger(imgEl) {
                 console.error(err);
                 alert("Error deleting: " + err.message);
               } finally {
-                popup.remove();
+                popup.hide();
               }
             },
           },

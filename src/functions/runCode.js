@@ -13,6 +13,7 @@ import {
 } from "../scripts/editor";
 import { tweenEasing } from "./utils";
 import { extensions } from "./extensionManager";
+import { currentThread } from "../components/VM";
 
 const BUBBLE_PADDING = 10;
 const BUBBLE_TAIL_HEIGHT = 15;
@@ -489,6 +490,11 @@ export function runCodeWithFunctions({
     extensions,
     MyFunctions
   };
+
+  Object.defineProperty(VM_FUNCTIONS, 'currentThread', {
+    get: () => currentThread,
+    enumerable: true,
+  });
 
   console.info('Compiling code:\n', code);
   try {

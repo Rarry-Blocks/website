@@ -1,15 +1,56 @@
+export class Thread {
+  constructor(target, generatorFunc) {
+    this.target = target;
+    this.status = "running";
+    this.variables = new Map();
+    this.generator = generatorFunc(this);
+  }
+
+  getVar(name) {
+    return this.variables.get(name);
+  }
+
+  setVar(name, value) {
+    this.variables.set(name, value);
+    return this; 
+  }
+
+  hasVar(name) {
+    return this.variables.has(name);
+  }
+
+  deleteVar(name) {
+    this.variables.delete(name);
+    return this;
+  }
+
+  clearVars() {
+    this.variables.clear();
+    return this;
+  }
+
+  stop() {
+    this.status = "stopped";
+  }
+
+  isRunning() {
+    return this.status === "running";
+  }
+
+  isStopped() {
+    return this.status === "stopped";
+  }
+}
+
+export let currentThread = null;
+
 export class VM {
   constructor() {
     this.threads = [];
-    this.currentThread = null;
   }
 
   execute(generatorFunc, target) {
-    const thread = {
-      target: target,
-      generator: generatorFunc(target),
-      status: 'running'
-    };
+    const thread = new Thread(target, generatorFunc);
     this.threads.push(thread);
     return thread;
   }
@@ -17,12 +58,13 @@ export class VM {
   step() {
     for (let i = this.threads.length - 1; i >= 0; i--) {
       const thread = this.threads[i];
-      if (!thread || thread.status === 'stopped') {
+
+      if (!thread || thread.status === "stopped") {
         this.threads.splice(i, 1);
         continue;
       }
 
-      this.currentThread = thread;
+      currentThread = thread;
 
       try {
         const result = thread.generator.next();
@@ -33,40 +75,31 @@ export class VM {
         console.error("Thread Error:", e);
         this.threads.splice(i, 1);
       } finally {
-        this.currentThread = null;
+        currentThread = null;
       }
     }
   }
 
   stopAll() {
     this.threads = [];
-    this.currentThread = null;
+    currentThread = null;
   }
 
   stopForTarget(target) {
     for (const thread of this.threads) {
-      if (thread.target === target) {
-        thread.status = 'stopped';
-      }
+      if (thread.target === target) thread.stop();
     }
   }
 
   stopOtherScriptsForTarget(target) {
     for (const thread of this.threads) {
-      if (
-        thread.target === target &&
-        thread !== this.currentThread
-      ) {
-        thread.status = "stopped";
-      }
+      if (thread.target === target && thread !== currentThread) thread.stop();
     }
   }
 
   stopAllExceptTarget(target) {
     for (const thread of this.threads) {
-      if (thread.target !== target) {
-        thread.status = "stopped";
-      }
+      if (thread.target !== target) thread.stop();
     }
   }
 }

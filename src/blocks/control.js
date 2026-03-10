@@ -1,5 +1,5 @@
-import * as Blockly from "rockly";
-import * as BlocklyJS from "rockly/javascript";
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
 import { spriteManager } from "../scripts/editor";
 
 Blockly.Blocks["wait_one_frame"] = {

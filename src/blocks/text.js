@@ -1,5 +1,5 @@
-import * as Blockly from "rockly";
-import * as BlocklyJS from "rockly/javascript";
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
 const xmlUtils = Blockly.utils.xml;
 
 /* Thank you LordCat0 (https://github.com/LordCat0) for this block's code! */
@@ -63,7 +63,7 @@ Blockly.Blocks["text_join_extendable"] = {
       .setAlign(Blockly.inputs.Align.RIGHT)
       .appendField(
         new Blockly.FieldImage(
-          "/icons/caretLeft.svg",
+          "/icons/blocks/caretLeft.svg",
           18,
           25,
           "remove an input",
@@ -72,7 +72,7 @@ Blockly.Blocks["text_join_extendable"] = {
       )
       .appendField(
         new Blockly.FieldImage(
-          "/icons/caretRight.svg",
+          "/icons/blocks/caretRight.svg",
           18,
           25,
           "add an input",

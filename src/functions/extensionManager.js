@@ -1,56 +1,9 @@
-import * as Blockly from "rockly";
-import * as BlocklyJS from "rockly/javascript";
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
 import { activeExtensions } from "../scripts/editor";
+import { DuplicateOnDrag } from "./patches/block";
 
 export const extensions = {};
-
-class DuplicateOnDrag {
-  constructor(block) {
-    this.block = block;
-  }
-
-  isMovable() {
-    return true;
-  }
-
-  startDrag(e) {
-    if (!this.block.isShadow()) return;
-
-    const ws = this.block.workspace;
-    const data = this.block.toCopyData();
-
-    data.blockState = {
-      ...(data.blockState ?? {}),
-      type: this.block.type,
-    };
-
-    if (this.block.saveExtraState) {
-      data.blockState.extraState = this.block.saveExtraState();
-    }
-
-    this.copy = Blockly.clipboard.paste(data, ws);
-    this.copy.setShadow(false);
-    this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.copy);
-    this.copy.setDragStrategy(this.baseStrat);
-    this.baseStrat.startDrag(e);
-  }
-
-  drag(e) {
-    this.block.workspace
-      .getGesture(e)
-      .getCurrentDragger()
-      .setDraggable(this.copy);
-    this.baseStrat.drag(e);
-  }
-
-  endDrag(e) {
-    this.baseStrat?.endDrag(e);
-  }
-
-  revertDrag(e) {
-    this.copy?.dispose();
-  }
-}
 
 function textToBlock(block, text, fields) {
   const regex = /\[([^\]]+)\]/g;
@@ -151,9 +104,8 @@ export async function registerExtension(extClass) {
         if (blockDef.cloneOnDrag === true)
           this.setDragStrategy(new DuplicateOnDrag(this));
 
-        this.setColour(blockDef.color || category.color);
-
-        this.setInputsInline(Boolean(blockDef.inlineInputs ?? false));
+        this.setColour(String(blockDef.color || category.color));
+        this.setInputsInline(Boolean(blockDef.inlineInputs ?? true));
       },
     };
 
@@ -170,7 +122,7 @@ export async function registerExtension(extClass) {
 
           let shadowEl = null;
 
-          if (spec.type === "Number") {
+          if (spec.type === "Number" || spec.type === null) {
             shadowEl = document.createElement("shadow");
             shadowEl.setAttribute("type", "math_number");
 
@@ -196,10 +148,7 @@ export async function registerExtension(extClass) {
             shadowEl.appendChild(fieldEl);
           }
 
-          if (shadowEl) {
-            valueEl.appendChild(shadowEl);
-          }
-
+          if (shadowEl) valueEl.appendChild(shadowEl);
           blockEl.appendChild(valueEl);
         }
       }
@@ -254,7 +203,7 @@ export async function registerExtension(extClass) {
         ([k, v]) => `${JSON.stringify(k)}:${v}`
       );
       const args = `{${argsParts.join(",")}}`;
-      const callCode = `extensions["${fullType}"](${args})`;
+      const callCode = `extensions["${fullType}"](${args}, currentThread)`;
 
       const finalCode = def.promise ? `await ${callCode}` : callCode;
 

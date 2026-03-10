@@ -1,5 +1,5 @@
-import * as Blockly from "rockly";
-import * as BlocklyJS from "rockly/javascript";
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
 import { DuplicateOnDragWithType } from "../functions/utils";
 const xmlUtils = Blockly.utils.xml;
 
@@ -65,7 +65,7 @@ Blockly.Blocks["sets_create_extendable"] = {
       .setAlign(Blockly.inputs.Align.RIGHT)
       .appendField(
         new Blockly.FieldImage(
-          "/icons/caretLeft.svg",
+          "/icons/blocks/caretLeft.svg",
           18,
           25,
           "remove an input",
@@ -74,7 +74,7 @@ Blockly.Blocks["sets_create_extendable"] = {
       )
       .appendField(
         new Blockly.FieldImage(
-          "/icons/caretRight.svg",
+          "/icons/blocks/caretRight.svg",
           18,
           25,
           "add an input",
@@ -524,9 +524,7 @@ BlocklyJS.javascriptGenerator.forBlock["sets_merge"] = function (
 
 Blockly.Blocks["sets_foreach"] = {
   init: function () {
-    this.appendValueInput("ITEM")
-      .setCheck("DuplicateShadowType")
-      .appendField("for each");
+    this.appendValueInput("ITEM").appendField("for each");
     this.appendValueInput("SET")
       .setCheck("Set")
       .appendField("in set");
@@ -555,18 +553,9 @@ Blockly.Blocks["sets_foreach_item"] = {
   init: function () {
     this.appendDummyInput("name").appendField("item");
     this.setInputsInline(true);
+    this.setOutput(true, "Number");
+    this.setDuplicateOnDrag(true);
     this.setStyle("set_blocks");
-
-    const outputTypes = "Number";
-    this.setOutput(true, null);
-    setTimeout(() => {
-      if (this.setDragStrategy && this.isShadow()) {
-        this.setOutput(true, "DuplicateShadowType");
-        this.setDragStrategy(new DuplicateOnDragWithType(this, outputTypes));
-      } else {
-        this.setOutput(true, outputTypes);
-      }
-    });
   },
 };
 

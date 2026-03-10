@@ -1,11 +1,14 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
-import * as Blockly from "rockly";
-import * as BlocklyJS from "rockly/javascript";
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js-legacy";
 import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
+
+import "../functions/patches/block.js";
+import "../functions/patches/connectionchecker.js";
 
 import Toolbox from "../components/Toolbox.js";
 import { setupSettingsButton } from "../functions/theme.js";
@@ -24,6 +27,7 @@ import { runCodeWithFunctions } from "../functions/runCode.js";
 import builtInExtensions from "../functions/builtInExtensions.js";
 import config from "../config";
 import { VM } from "../components/VM.js";
+import CustomRenderer from "../functions/render.js";
 
 BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
 
@@ -93,6 +97,8 @@ createPenGraphics();
 export let projectVariables = {};
 export let activeSprite = null;
 
+Blockly.blockRendering.register("custom_zelos", CustomRenderer);
+
 const blocklyDiv = document.getElementById("blocklyDiv");
 const toolbox = document.getElementById("toolbox");
 toolbox.innerHTML = Toolbox;
@@ -100,7 +106,7 @@ export const workspace = Blockly.inject(blocklyDiv, {
   toolbox: toolbox,
   scrollbars: true,
   trashcan: true,
-  renderer: 'zelos',
+  renderer: 'custom_zelos',
   zoom: {
     controls: true,
     wheel: true,
@@ -1578,7 +1584,7 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
           className: "primary",
           disabled: isSharing,
           onClick: popup => {
-            const input = popup.querySelector('[data-row="1"][data-col="1"]');
+            const input = popup.element.querySelector('[data-row="1"][data-col="1"]');
             const userCode = input ? input.value : "";
 
             const iframe = document.createElement("iframe");
@@ -1639,7 +1645,7 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
 
             window.addEventListener("message", handleMessage);
 
-            popup.remove();
+            popup.hide();
             document.getElementById("extensions-popup")?.classList.add("hidden");
           },
         },
@@ -1993,7 +1999,7 @@ liveShare.addEventListener("click", async () => {
             message: amHost ? "Room closed" : "Left room",
           });
 
-          popup.remove();
+          popup.hide();
 
           currentSocket.disconnect();
           currentSocket = null;
@@ -2170,7 +2176,7 @@ if (window.location.hostname === "localhost") {
   const stageControls = document.getElementById("stage-controls");
 
   const devButton = document.createElement("button");
-  devButton.innerHTML = '<img src="icons/dev-tools-icon.png">';
+  devButton.innerHTML = '<img src="icons/devToolsIcon.png">';
   devButton.addEventListener("click", e => {
     new Popup({
       title: "Dev Tools",
@@ -2182,7 +2188,7 @@ if (window.location.hostname === "localhost") {
             onClick: popup => {
               console.log(Blockly.Xml.workspaceToDom(workspace));
 
-              popup.remove();
+              popup.hide();
             },
           },
         ],

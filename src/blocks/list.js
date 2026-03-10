@@ -1,5 +1,5 @@
-import * as Blockly from "rockly";
-import * as BlocklyJS from "rockly/javascript";
+import * as Blockly from "blockly";
+import * as BlocklyJS from "blockly/javascript";
 import { DuplicateOnDragWithType } from "../functions/utils";
 const xmlUtils = Blockly.utils.xml;
 
@@ -65,7 +65,7 @@ Blockly.Blocks["lists_extendable"] = {
       .setAlign(Blockly.inputs.Align.RIGHT)
       .appendField(
         new Blockly.FieldImage(
-          "/icons/caretLeft.svg",
+          "/icons/blocks/caretLeft.svg",
           18,
           25,
           "remove an input",
@@ -74,7 +74,7 @@ Blockly.Blocks["lists_extendable"] = {
       )
       .appendField(
         new Blockly.FieldImage(
-          "/icons/caretRight.svg",
+          "/icons/blocks/caretRight.svg",
           18,
           25,
           "add an input",
@@ -110,7 +110,7 @@ BlocklyJS.javascriptGenerator.forBlock["lists_extendable"] = function (block, ge
 Blockly.Blocks["lists_filter"] = {
   init: function () {
     this.appendValueInput("list").setCheck("Array").appendField("filter list");
-    this.appendValueInput("item").setCheck("DuplicateShadowType").appendField("by");
+    this.appendValueInput("item").appendField("by");
     this.appendValueInput("method").setCheck("Boolean").appendField("⇒");
     this.setInputsInline(true);
     this.setOutput(true, "Array");
@@ -138,7 +138,7 @@ BlocklyJS.javascriptGenerator.forBlock["lists_filter"] = function (
 Blockly.Blocks["lists_find"] = {
   init: function () {
     this.appendValueInput("list").setCheck("Array").appendField("in list");
-    this.appendValueInput("item").setCheck("DuplicateShadowType").appendField("find first");
+    this.appendValueInput("item").appendField("find first");
     this.appendValueInput("method")
       .setCheck("Boolean")
       .appendField("that matches");
@@ -168,7 +168,7 @@ BlocklyJS.javascriptGenerator.forBlock["lists_find"] = function (
 Blockly.Blocks["lists_map"] = {
   init: function () {
     this.appendValueInput("list").setCheck("Array").appendField("map list");
-    this.appendValueInput("item").setCheck("DuplicateShadowType").appendField("by");
+    this.appendValueInput("item").appendField("by");
     this.appendValueInput("method").setCheck(null).appendField("⇒");
     this.setOutput(true, "Array");
     this.setInputsInline(true);
@@ -190,19 +190,9 @@ Blockly.Blocks["lists_filter_item"] = {
   init: function () {
     this.appendDummyInput("name").appendField("item");
     this.setInputsInline(true);
-    this.setOutput(true, "DuplicateShadowType");
-    this.setStyle("list_blocks");
-
-    const outputTypes = null;
     this.setOutput(true, null);
-    setTimeout(() => {
-      if (this.setDragStrategy && this.isShadow()) {
-        this.setOutput(true, "DuplicateShadowType");
-        this.setDragStrategy(new DuplicateOnDragWithType(this, outputTypes));
-      } else {
-        this.setOutput(true, outputTypes);
-      }
-    });
+    this.setDuplicateOnDrag(true);
+    this.setStyle("list_blocks");
   },
 };
 
@@ -225,23 +215,20 @@ BlocklyJS.javascriptGenerator.forBlock["lists_merge"] = function (
   block,
   generator
 ) {
-  const val_list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
-  const val_list2 = generator.valueToCode(
+  const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
+  const list2 = generator.valueToCode(
     block,
     "list2",
     BlocklyJS.Order.ATOMIC
   );
-  const code = `${val_list}.concat(${val_list2})`;
+  const code = `${list}.concat(${list2})`;
   return [code, BlocklyJS.Order.NONE];
 };
 
 Blockly.Blocks["lists_foreach"] = {
   init: function () {
-    this.appendValueInput("ITEM")
-      .setCheck("DuplicateShadowType")
-      .appendField("for each");
-    this.appendValueInput("INDEX")
-      .setCheck("DuplicateShadowType");
+    this.appendValueInput("ITEM").appendField("for each");
+    this.appendValueInput("INDEX");
     this.appendValueInput("LIST")
       .setCheck("Array")
       .appendField("in list");
@@ -271,18 +258,9 @@ Blockly.Blocks["lists_foreach_index"] = {
   init: function () {
     this.appendDummyInput("name").appendField("index");
     this.setInputsInline(true);
+    this.setOutput(true, "Number");
+    this.setDuplicateOnDrag(true);
     this.setStyle("list_blocks");
-
-    const outputTypes = "Number";
-    this.setOutput(true, null);
-    setTimeout(() => {
-      if (this.setDragStrategy && this.isShadow()) {
-        this.setOutput(true, "DuplicateShadowType");
-        this.setDragStrategy(new DuplicateOnDragWithType(this, outputTypes));
-      } else {
-        this.setOutput(true, outputTypes);
-      }
-    });
   },
 };
 
@@ -491,19 +469,14 @@ Blockly.Blocks["lists_setIndex_modified"] = {
       }
     );
     this.appendDummyInput().appendField(whereField, "WHERE");
-
     this.appendDummyInput("AT");
-
     this.appendValueInput("TO").appendField(
       Blockly.Msg.LISTS_SET_INDEX_INPUT_TO
     );
 
     this.setInputsInline(true);
-
     this.setOutput(true, "Array");
-
     this.updateAt_(true);
-
     this.setTooltip(() => {
       const mode = this.getFieldValue("MODE");
       const where = this.getFieldValue("WHERE");
