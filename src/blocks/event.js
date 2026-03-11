@@ -6,7 +6,7 @@ Blockly.Blocks["when_flag_clicked"] = {
     this.appendDummyInput()
       .appendField("when")
       .appendField(
-        new Blockly.FieldImage("icons/flag.svg", 25, 25, "Green flag", null, false)
+        new Blockly.FieldImage("icons/flag.svg", 25, 25, "flag", null, false)
       )
       .appendField("clicked");
     this.appendStatementInput("DO").setCheck("default");

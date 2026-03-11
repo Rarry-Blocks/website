@@ -23,6 +23,14 @@ export class DuplicateOnDrag {
     if (this.block.saveExtraState)
       data.blockState.extraState = this.block.saveExtraState();
 
+    // Special case for function statement argument.
+    if (
+      this.block.type === "functions_argument_block" &&
+      this.block.argType_ === "statement"
+    ) {
+      data.blockState.type = "functions_statement_argument_block";
+    }
+
     this.copy = Blockly.clipboard.paste(data, ws);
     this.copy.setShadow(false);
 
@@ -56,9 +64,13 @@ export class DuplicateOnDrag {
 Blockly.Block.prototype.duplicateOnDrag_ = false;
 
 Blockly.Block.prototype.setDuplicateOnDrag = function (value) {
+  if (!this.setDragStrategy) return;
+
   this.duplicateOnDrag_ = value;
-  if (value) {
+  if (value === true) {
     this.setDragStrategy(new DuplicateOnDrag(this));
+  } else {
+    this.setDragStrategy(new Blockly.dragging.BlockDragStrategy(this));
   }
 };
 

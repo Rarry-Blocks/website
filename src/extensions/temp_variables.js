@@ -5,7 +5,7 @@
     registerCategory() {
       return {
         name: "Temp Variables",
-        color: "#8B5CF6",
+        color: "#e4945f",
       };
     }
 

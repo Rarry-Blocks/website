@@ -3,60 +3,6 @@ import * as BlocklyJS from "blockly/javascript";
 
 const ARG_BLOCK_TYPE = "FunctionsArgumentBlock";
 
-class FunctionDuplicateOnDrag {
-  constructor(block) {
-    this.block = block;
-  }
-
-  isMovable() {
-    return true;
-  }
-
-  startDrag(e) {
-    const ws = this.block.workspace;
-
-    let typeToCreate = this.block.type;
-    if (this.block.argType_ === "statement") {
-      typeToCreate = "functions_statement_argument_block";
-    }
-
-    let data = this.block.toCopyData();
-    if (data?.blockState) {
-      data.blockState.type = typeToCreate;
-    } else {
-      data.blockState = { type: typeToCreate };
-    }
-
-    if (this.block.mutationToDom) {
-      const mutation = this.block.mutationToDom();
-      if (mutation) {
-        data.blockState.extraState = mutation.outerHTML;
-      }
-    }
-
-    this.copy = Blockly.clipboard.paste(data, ws);
-    this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.copy);
-    this.copy.setDragStrategy(this.baseStrat);
-    this.baseStrat.startDrag(e);
-  }
-
-  drag(e) {
-    this.block.workspace
-      .getGesture(e)
-      .getCurrentDragger()
-      .setDraggable(this.copy);
-    this.baseStrat.drag(e);
-  }
-
-  endDrag(e) {
-    this.baseStrat?.endDrag(e);
-  }
-
-  revertDrag(e) {
-    this.copy?.dispose();
-  }
-}
-
 function typeToBlocklyCheck(type) {
   return (
     {
@@ -122,10 +68,10 @@ Blockly.Blocks["functions_argument_block"] = {
     this.argType_ = type;
     if (type === "statement") {
       this.setOutputShape(3);
-      this.setOutput(true, ARG_BLOCK_TYPE);
+      this.setOutput(true, null);
     } else {
       const outputType = typeToBlocklyCheck(type) || "String";
-      this.setOutput(true, [outputType, ARG_BLOCK_TYPE]);
+      this.setOutput(true, outputType);
     }
   },
 
@@ -264,7 +210,7 @@ Blockly.Blocks["functions_definition"] = {
   createDefaultArgBlock_: function (type, name = "arg") {
     Blockly.Events.disable();
 
-    let block;
+    var block;
     try {
       const ws = this.workspace;
       block = ws.newBlock("functions_argument_block");
@@ -277,7 +223,9 @@ Blockly.Blocks["functions_definition"] = {
         block.initSvg();
         block.render();
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error(e);
+    }
 
     Blockly.Events.enable();
     return block;
@@ -320,11 +268,16 @@ Blockly.Blocks["functions_definition"] = {
         }
 
         const reporter = this.createDefaultArgBlock_(type, name);
-        reporter.setFieldValue(name, "ARG_NAME");
+        if (reporter) {
+          reporter.setFieldValue(name, "ARG_NAME");
+          try {
+            reporter.outputConnection.connect(input.connection);
+          } catch (e) { }
+        }
 
         try {
           reporter.outputConnection.connect(input.connection);
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
@@ -336,7 +289,7 @@ Blockly.Blocks["functions_definition"] = {
     if (savedBody) {
       try {
         newBody.connection.connect(savedBody);
-      } catch (e) {}
+      } catch (e) { }
     }
   },
 
@@ -687,9 +640,9 @@ Blockly.Blocks["functions_call"] = {
         try {
           input.connection.connect(
             oldConnections[key].targetBlock()?.outputConnection ||
-              oldConnections[key],
+            oldConnections[key],
           );
-        } catch (e) {}
+        } catch (e) { }
       }
     }
   },
@@ -725,7 +678,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_argument_block"] = (
 
 BlocklyJS.javascriptGenerator.forBlock["functions_statement_argument_block"] = (
   block,
-) => "statement_" + block.argName_ + "();\n";
+) => "yield* statement_" + block.argName_ + "();\n";
 
 BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
   block,

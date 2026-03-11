@@ -5,212 +5,223 @@ import { DuplicateOnDrag } from "./patches/block";
 
 export const extensions = {};
 
-function textToBlock(block, text, fields) {
+const INPUT_TYPE = {
+  VALUE: 1,
+  DUMMY: 2,
+  STATEMENT: 3,
+};
+
+/**
+ * Parse a text template and append the
+ * appropriate inputs or fields onto the block.
+ */
+function textToBlock(block, text, fields = {}) {
   const regex = /\[([^\]]+)\]/g;
   let lastIndex = 0;
   let match;
 
   while ((match = regex.exec(text))) {
-    const before = text.slice(lastIndex, match.index);
-    if (before) {
-      block.appendDummyInput().appendField(before.trim());
-    }
+    const before = text.slice(lastIndex, match.index).trim();
+    if (before) block.appendDummyInput().appendField(before);
 
     const inputName = match[1].trim();
-    const spec = fields?.[inputName];
+    const spec = fields[inputName];
 
     if (spec?.kind === "statement") {
-      block
-        .appendStatementInput(inputName)
-        .setCheck(spec?.accepts || "default");
+      block.appendStatementInput(inputName).setCheck(spec.accepts ?? "default");
     } else if (spec?.kind === "value") {
-      block.appendValueInput(inputName).setCheck(spec?.type);
+      block.appendValueInput(inputName).setCheck(spec.type ?? null);
     } else if (spec?.kind === "menu") {
-      const menuItems = spec.items.map((item) =>
-        typeof item === "string" ? [item, item] : [item.text, item.value]
+      const items = spec.items.map(item =>
+        typeof item === "string" ? [item, item] : [item.text, item.value],
       );
-      const field = new Blockly.FieldDropdown(menuItems);
-      block.appendDummyInput().appendField(field, inputName);
+      block.appendDummyInput().appendField(new Blockly.FieldDropdown(items), inputName);
     } else {
-      block.appendDummyInput().appendField("[" + inputName + "]");
+      block.appendDummyInput().appendField(`[${inputName}]`);
     }
 
     lastIndex = regex.lastIndex;
   }
 
-  const after = text.slice(lastIndex);
-  if (after) {
-    block.appendDummyInput().appendField(after.trim());
-  }
+  const trailing = text.slice(lastIndex).trim();
+  if (trailing) block.appendDummyInput().appendField(trailing);
 }
 
-export async function registerExtension(extClass) {
-  const ext = new extClass();
-  const id = ext.id || ext.constructor.name;
+/** Builds a shadow element with a default value. */
+function buildShadowElement(type, defaultValue) {
+  const SHADOW_CONFIG = {
+    Number: { type: "math_number", field: "NUM", value: defaultValue },
+    String: { type: "text", field: "TEXT", value: defaultValue },
+    Boolean: {
+      type: "logic_boolean",
+      field: "BOOL",
+      value: defaultValue ? "TRUE" : "FALSE",
+    },
+    [null]: { type: "math_number", field: "NUM", value: defaultValue },
+  };
 
-  if (activeExtensions.some((i) => (i?.id || i) === id)) {
-    console.warn(`Extension ${id} already registered`);
-    return;
+  const cfg = SHADOW_CONFIG[type] ?? SHADOW_CONFIG[null];
+  const shadow = document.createElement("shadow");
+  shadow.setAttribute("type", cfg.type);
+
+  const field = document.createElement("field");
+  field.setAttribute("name", cfg.field);
+  field.textContent = cfg.value;
+  shadow.appendChild(field);
+
+  return shadow;
+}
+
+/** Builds a block element for the toolbox, including values with defaults. */
+function buildBlockElement(blockType, fields = {}) {
+  const blockEl = document.createElement("block");
+  blockEl.setAttribute("type", blockType);
+
+  for (const [name, spec] of Object.entries(fields)) {
+    if (spec?.kind === "menu" || spec?.kind === "statement") continue;
+    if (spec?.default === undefined) continue;
+
+    const valueEl = document.createElement("value");
+    valueEl.setAttribute("name", name.trim());
+    const shadow = buildShadowElement(spec.type ?? null, spec.default);
+    valueEl.appendChild(shadow);
+    blockEl.appendChild(valueEl);
   }
 
-  const coreDom = document.getElementById("toolbox");
+  return blockEl;
+}
 
-  const category = ext.registerCategory?.();
-  let categoryEl = null;
-  if (category) {
-    categoryEl = document.createElement("category");
-    categoryEl.setAttribute("name", category.name || "Extension");
-    if (!category.color) category.color = "#888";
-    categoryEl.setAttribute("colour", category.color);
-    if (category.iconURI) categoryEl.setAttribute("iconURI", category.iconURI);
-  }
+function buildCategoryElement(category) {
+  if (!category) return null;
 
-  const blocks = ext.registerBlocks?.() || [];
+  const el = document.createElement("category");
+  el.setAttribute("name", category.name ?? "Extension");
+  el.setAttribute("colour", category.color ?? "#888");
+  if (category.iconURI) el.setAttribute("iconURI", category.iconURI);
+  return el;
+}
+
+function registerBlocks(id, blocks, categoryColor, categoryEl) {
   const blockDefs = {};
-  blocks.forEach((blockDef) => {
-    if (!blockDef.id) {
-      console.warn("Skipped registration of block with no ID");
-      return;
-    }
-    if (typeof blockDef !== "object") {
-      console.warn("Invalid block definition:", blockDef);
-      return;
+
+  for (const blockDef of blocks) {
+    if (!blockDef?.id) {
+      console.warn("Skipped block with no ID:", blockDef);
+      continue;
     }
 
     const blockType = `${id}_${blockDef.id}`;
     blockDefs[blockType] = blockDef;
+
     Blockly.Blocks[blockType] = {
-      init: function () {
+      init() {
         textToBlock(this, blockDef.text, blockDef.fields);
 
-        if (blockDef.type === "statement") {
-          this.setPreviousStatement(true, blockDef.statementType || "default");
-          this.setNextStatement(true, blockDef.statementType || "default");
-        } else if (blockDef.type === "cap") {
-          this.setPreviousStatement(true, blockDef.statementType || "default");
-        } else if (blockDef.type === "output") {
-          this.setOutput(true, blockDef.outputType);
-          if (blockDef.outputShape) this.setOutputShape(blockDef.outputShape);
-        } else {
-          console.warn(
-            `Invalid block type for ${blockDef}, using statement instead`
-          );
-          this.setPreviousStatement(true, blockDef.statementType || "default");
-          this.setNextStatement(true, blockDef.statementType || "default");
+        switch (blockDef.type) {
+          case "statement":
+            this.setPreviousStatement(true, blockDef.statementType ?? "default");
+            this.setNextStatement(true, blockDef.statementType ?? "default");
+            break;
+          case "cap":
+            this.setPreviousStatement(true, blockDef.statementType ?? "default");
+            break;
+          case "output":
+            this.setOutput(true, blockDef.outputType ?? null);
+            if (blockDef.outputShape) this.setOutputShape(blockDef.outputShape);
+            break;
+          default:
+            console.warn(
+              `Unknown block type "${blockDef.type}" for ${blockType}; defaulting to statement`,
+            );
+            this.setPreviousStatement(true, blockDef.statementType ?? "default");
+            this.setNextStatement(true, blockDef.statementType ?? "default");
         }
 
-        if (blockDef.tooltip) this.setTooltip(blockDef.tooltip);
+        if (blockDef.tooltip) this.setTooltip(String(blockDef.tooltip));
+        if (blockDef.duplicateOnDrag) this.setDragStrategy(new DuplicateOnDrag(this));
 
-        if (blockDef.cloneOnDrag === true)
-          this.setDragStrategy(new DuplicateOnDrag(this));
-
-        this.setColour(String(blockDef.color || category.color));
-        this.setInputsInline(Boolean(blockDef.inlineInputs ?? true));
+        this.setColour(String(blockDef.color ?? categoryColor ?? "#888"));
+        this.setInputsInline(blockDef.inlineInputs ?? true);
       },
     };
 
-    if (categoryEl) {
-      const blockEl = document.createElement("block");
-      blockEl.setAttribute("type", blockType);
-
-      for (const [name, spec] of Object.entries(blockDef.fields || {})) {
-        if (spec?.kind === "menu") continue;
-
-        if (spec.default !== undefined && spec?.kind !== "statement") {
-          const valueEl = document.createElement("value");
-          valueEl.setAttribute("name", name.trim());
-
-          let shadowEl = null;
-
-          if (spec.type === "Number" || spec.type === null) {
-            shadowEl = document.createElement("shadow");
-            shadowEl.setAttribute("type", "math_number");
-
-            const fieldEl = document.createElement("field");
-            fieldEl.setAttribute("name", "NUM");
-            fieldEl.textContent = spec.default;
-            shadowEl.appendChild(fieldEl);
-          } else if (spec.type === "String") {
-            shadowEl = document.createElement("shadow");
-            shadowEl.setAttribute("type", "text");
-
-            const fieldEl = document.createElement("field");
-            fieldEl.setAttribute("name", "TEXT");
-            fieldEl.textContent = spec.default;
-            shadowEl.appendChild(fieldEl);
-          } else if (spec.type === "Boolean") {
-            shadowEl = document.createElement("shadow");
-            shadowEl.setAttribute("type", "logic_boolean");
-
-            const fieldEl = document.createElement("field");
-            fieldEl.setAttribute("name", "BOOL");
-            fieldEl.textContent = spec.default ? "TRUE" : "FALSE";
-            shadowEl.appendChild(fieldEl);
-          }
-
-          if (shadowEl) valueEl.appendChild(shadowEl);
-          blockEl.appendChild(valueEl);
-        }
-      }
-
-      categoryEl.appendChild(blockEl);
-    }
-  });
-
-  if (categoryEl) {
-    coreDom.appendChild(categoryEl);
-    Blockly.getMainWorkspace().updateToolbox(coreDom);
+    categoryEl?.appendChild(buildBlockElement(blockType, blockDef.fields));
   }
 
-  const codeGen = ext.registerCode?.() || {};
-  Object.entries(codeGen).forEach(([blockType, fn]) => {
-    const fullType = `${id}_${blockType}`;
+  return blockDefs;
+}
 
-    extensions[fullType] = fn;
-    const def = blockDefs[fullType] || {};
-    BlocklyJS.javascriptGenerator.forBlock[fullType] = function (block) {
-      const inputs = {};
+function collectInputs(block, fields) {
+  const inputs = {};
 
-      for (const input of block.inputList) {
-        const name = input.name;
-        let codeExpr;
+  for (const input of block.inputList) {
+    const name = input.name;
 
-        if (input.type === 1 || input.type === 2) {
-          codeExpr =
-            BlocklyJS.javascriptGenerator.valueToCode(
-              block,
-              name,
-              BlocklyJS.Order.ATOMIC
-            ) || undefined;
-          if (codeExpr !== undefined) inputs[name] = codeExpr;
-        } else if (input.type === 3) {
-          codeExpr =
-            BlocklyJS.javascriptGenerator.statementToCode(block, name) ||
-            undefined;
-          if (codeExpr !== undefined)
-            inputs[name] = `async () => { ${codeExpr} }`;
-        }
-      }
-
-      for (const [name, spec] of Object.entries(def.fields || {})) {
-        if (spec.kind === "menu") {
-          const fieldVal = block.getFieldValue(name);
-          if (fieldVal !== undefined) inputs[name] = JSON.stringify(fieldVal);
-        }
-      }
-
-      const argsParts = Object.entries(inputs).map(
-        ([k, v]) => `${JSON.stringify(k)}:${v}`
+    if (input.type === INPUT_TYPE.VALUE || input.type === INPUT_TYPE.DUMMY) {
+      const code = BlocklyJS.javascriptGenerator.valueToCode(
+        block,
+        name,
+        BlocklyJS.Order.ATOMIC,
       );
-      const args = `{${argsParts.join(",")}}`;
-      const callCode = `extensions["${fullType}"](${args}, currentThread)`;
+      if (code) inputs[name] = code;
+    } else if (input.type === INPUT_TYPE.STATEMENT) {
+      const code = BlocklyJS.javascriptGenerator.statementToCode(block, name);
+      if (code) inputs[name] = `async () => { ${code} }`;
+    }
+  }
 
-      const finalCode = def.promise ? `await ${callCode}` : callCode;
+  for (const [name, spec] of Object.entries(fields ?? {})) {
+    if (spec?.kind !== "menu") continue;
+    const val = block.getFieldValue(name);
+    if (val !== undefined) inputs[name] = JSON.stringify(val);
+  }
 
-      if (block.outputConnection) return [finalCode, BlocklyJS.Order.NONE];
-      else return finalCode + ";\n";
+  return inputs;
+}
+
+function registerCodeGenerators(id, codeGen, blockDefs) {
+  for (const [blockId, handler] of Object.entries(codeGen)) {
+    const fullType = `${id}_${blockId}`;
+    extensions[fullType] = handler;
+
+    const def = blockDefs[fullType] ?? {};
+
+    BlocklyJS.javascriptGenerator.forBlock[fullType] = function (block) {
+      const inputs = collectInputs(block, def.fields);
+      const argsLiteral = `{${Object.entries(inputs)
+        .map(([k, v]) => `${JSON.stringify(k)}:${v}`)
+        .join(",")}}`;
+
+      const call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, currentThread)`;
+      const expr = def.promise ? `await ${call}` : call;
+
+      return block.outputConnection ? [expr, BlocklyJS.Order.NONE] : `${expr};\n`;
     };
-  });
+  }
+}
 
-  activeExtensions.push({ id, code: extClass.toString() });
+export async function registerExtension(ExtClass) {
+  const ext = new ExtClass();
+  const id = ext.id ?? ext.constructor.name;
+
+  if (activeExtensions.some(i => (i?.id ?? i) === id)) {
+    console.warn(`Extension "${id}" is already registered, skipping`);
+    return;
+  }
+
+  const categoryDescriptor = ext.registerCategory?.();
+  const categoryEl = buildCategoryElement(categoryDescriptor);
+  const categoryColor = categoryDescriptor?.color ?? "#888";
+  const blocks = ext.registerBlocks?.() ?? [];
+  const blockDefs = registerBlocks(id, blocks, categoryColor, categoryEl);
+
+  if (categoryEl) {
+    document.getElementById("toolbox").appendChild(categoryEl);
+    Blockly.getMainWorkspace().updateToolbox(document.getElementById("toolbox"));
+  }
+
+  const codeGen = ext.registerCode?.() ?? {};
+  registerCodeGenerators(id, codeGen, blockDefs);
+
+  activeExtensions.push({ id, code: ExtClass.toString() });
 }
