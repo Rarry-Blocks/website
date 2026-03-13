@@ -56,6 +56,7 @@ export class VM {
   }
 
   step() {
+    this.stepStart = Date.now();
     for (let i = this.threads.length - 1; i >= 0; i--) {
       const thread = this.threads[i];
 
@@ -78,6 +79,10 @@ export class VM {
         currentThread = null;
       }
     }
+  }
+
+  isOverBudget() {
+    return Date.now() - this.stepStart > 16; 
   }
 
   stopAll() {

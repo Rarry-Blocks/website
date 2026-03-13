@@ -125,7 +125,7 @@ BlocklyJS.javascriptGenerator.forBlock["say_message"] = function (
   const message =
     generator.valueToCode(block, "MESSAGE", BlocklyJS.Order.NONE) || "";
 
-  return `sayMessage(${message});\n`;
+  return `sayMessage(${message});\nyield;\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["say_message_duration"] = function (
@@ -137,7 +137,7 @@ BlocklyJS.javascriptGenerator.forBlock["say_message_duration"] = function (
   const duration =
     generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) || 2;
 
-  return `sayMessage(${message}, ${duration});\n`;
+  return `sayMessage(${message}, ${duration});\nyield;\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["switch_costume"] = function (
@@ -145,7 +145,7 @@ BlocklyJS.javascriptGenerator.forBlock["switch_costume"] = function (
   generator
 ) {
   var costume = generator.valueToCode(block, "COSTUME", BlocklyJS.Order.ATOMIC);
-  return `switchCostume(${costume});\n`;
+  return `switchCostume(${costume});\nyield;\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["set_size"] = function (
@@ -154,7 +154,7 @@ BlocklyJS.javascriptGenerator.forBlock["set_size"] = function (
 ) {
   const amount =
     generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 100;
-  return `setSize(${amount}, false);\n`;
+  return `setSize(${amount}, false);\nyield;\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["change_size"] = function (
@@ -163,7 +163,7 @@ BlocklyJS.javascriptGenerator.forBlock["change_size"] = function (
 ) {
   const amount =
     generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 100;
-  return `setSize(${amount}, true);\n`;
+  return `setSize(${amount}, true);\nyield;\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["get_costume_size"] = function (block) {
@@ -176,11 +176,11 @@ BlocklyJS.javascriptGenerator.forBlock["get_sprite_scale"] = function () {
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
-  return "toggleVisibility(false);\n";
+  return "toggleVisibility(false);\nyield;\n";
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_show_sprite"] = function () {
-  return "toggleVisibility(true);\n";
+  return "toggleVisibility(true);\nyield;\n";
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
@@ -190,7 +190,7 @@ BlocklyJS.javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function 
   const visible =
     generator.valueToCode(block, "VISIBLE", BlocklyJS.Order.ATOMIC) ?? "false";
 
-  return `toggleVisibility(${visible});\n`;
+  return `toggleVisibility(${visible});\nyield;\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_isVisible"] = () => [

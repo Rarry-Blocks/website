@@ -2,7 +2,7 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import * as PIXI from "pixi.js-legacy";
 
-BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP = `yield;\n`;
+BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP = `if (vm.isOverBudget()) yield;`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
