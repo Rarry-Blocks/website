@@ -169,14 +169,17 @@ Blockly.Blocks["controls_stopblock"] = {
     this.appendDummyInput()
       .appendField("stop")
       .appendField(
-        new Blockly.FieldDropdown([
-          ["this script", "script"],
-          ["my other scripts", "others"],
-          ["every other sprite", "othersprites"],
-          ["the project", "project"],
-        ], function (selection) {
-          this.getSourceBlock().updateShape_(selection);
-        }),
+        new Blockly.FieldDropdown(
+          [
+            ["this script", "script"],
+            ["my other scripts", "others"],
+            ["every other sprite", "othersprites"],
+            ["the project", "project"],
+          ],
+          function (selection) {
+            this.getSourceBlock().updateShape_(selection);
+          },
+        ),
         "MODE",
       );
     this.setPreviousStatement(true, "default");
@@ -205,11 +208,11 @@ Blockly.Blocks["controls_stopblock"] = {
     this.setNextStatement(hasNext, "default");
   },
   saveExtraState: function () {
-    return { "hasNext": !!this.nextConnection };
+    return { hasNext: !!this.nextConnection };
   },
   loadExtraState: function (state) {
     this.setNextStatement(state["hasNext"], "default");
-  }
+  },
 };
 
 BlocklyJS.javascriptGenerator.forBlock["controls_stopblock"] = block => {
@@ -225,18 +228,19 @@ BlocklyJS.javascriptGenerator.forBlock["controls_stopblock"] = block => {
 
 Blockly.Blocks["controls_stop_sprite"] = {
   init: function () {
-    this.appendValueInput("ID")
-      .setCheck("String")
-      .appendField("stop sprite");
+    this.appendValueInput("ID").setCheck("String").appendField("stop sprite");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setStyle("control_blocks");
     this.setTooltip("Stops all scripts for the specified sprite.");
-  }
+  },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_stop_sprite"] = function (block, generator) {
-  const spriteId = generator.valueToCode(block, 'ID', BlocklyJS.Order.ATOMIC) || "''";
+BlocklyJS.javascriptGenerator.forBlock["controls_stop_sprite"] = function (
+  block,
+  generator,
+) {
+  const spriteId = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC) || "''";
   return `vm.stopForTarget(vm.runtime.getTargetById(${spriteId}));\n`;
 };
 
@@ -386,11 +390,49 @@ Blockly.Blocks["controls_forever"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_forever"] = function (
-  block,
-  generator,
-) {
+BlocklyJS.javascriptGenerator.forBlock["controls_forever"] = function (block, generator) {
   const branch = generator.statementToCode(block, "DO");
   const loopTrap = generator.addLoopTrap(branch, block);
   return `while (true) {\n${loopTrap}}\n`;
+};
+
+Blockly.Blocks["controls_forLoop_var"] = {
+  init() {
+    this.appendDummyInput().appendField("i");
+    this.setOutput(true, "Number");
+    this.setDuplicateOnDrag(true);
+    this.setStyle("control_blocks");
+    this.setTooltip("The current value of i in the for loop.");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_forLoop_var"] = () => [
+  `controlsForLoopVar`,
+  BlocklyJS.Order.ATOMIC,
+];
+
+Blockly.Blocks["controls_forLoop"] = {
+  init() {
+    this.appendValueInput("VAR").appendField("for each");
+    this.appendValueInput("START").setCheck("Number").appendField("in range");
+    this.appendValueInput("END").setCheck("Number").appendField("to");
+    this.appendStatementInput("DO").setCheck("default").appendField("do");
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setStyle("control_blocks");
+    this.setTooltip("Runs the code for each value of i from start to end (inclusive).");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_forLoop"] = function (block, generator) {
+  const start = generator.valueToCode(block, "START", BlocklyJS.Order.NONE) || "0";
+  const end = generator.valueToCode(block, "END", BlocklyJS.Order.NONE) || "0";
+  const branch = generator.statementToCode(block, "DO");
+  const loopTrap = generator.addLoopTrap(branch, block);
+
+  const code = `for (let controlsForLoopVar = ${start}; controlsForLoopVar <= ${end}; controlsForLoopVar++) {
+  ${loopTrap}}\n`;
+
+  return code;
 };

@@ -72,16 +72,14 @@
     registerCode() {
       return {
         set({ NAME, VALUE }, currentThread) {
-          const name = NAME;
-          if (name == null) return;
-          currentThread?.setVar(name, VALUE ?? "");
+          if (NAME == null) return;
+          currentThread?.setVar(NAME, VALUE ?? "");
         },
 
         change({ NAME, AMOUNT }, currentThread) {
-          const name = NAME;
-          if (name == null) return;
-          const current = Number(currentThread?.getVar(name)) || 0;
-          currentThread?.setVar(name, current + (Number(AMOUNT) || 0));
+          if (NAME == null) return;
+          const current = Number(currentThread?.getVar(NAME)) || 0;
+          currentThread?.setVar(NAME, current + (Number(AMOUNT) || 0));
         },
 
         get({ NAME }, currentThread) {

@@ -21,7 +21,8 @@ const engine = new Set([
   "showSprite", "signal", "soundMap", "soundProperties", "sprite",
   "spriteData", "spriteManager", "stage", "startTween",
   "stopAllSounds", "stopSound", "stopped", "switchCostume",
-  "triggerCustomEvent", "wait", "waitOneFrame", "whenFlagClicked"
+  "triggerCustomEvent", "wait", "waitOneFrame", "whenFlagClicked",
+  "projectBlockValues", "projectVariables"
 ]);
 
 const localhost = window.location.hostname === "localhost";

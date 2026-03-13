@@ -9,7 +9,8 @@ import {
   app,
   spriteManager,
   vm,
-  projectVariables
+  projectVariables,
+  projectBlockValues
 } from "../scripts/editor";
 import { tweenEasing } from "./utils";
 import { extensions } from "./extensionManager";
@@ -487,6 +488,7 @@ export function runCodeWithFunctions({
     getTargetData,
     spriteManager,
     projectVariables,
+    projectBlockValues,
     extensions,
     MyFunctions
   };

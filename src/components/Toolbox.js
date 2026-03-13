@@ -53,6 +53,17 @@ const Toolbox = `
         ${shadowBoolean(true)}
       </value>
     </block>
+    <block type="controls_forLoop">
+      <value name="VAR">
+        ${shadow("controls_forLoop_var")}
+      </value>
+      <value name="START">
+        ${shadowNumber(1)}
+      </value>
+      <value name="END">
+        ${shadowNumber(10)}
+      </value>
+    </block>
     ${block("controls_flow_statements")}
     ${block("controls_stopblock")}
     <block type="controls_stop_sprite">

@@ -93,4 +93,9 @@ export default [
         </block>
       </category>`,
   },
+  {
+    id: "temp_variables",
+    name: "Temporary Variables",
+    url: "/src/extensions/temp_variables.js",
+  },
 ];

@@ -95,6 +95,7 @@ function createPenGraphics() {
 createPenGraphics();
 
 export let projectVariables = {};
+export let projectBlockValues = {};
 export let activeSprite = null;
 
 Blockly.blockRendering.register("custom_zelos", CustomRenderer);
@@ -1510,30 +1511,99 @@ function addExtension(id, emit = false) {
   if (activeExtensions.includes(id)) return;
 
   const extension = builtInExtensions.find(e => e?.id === id);
-  if (!extension || !extension.xml) return;
+  if (!extension) return;
+
+  function finalize() {
+    activeExtensions.push(id);
+    document.querySelector(`button[data-extension-id="${id}"]`).disabled = true;
+    setTimeout(() => extensionsPopup.classList.add("hidden"));
+
+    if (emit && currentSocket && currentRoom) {
+      currentSocket.emit("projectUpdate", {
+        roomId: currentRoom,
+        type: "addExtension",
+        data: id,
+      });
+    }
+  }
+
+  if (typeof extension.url === "string") {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.sandbox = "allow-scripts";
+    iframe.srcdoc = `
+      <script>
+        "use strict";
+        const registerExtension = (def) => {
+          parent.postMessage({ type: "registerExtension", code: def.toString() }, "*");
+        };
+        window.addEventListener("message", (event) => {
+          if (event.data && event.data.type === "runCode") {
+            try {
+              eval(event.data.code);
+            } catch (err) {
+              parent.postMessage({ type: "error", error: err.message }, "*");
+            }
+          }
+        });
+        parent.postMessage({ type: "iframeReady" }, "*");
+      </script>
+    `;
+    document.body.appendChild(iframe);
+
+    const handleMessage = event => {
+      if (!event.data) return;
+
+      switch (event.data.type) {
+        case "registerExtension":
+          try {
+            const ExtensionClass = eval("(" + event.data.code + ")");
+            registerExtension(ExtensionClass);
+            finalize();
+          } catch (error) {
+            console.error("Error loading built-in extension:", error);
+            alert("Error loading extension: " + error);
+          }
+          iframe.remove();
+          window.removeEventListener("message", handleMessage);
+          break;
+        case "error":
+          console.error("Error in built-in extension:", event.data.error);
+          alert("Error loading extension: " + event.data.error);
+          iframe.remove();
+          window.removeEventListener("message", handleMessage);
+          break;
+        case "iframeReady":
+          fetch(extension.url)
+            .then(r => {
+              if (!r.ok) throw new Error(`Failed to fetch extension: ${r.status}`);
+              return r.text();
+            })
+            .then(code => iframe.contentWindow.postMessage({ type: "runCode", code }, "*"))
+            .catch(err => {
+              console.error("Error fetching built-in extension:", err);
+              alert("Error fetching extension: " + err.message);
+              iframe.remove();
+              window.removeEventListener("message", handleMessage);
+            });
+          break;
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return;
+  }
+
+  if (typeof extension.xml !== "string") return;
 
   const parser = new DOMParser();
   const extDoc = parser.parseFromString(extension.xml, "text/xml");
 
   const category = extDoc.querySelector("category");
   toolbox.appendChild(category.cloneNode(true));
-
   workspace.updateToolbox(toolbox);
 
-  activeExtensions.push(id);
-  document.querySelector(`button[data-extension-id="${id}"]`).disabled = true;
-
-  setTimeout(() => {
-    extensionsPopup.classList.add("hidden");
-  });
-
-  if (emit && currentSocket && currentRoom) {
-    currentSocket.emit("projectUpdate", {
-      roomId: currentRoom,
-      type: "addExtension",
-      data: id,
-    });
-  }
+  finalize();
 }
 
 addExtensionButton();
