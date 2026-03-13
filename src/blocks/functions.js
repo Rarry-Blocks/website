@@ -80,10 +80,7 @@ Blockly.Blocks["functions_argument_block"] = {
     if (this.getField("ARG_NAME")) {
       this.setFieldValue(name, "ARG_NAME");
     } else {
-      this.appendDummyInput().appendField(
-        new Blockly.FieldLabel(name),
-        "ARG_NAME",
-      );
+      this.appendDummyInput().appendField(new Blockly.FieldLabel(name), "ARG_NAME");
     }
   },
 };
@@ -118,10 +115,7 @@ Blockly.Blocks["functions_statement_argument_block"] = {
     if (this.getField("ARG_NAME")) {
       this.setFieldValue(name, "ARG_NAME");
     } else {
-      this.appendDummyInput().appendField(
-        new Blockly.FieldLabel(name),
-        "ARG_NAME",
-      );
+      this.appendDummyInput().appendField(new Blockly.FieldLabel(name), "ARG_NAME");
     }
   },
 };
@@ -140,9 +134,7 @@ Blockly.Blocks["functions_definition"] = {
     this.returnTypes_ = [];
 
     this.updateShape_();
-    this.setMutator(
-      new Blockly.icons.MutatorIcon(["functions_args_generic"], this),
-    );
+    this.setMutator(new Blockly.icons.MutatorIcon(["functions_args_generic"], this));
   },
 
   mutationToDom: function () {
@@ -168,20 +160,18 @@ Blockly.Blocks["functions_definition"] = {
     this.argNames_ = [];
 
     const children = [...xmlElement.children].filter(
-      (n) => n.tagName.toLowerCase() === "item",
+      n => n.tagName.toLowerCase() === "item",
     );
     for (let i = 0; i < children.length; i++) {
       this.argTypes_[i] = children[i].getAttribute("type");
       this.argNames_[i] = children[i].getAttribute("name");
     }
 
-    while (this.argTypes_.length < this.itemCount_)
-      this.argTypes_.push("label");
+    while (this.argTypes_.length < this.itemCount_) this.argTypes_.push("label");
     while (this.argNames_.length < this.itemCount_) this.argNames_.push("text");
 
     this.functionId_ =
-      xmlElement.getAttribute("functionid") ||
-      Blockly.utils.idGenerator.genUid();
+      xmlElement.getAttribute("functionid") || Blockly.utils.idGenerator.genUid();
     this.blockShape_ = xmlElement.getAttribute("shape") || "statement";
     this.updateShape_();
   },
@@ -243,7 +233,7 @@ Blockly.Blocks["functions_definition"] = {
     if (this.getInput("EMPTY")) this.removeInput("EMPTY");
     if (this.getInput("SHAPE")) this.removeInput("SHAPE");
 
-    [...this.inputList].forEach((input) => {
+    [...this.inputList].forEach(input => {
       const connection = input.connection?.targetConnection;
       if (connection) connection.getSourceBlock()?.dispose(false);
       this.removeInput(input.name);
@@ -258,9 +248,7 @@ Blockly.Blocks["functions_definition"] = {
       if (type === "label") {
         this.appendDummyInput().appendField(new Blockly.FieldLabel(name));
       } else {
-        const input = this.appendValueInput(name).setCheck(
-          typeToBlocklyCheck(type),
-        );
+        const input = this.appendValueInput(name).setCheck(typeToBlocklyCheck(type));
 
         if (!firstArgAdded) {
           input.appendField("my block with");
@@ -349,9 +337,7 @@ Blockly.Blocks["functions_definition"] = {
     while (itemBlock) {
       if (!(itemBlock.isInsertionMarker && itemBlock.isInsertionMarker())) {
         if (dups.includes(index)) {
-          itemBlock.setWarningText(
-            "This argument name is already used for this type.",
-          );
+          itemBlock.setWarningText("This argument name is already used for this type.");
         } else if (invalid.includes(index)) {
           itemBlock.setWarningText("This argument name is not a valid.");
         } else {
@@ -363,8 +349,7 @@ Blockly.Blocks["functions_definition"] = {
       itemBlock = itemBlock.getNextBlock();
     }
 
-    const newBlockShape =
-      containerBlock.getFieldValue("SHAPEMENU") || "statement";
+    const newBlockShape = containerBlock.getFieldValue("SHAPEMENU") || "statement";
 
     if (dups.length > 0 || invalid.length > 0) return;
 
@@ -404,9 +389,7 @@ Blockly.Blocks["functions_definition"] = {
         const val = block.getInputTargetBlock("VALUE");
         const checks = val?.outputConnection?.check;
         if (checks !== undefined) {
-          (Array.isArray(checks) ? checks : [checks]).forEach((t) =>
-            types.add(t),
-          );
+          (Array.isArray(checks) ? checks : [checks]).forEach(t => types.add(t));
         }
       }
 
@@ -501,10 +484,7 @@ Blockly.Blocks["functions_call"] = {
     container.setAttribute("functionid", this.functionId_);
     container.setAttribute("items", this.argTypes_.length);
     container.setAttribute("shape", this.blockShape_ || "statement");
-    container.setAttribute(
-      "returntypes",
-      JSON.stringify(this.returnTypes_ || []),
-    );
+    container.setAttribute("returntypes", JSON.stringify(this.returnTypes_ || []));
 
     for (let i = 0; i < this.argTypes_.length; i++) {
       const item = Blockly.utils.xml.createElement("item");
@@ -526,9 +506,7 @@ Blockly.Blocks["functions_call"] = {
 
     this.returnTypes_;
     try {
-      this.returnTypes_ = JSON.parse(
-        xmlElement.getAttribute("returntypes") || "[]",
-      );
+      this.returnTypes_ = JSON.parse(xmlElement.getAttribute("returntypes") || "[]");
     } catch {
       this.returnTypes_ = [];
     }
@@ -559,7 +537,7 @@ Blockly.Blocks["functions_call"] = {
   updateShape_: function () {
     const oldConnections = {};
 
-    [...this.inputList].forEach((input) => {
+    [...this.inputList].forEach(input => {
       if (input.connection && input.connection.targetBlock()) {
         oldConnections[input.name] = input.connection.targetConnection;
       }
@@ -639,8 +617,7 @@ Blockly.Blocks["functions_call"] = {
       if (oldConnections[key]) {
         try {
           input.connection.connect(
-            oldConnections[key].targetBlock()?.outputConnection ||
-            oldConnections[key],
+            oldConnections[key].targetBlock()?.outputConnection || oldConnections[key],
           );
         } catch (e) { }
       }
@@ -662,7 +639,9 @@ Blockly.Blocks["functions_return"] = {
     if (!def || def.type !== "functions_definition") return;
 
     def.updateReturnState_();
-    def.workspace.updateAllFunctionCalls();
+    if (typeof this.workspace.updateAllFunctionCalls === "function") {
+      this.workspace.updateAllFunctionCalls();
+    }
   },
 
   onchange(e) {
@@ -672,13 +651,13 @@ Blockly.Blocks["functions_return"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["functions_argument_block"] = (
-  block,
-) => [block.argType_ + "_" + block.argName_, BlocklyJS.Order.NONE];
+BlocklyJS.javascriptGenerator.forBlock["functions_argument_block"] = block => [
+  block.argType_ + "_" + block.argName_,
+  BlocklyJS.Order.NONE,
+];
 
-BlocklyJS.javascriptGenerator.forBlock["functions_statement_argument_block"] = (
-  block,
-) => "yield* statement_" + block.argName_ + "();\n";
+BlocklyJS.javascriptGenerator.forBlock["functions_statement_argument_block"] = block =>
+  "yield* statement_" + block.argName_ + "();\n";
 
 BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
   block,
@@ -695,10 +674,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
   return `MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) {\n${body}};\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
-  block,
-  generator,
-) {
+BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (block, generator) {
   const args = [];
 
   for (let i = 0; i < block.argTypes_.length; i++) {
@@ -710,21 +686,21 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (
 
     if (type === "statement")
       args.push(`function* (sprite) {${generator.statementToCode(block, key)}}`);
-    else
-      args.push(
-        generator.valueToCode(block, key, BlocklyJS.Order.NONE) || "null",
-      );
+    else args.push(generator.valueToCode(block, key, BlocklyJS.Order.NONE) || "null");
   }
 
-  return `yield* MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
+  const callExpr = `yield* MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
     ", ",
-  )});\n`;
+  )})`;
+
+  if (block.outputConnection) {
+    return [callExpr, BlocklyJS.Order.NONE];
+  }
+
+  return callExpr + `;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["functions_return"] = function (
-  block,
-  generator,
-) {
+BlocklyJS.javascriptGenerator.forBlock["functions_return"] = function (block, generator) {
   const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.NONE);
   return `return ${value || "null"};\n`;
 };
