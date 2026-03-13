@@ -96,6 +96,6 @@ export default [
   {
     id: "temp_variables",
     name: "Temporary Variables",
-    url: "/src/extensions/temp_variables.js",
+    url: "/extensions/temp_variables.js",
   },
 ];
