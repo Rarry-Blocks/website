@@ -12,7 +12,7 @@ export class Thread {
 
   setVar(name, value) {
     this.variables.set(name, value);
-    return this; 
+    return this;
   }
 
   hasVar(name) {
@@ -47,6 +47,7 @@ export let currentThread = null;
 export class VM {
   constructor() {
     this.threads = [];
+    this.stepStart = 0;
   }
 
   execute(generatorFunc, target) {
@@ -56,7 +57,8 @@ export class VM {
   }
 
   step() {
-    this.stepStart = Date.now();
+    if (this.isOverBudget()) this.stepStart = performance.now();
+
     for (let i = this.threads.length - 1; i >= 0; i--) {
       const thread = this.threads[i];
 
@@ -82,7 +84,7 @@ export class VM {
   }
 
   isOverBudget() {
-    return Date.now() - this.stepStart > 16; 
+    return performance.now() - this.stepStart > 8;
   }
 
   stopAll() {
