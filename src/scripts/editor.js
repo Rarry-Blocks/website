@@ -28,6 +28,14 @@ import builtInExtensions from "../functions/builtInExtensions.js";
 import config from "../config";
 import { VM } from "../components/VM.js";
 import CustomRenderer from "../functions/render.js";
+import {
+  renderSpritesList,
+  renderCostumesList,
+  renderSoundsList,
+  renderSpriteInfo,
+  resetSpriteInfo,
+  updateSpriteInfoValues,
+} from "./editor/ui.js";
 
 BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
 
@@ -44,18 +52,16 @@ let connectedUsers = [];
 
 const wrapper = document.getElementById("stage-wrapper");
 const stageContainer = document.getElementById("stage");
-const costumesList = document.getElementById("costumes-list");
 const loadInput = document.getElementById("load-input");
 const loadButton = document.getElementById("load-button");
-const deleteSpriteButton = document.getElementById("delete-sprite-button");
-const runButton = document.getElementById("run-button");
-const tabButtons = document.querySelectorAll(".tab-button");
-const tabContents = document.querySelectorAll(".tab-content");
+export const deleteSpriteButton = document.getElementById("delete-sprite-button");
+export const runButton = document.getElementById("run-button");
+export const tabButtons = document.querySelectorAll(".tab-button");
+export const tabContents = document.querySelectorAll(".tab-content");
 const fullscreenButton = document.getElementById("fullscreen-button");
 
 export const BASE_WIDTH = 480;
 export const BASE_HEIGHT = 360;
-const MAX_HTTP_BUFFER = 20 * 1024 * 1024;
 
 export const app = new PIXI.Application({
   width: BASE_WIDTH,
@@ -107,7 +113,7 @@ export const workspace = Blockly.inject(blocklyDiv, {
   toolbox: toolbox,
   scrollbars: true,
   trashcan: true,
-  renderer: 'custom_zelos',
+  renderer: "custom_zelos",
   zoom: {
     controls: true,
     wheel: true,
@@ -130,7 +136,6 @@ export const workspace = Blockly.inject(blocklyDiv, {
 const observer = new ResizeObserver(() => {
   Blockly.svgResize(workspace);
 });
-
 observer.observe(blocklyDiv);
 
 setupSettingsButton(workspace);
@@ -289,7 +294,7 @@ workspace.registerToolboxCategoryCallback("FUNCTIONS_CATEGORY", dynamicFunctions
 
 export const spriteManager = new SpriteManager(app);
 
-function addSprite(id, emit = false) {
+export function addSprite(id, emit = false) {
   const texture = PIXI.Texture.from("./icons/ddededodediamante.png", {
     crossorigin: true,
   });
@@ -312,7 +317,7 @@ function addSprite(id, emit = false) {
   return sprite;
 }
 
-function deleteSprite(id, emit = false) {
+export function deleteSprite(id, emit = false) {
   const sprite = spriteManager.get(id);
   if (!sprite) return;
 
@@ -337,7 +342,7 @@ function deleteSprite(id, emit = false) {
   setActiveSprite(remaining[0] ?? null);
 }
 
-function setActiveSprite(sprite) {
+export function setActiveSprite(sprite) {
   activeSprite = sprite;
   renderSpritesList(true);
 
@@ -362,403 +367,6 @@ function setActiveSprite(sprite) {
   Blockly.Events.enable();
 
   resetSpriteInfo();
-}
-
-function renderSpritesList(renderOthers = false) {
-  const listEl = document.getElementById("sprites-list");
-  listEl.innerHTML = "";
-
-  const sprites = spriteManager.getOriginals();
-
-  listEl.style.display = sprites.length === 0 ? "none" : "";
-
-  sprites.forEach(sprite => {
-    const spriteIconContainer = document.createElement("div");
-
-    if (activeSprite?.id === sprite.id) {
-      spriteIconContainer.className = "active";
-    }
-
-    const img = new Image(50, 50);
-    img.style.objectFit = "contain";
-
-    const baseTex = sprite.pixiSprite.texture.baseTexture;
-
-    if (baseTex.valid) {
-      img.src = baseTex.resource?.url || "";
-    } else {
-      baseTex.once("loaded", () => {
-        img.src = baseTex.resource?.url || "";
-      });
-    }
-
-    spriteIconContainer.appendChild(img);
-    spriteIconContainer.onclick = () => setActiveSprite(sprite);
-    listEl.appendChild(spriteIconContainer);
-  });
-
-  if (renderOthers === true) {
-    renderSpriteInfo();
-    renderCostumesList();
-    renderSoundsList();
-  }
-}
-
-function renderSpriteInfo() {
-  const infoEl = document.getElementById("sprite-info");
-
-  if (!activeSprite) {
-    infoEl.innerHTML = "<p>Select a sprite to see its properties.</p>";
-    return;
-  }
-
-  let nameInput = infoEl.querySelector(".sprite-name-input");
-
-  if (!nameInput) {
-    infoEl.innerHTML = "";
-
-    const nameRow = document.createElement("div");
-    nameRow.className = "name";
-
-    nameInput = createInput(activeSprite?.name ?? "Sprite", newValue => {
-      const oldName = activeSprite.name;
-      activeSprite.name = newValue;
-
-      if (currentSocket && currentRoom && newValue !== oldName) {
-        currentSocket.emit("projectUpdate", {
-          roomId: currentRoom,
-          type: "renameSprite",
-          data: {
-            spriteId: activeSprite.id,
-            newName: newValue
-          },
-        });
-      }
-    });
-    nameInput.classList.add("sprite-name-input");
-
-    nameRow.appendChild(nameInput);
-
-    const infoRow = document.createElement("div");
-    infoRow.className = "info";
-    infoRow.innerHTML = `
-      <p class="pos"></p>
-      <p class="angle"></p>
-      <p class="size"></p>
-      <p class="vis"></p>
-    `;
-
-    infoEl.appendChild(nameRow);
-    infoEl.appendChild(infoRow);
-  } else {
-    nameInput.value = activeSprite.name;
-  }
-
-  updateSpriteInfoValues();
-}
-
-function updateSpriteInfoValues() {
-  if (!activeSprite) return;
-
-  const sprite = activeSprite.pixiSprite;
-  const infoEl = document.getElementById("sprite-info");
-
-  infoEl.querySelector(".pos").textContent =
-    `${Math.round(sprite.x)}, ${Math.round(-sprite.y)}`;
-
-  infoEl.querySelector(".angle").textContent =
-    `${Math.round(sprite.angle)}º`;
-
-  infoEl.querySelector(".size").textContent =
-    `size: ${Math.round(((sprite.scale.x + sprite.scale.y) / 2) * 100)}`;
-
-  infoEl.querySelector(".vis").innerHTML =
-    `<i class="fa-solid fa-${sprite.visible ? "eye" : "eye-slash"}"></i>`;
-}
-
-function resetSpriteInfo() {
-  const infoEl = document.getElementById("sprite-info");
-  infoEl.innerHTML = "";
-  renderSpriteInfo();
-}
-
-function createRenameableLabel(initialName, onRename) {
-  const container = document.createElement("div");
-  container.style.display = "flex";
-  container.style.alignItems = "center";
-  container.style.gap = "8px";
-
-  const nameLabel = document.createElement("p");
-  nameLabel.textContent = initialName;
-  nameLabel.style.margin = "0";
-  nameLabel.style.cursor = "pointer";
-
-  function startRename() {
-    let willRename = true;
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = nameLabel.textContent;
-    input.style.flexGrow = "1";
-
-    container.replaceChild(input, nameLabel);
-    input.focus();
-    input.select();
-
-    function commit() {
-      if (willRename) {
-        const newName = input.value.trim();
-        if (newName && newName !== nameLabel.textContent) {
-          onRename(newName);
-          nameLabel.textContent = newName;
-        }
-      }
-      container.replaceChild(nameLabel, input);
-    }
-
-    input.addEventListener("blur", commit);
-    input.addEventListener("keydown", e => {
-      if (e.key === "Enter") input.blur();
-      else if (e.key === "Escape") {
-        willRename = false;
-        input.blur();
-      }
-    });
-  }
-
-  nameLabel.addEventListener("click", startRename);
-  container.appendChild(nameLabel);
-
-  return container;
-}
-
-function createInput(initialValue = "", onChange) {
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = initialValue.trim();
-
-  input.focus();
-  input.select();
-
-  let canceled = false;
-
-  function commit() {
-    if (canceled) return;
-
-    const newName = input.value.trim();
-    onChange(newName);
-  }
-
-  input.addEventListener("blur", commit);
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      input.blur();
-    }
-
-    if (e.key === "Escape") {
-      canceled = true;
-      input.value = initialValue;
-      input.blur();
-    }
-  });
-
-  return input;
-}
-
-function createDeleteButton(onDelete) {
-  const img = document.createElement("img");
-  img.src = "icons/trash.svg";
-  img.className = "button";
-  img.draggable = false;
-  img.onclick = onDelete;
-  return img;
-}
-
-function renderCostumesList() {
-  costumesList.innerHTML = "";
-
-  if (!activeSprite || !activeSprite.costumes) return;
-
-  activeSprite.costumes.forEach((costume, index) => {
-    const costumeContainer = document.createElement("div");
-    costumeContainer.className = "costume-container";
-
-    const img = new Image(60, 60);
-    img.style.objectFit = "contain";
-    img.src = costume.texture.baseTexture.resource.url;
-
-    const renameableLabel = createRenameableLabel(costume.name, newName => {
-      const oldName = costume.name;
-      costume.name = newName;
-
-      if (currentSocket && currentRoom && oldName !== newName) {
-        currentSocket.emit("projectUpdate", {
-          roomId: currentRoom,
-          type: "renameCostume",
-          data: {
-            spriteId: activeSprite.id,
-            id: costume.id,
-            newName,
-          },
-        });
-      }
-    });
-
-    const _texture = costume.texture.baseTexture || costume.texture;
-    const sizeLabel = document.createElement("span");
-    sizeLabel.className = "smallLabel";
-    sizeLabel.textContent = "Loading...";
-    if (_texture.valid) {
-      sizeLabel.textContent = `${_texture.width}x${_texture.height}`;
-    } else {
-      _texture.once("update", () => {
-        sizeLabel.textContent = `${_texture.width}x${_texture.height}`;
-      });
-    }
-
-    const deleteBtn = createDeleteButton(() => {
-      const deleted = activeSprite.costumes[index];
-      const wasCurrentCostumeDeleted = activeSprite.currentCostume === index;
-
-      activeSprite.costumes.splice(index, 1);
-
-      if (wasCurrentCostumeDeleted) {
-        if (activeSprite.costumes.length > 0) {
-          activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
-        } else {
-          activeSprite.pixiSprite.texture = PIXI.Texture.EMPTY;
-        }
-      }
-      renderCostumesList();
-
-      if (currentSocket && currentRoom && deleted) {
-        currentSocket.emit("projectUpdate", {
-          roomId: currentRoom,
-          type: "deleteCostume",
-          data: {
-            spriteId: activeSprite.id,
-            id: deleted.id,
-          },
-        });
-      }
-    });
-
-    costumeContainer.appendChild(img);
-    costumeContainer.appendChild(renameableLabel);
-    costumeContainer.appendChild(deleteBtn);
-    costumeContainer.appendChild(sizeLabel);
-
-    costumesList.appendChild(costumeContainer);
-  });
-}
-
-const playingAudios = {};
-function renderSoundsList() {
-  const soundsList = document.getElementById("sounds-list");
-  soundsList.innerHTML = "";
-
-  if (!activeSprite || !activeSprite.sounds) return;
-
-  activeSprite.sounds.forEach((sound, index) => {
-    const container = document.createElement("div");
-    container.className = "sound-container";
-
-    let sizeBytes = 0;
-    if (sound.dataURL) {
-      const base64Length = sound.dataURL.length - (sound.dataURL.indexOf(",") + 1);
-      sizeBytes = Math.floor((base64Length * 3) / 4);
-    }
-
-    const renameableLabel = createRenameableLabel(sound.name, newName => {
-      const oldName = sound.name;
-      sound.name = newName;
-
-      if (currentSocket && currentRoom && oldName !== newName) {
-        currentSocket.emit("projectUpdate", {
-          roomId: currentRoom,
-          type: "renameSound",
-          data: {
-            spriteId: activeSprite.id,
-            id: sound.id,
-            newName,
-          },
-        });
-      }
-    });
-
-    let sizeLabel;
-    if (typeof sizeBytes === "number" && sizeBytes > 0) {
-      sizeLabel = document.createElement("span");
-      sizeLabel.className = "smallLabel";
-
-      const sizeKB = sizeBytes / 1024;
-      if (sizeKB < 1024) {
-        sizeLabel.textContent = `${sizeKB.toFixed(2)} KB`;
-      } else {
-        sizeLabel.textContent = `${(sizeKB / 1024).toFixed(2)} MB`;
-      }
-    }
-
-    const playButton = document.createElement("img");
-    playButton.src = playingAudios[sound.id] ? "icons/stopAudio.svg" : "icons/play.svg";
-    playButton.className = "button";
-    playButton.draggable = false;
-
-    playButton.onclick = () => {
-      if (playingAudios[sound.id]) {
-        playingAudios[sound.id].pause();
-        playingAudios[sound.id].currentTime = 0;
-        delete playingAudios[sound.id];
-        playButton.src = "icons/play.svg";
-      } else {
-        for (const key in playingAudios) {
-          playingAudios[key].pause();
-          playingAudios[key].currentTime = 0;
-        }
-        Object.keys(playingAudios).forEach(k => delete playingAudios[k]);
-
-        const audio = new Audio(sound.dataURL);
-        playingAudios[sound.id] = audio;
-        playButton.src = "icons/stopAudio.svg";
-
-        audio.addEventListener("ended", () => {
-          delete playingAudios[sound.id];
-          playButton.src = "icons/play.svg";
-        });
-
-        audio.play();
-      }
-    };
-
-    const deleteBtn = createDeleteButton(() => {
-      const deleted = activeSprite.sounds[index];
-      activeSprite.sounds.splice(index, 1);
-
-      if (playingAudios[sound.id]) {
-        playingAudios[sound.id].pause();
-        delete playingAudios[sound.id];
-      }
-
-      renderSoundsList();
-
-      if (currentSocket && currentRoom && deleted) {
-        currentSocket.emit("projectUpdate", {
-          roomId: currentRoom,
-          type: "deleteSound",
-          data: {
-            spriteId: activeSprite.id,
-            id: deleted.id
-          },
-        });
-      }
-    });
-
-    container.appendChild(renameableLabel);
-    container.appendChild(playButton);
-    container.appendChild(deleteBtn);
-    if (sizeLabel) container.appendChild(sizeLabel);
-    soundsList.appendChild(container);
-  });
 }
 
 export function calculateBubblePosition(
@@ -1219,7 +827,7 @@ async function loadProject(ev) {
   });
 }
 
-async function oldLoadProject(input) {
+export async function oldLoadProject(input) {
   if (typeof input === "object" && !input.target) {
     return await handleProjectData(input);
   }
@@ -1341,7 +949,7 @@ document.getElementById("costume-upload").addEventListener("change", e => {
       uniqueName = `${baseName}_${counter}`;
     }
 
-    const newCostume = new Costume({ name: uniqueName, texture })
+    const newCostume = new Costume({ name: uniqueName, texture });
     activeSprite.costumes.push(newCostume);
 
     if (activeSprite.pixiSprite.texture === PIXI.Texture.EMPTY) {
@@ -1579,7 +1187,9 @@ function addExtension(id, emit = false) {
               if (!r.ok) throw new Error(`Failed to fetch extension: ${r.status}`);
               return r.text();
             })
-            .then(code => iframe.contentWindow.postMessage({ type: "runCode", code }, "*"))
+            .then(code =>
+              iframe.contentWindow.postMessage({ type: "runCode", code }, "*"),
+            )
             .catch(err => {
               console.error("Error fetching built-in extension:", err);
               alert("Error fetching extension: " + err.message);
@@ -1626,8 +1236,9 @@ const stageDiv = document.getElementById("stage-div");
 
 fullscreenButton.addEventListener("click", () => {
   const isFull = stageDiv.classList.toggle("fullscreen");
-  fullscreenButton.innerHTML = `<img src="icons/${isFull ? "smallscreen.svg" : "fullscreen.svg"
-    }">`;
+  fullscreenButton.innerHTML = `<img src="icons/${
+    isFull ? "smallscreen.svg" : "fullscreen.svg"
+  }">`;
   resizeCanvas();
 });
 
@@ -1742,7 +1353,7 @@ function createSession() {
       resolve(currentSocket);
     });
 
-    currentSocket.on("connect_error", (err) => {
+    currentSocket.on("connect_error", err => {
       console.error("Liveshare connection error:", err);
       currentSocketPromise = null;
       reject(err);
@@ -1774,7 +1385,7 @@ function createSession() {
   function optionalDecompressData(data) {
     if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
       try {
-        const decompressed = pako.inflate(new Uint8Array(data), { to: 'string' });
+        const decompressed = pako.inflate(new Uint8Array(data), { to: "string" });
         return JSON.parse(decompressed);
       } catch (err) {
         throw new Error("Failed to decompress data: " + err);
@@ -1839,11 +1450,13 @@ function createSession() {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
 
-        target.sounds.push(new Sound({
-          name: data.name,
-          dataURL: data.dataURL,
-          id: data.id
-        }));
+        target.sounds.push(
+          new Sound({
+            name: data.name,
+            dataURL: data.dataURL,
+            id: data.id,
+          }),
+        );
 
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
@@ -1993,12 +1606,13 @@ function updateUsersList() {
         <div>
           <img src="${config.apiUrl}/users/${u.id}/avatar">
           <b>${u.isHost ? "👑 " : ""}${u.username}</b>
-          ${canKick
-          ? `<button class="kick-button danger" data-id="${u.id}">
+          ${
+            canKick
+              ? `<button class="kick-button danger" data-id="${u.id}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>`
-          : ""
-        }
+              : ""
+          }
         </div>`;
     })
     .join("");
@@ -2033,17 +1647,17 @@ liveShare.addEventListener("click", async () => {
     const buttons = [
       amHost
         ? {
-          type: "button",
-          label: invitesLabel,
-          onClick: () => {
-            const newStatus = !invitesEnabled;
-            invitesEnabled = newStatus;
-            currentSocket.emit("toggleInvites", {
-              roomId: currentRoom,
-              enabled: newStatus,
-            });
-          },
-        }
+            type: "button",
+            label: invitesLabel,
+            onClick: () => {
+              const newStatus = !invitesEnabled;
+              invitesEnabled = newStatus;
+              currentSocket.emit("toggleInvites", {
+                roomId: currentRoom,
+                enabled: newStatus,
+              });
+            },
+          }
         : null,
       {
         type: "button",
@@ -2107,7 +1721,7 @@ liveShare.addEventListener("click", async () => {
       return;
     }
 
-    currentSocket.emit("createRoom", { token }, (res) => {
+    currentSocket.emit("createRoom", { token }, res => {
       if (res?.error) {
         console.error(res.error);
         showNotification({ message: `Error: ${res.error}` });

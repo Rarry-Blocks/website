@@ -1,7 +1,10 @@
-import { activeSprite } from "../scripts/editor";
-
-function block(type) {
-  return `<block type="${type}"></block>`;
+function block(type, ...extra) {
+  if (extra) return `<block type="${type}">${extra.join("")}</block>`;
+  else return `<block type="${type}"></block>`;
+}
+function value(name, ...extra) {
+  if (extra) return `<value name="${name}">${extra.join("")}</value>`;
+  else return `<value name="${name}"></value>`;
 }
 function shadow(type) {
   return `<shadow type="${type}"></shadow>`;
@@ -12,7 +15,7 @@ function sep(sep) {
 function shadowNumber(value = 10) {
   return `<shadow type="math_number"><field name="NUM">${value}</field></shadow>`;
 }
-function shadowText(value = "ABC") {
+function shadowText(value = "") {
   return `<shadow type="text"><field name="TEXT">${value}</field></shadow>`;
 }
 function shadowBoolean(value = true) {
@@ -265,11 +268,14 @@ const Toolbox = `
       </value>
     </block>
     <block type="math_constrain">
+      <value name="VALUE">
+        ${shadowNumber(5)}
+      </value>
       <value name="LOW">
         ${shadowNumber(1)}
       </value>
       <value name="HIGH">
-        ${shadowNumber(100)}
+        ${shadowNumber(10)}
       </value>
     </block>
     <block type="math_random_int">
@@ -284,15 +290,13 @@ const Toolbox = `
     <label text="Text"></label>
     ${block("text")}
     ${block("text_join_extendable")}
-    ${block("text_length")}
-    ${block("text_isEmpty")}
-    ${block("text_indexOf")}
-    ${block("text_charAt")}
-    ${block("text_getSubstring")}
-    ${block("text_changeCase")}
-    ${block("text_trim")}
-    ${block("text_print")}
-    ${block("text_prompt_ext")}
+    ${block("text_length", value("VALUE", shadowText()))}
+    ${block("text_isEmpty", value("VALUE", shadowText()))}
+    ${block("text_indexOf", value("VALUE", shadowText()), value("FIND", shadowText()))}
+    ${block("text_charAt", value("VALUE", shadowText()))}
+    ${block("text_getSubstring", value("STRING", shadowText()))}
+    ${block("text_changeCase", value("TEXT", shadowText()))}
+    ${block("text_trim", value("TEXT", shadowText()))}
   </category>
 
   <category name="System" colour="#5CB1D6">

@@ -1,8 +1,6 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 
-const ARG_BLOCK_TYPE = "FunctionsArgumentBlock";
-
 function typeToBlocklyCheck(type) {
   return (
     {

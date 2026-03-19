@@ -17,18 +17,18 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
       const height = blockHeight > maxH ? maxH : blockHeight;
       const radius = height / 2;
-      const sweep = right === up ? '0' : '1';
+      const sweep = right === up ? "0" : "1";
       return (
         svgPaths.arc(
-          'a',
-          '0 0,' + sweep,
+          "a",
+          "0 0," + sweep,
           radius,
           svgPaths.point((right ? 1 : -1) * radius, (up ? -1 : 1) * radius),
         ) +
-        svgPaths.lineOnAxis('v', (up ? -1 : 1) * remainingHeight) +
+        svgPaths.lineOnAxis("v", (up ? -1 : 1) * remainingHeight) +
         svgPaths.arc(
-          'a',
-          '0 0,' + sweep,
+          "a",
+          "0 0," + sweep,
           radius,
           svgPaths.point((right ? -1 : 1) * radius, (up ? -1 : 1) * radius),
         )
@@ -45,12 +45,12 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       const totalHeight = height + remainingHeight;
 
       return (
-        svgPaths.lineOnAxis('h', radius * dirR) +
-        svgPaths.curve('q', [
+        svgPaths.lineOnAxis("h", radius * dirR) +
+        svgPaths.curve("q", [
           svgPaths.point((radius / 2) * -dirR, dirU * (totalHeight / 2)),
           svgPaths.point(0, totalHeight * dirU),
         ]) +
-        svgPaths.lineOnAxis('h', radius * -dirR)
+        svgPaths.lineOnAxis("h", radius * -dirR)
       );
     }
 
@@ -92,7 +92,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     function makeMainPath(blockHeight, up, right) {
       const dirR = right ? 1 : -1;
       const dirU = up ? -1 : 1;
-      
+
       const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
       const height = blockHeight > maxH ? maxH : blockHeight;
       const totalHeight = height + remainingHeight;
@@ -227,6 +227,16 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   }
 }
 
+class CustomPathObject extends Blockly.zelos.PathObject {
+  applyColour(block) {
+    super.applyColour(block);
+    if (block.isShadow() && block.canDuplicateOnDrag?.()) {
+      this.svgPath.setAttribute("fill", block.style.colourPrimary);
+      this.svgPath.setAttribute("stroke", block.style.colourTertiary);
+    }
+  }
+}
+
 export default class CustomRenderer extends Blockly.zelos.Renderer {
   constructor() {
     super();
@@ -234,5 +244,9 @@ export default class CustomRenderer extends Blockly.zelos.Renderer {
 
   makeConstants_() {
     return new CustomConstantProvider();
+  }
+
+  makePathObject(root, style) {
+    return new CustomPathObject(root, style, this.getConstants());
   }
 }
