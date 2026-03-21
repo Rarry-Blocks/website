@@ -80,15 +80,26 @@ button.tab-button.inactive {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  margin: 0;
-  padding: 0;
   z-index: 9999;
   background: var(--color1);
+}
+
+#stage-div.fullscreen #stage-controls {
+  flex-shrink: 0;
+  border-bottom: none;
+  background: transparent;
+}
+
+#stage-div.fullscreen #stage-wrapper {
+  padding-top: 0;
+  width: min(100vw, calc((100vh - 3.5rem) * 16 / 9));
+  height: min(100vh - 3.5rem, calc(100vw * 9 / 16));
 }
 
 #stage canvas {
