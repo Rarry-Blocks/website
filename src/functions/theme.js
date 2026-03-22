@@ -34,6 +34,9 @@ const blockStyles = {
   procedure_blocks: {
     colourPrimary: "#FF6680",
   },
+  system_blocks: {
+    colourPrimary: "#5CB1D6"
+  },
   motion_blocks: {
     colourPrimary: "#4C97FF",
   },

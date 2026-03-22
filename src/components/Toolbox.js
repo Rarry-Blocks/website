@@ -1,13 +1,11 @@
 function block(type, ...extra) {
-  if (extra) return `<block type="${type}">${extra.join("")}</block>`;
-  else return `<block type="${type}"></block>`;
+  return `<block type="${type}">${extra?.join?.("")}</block>`;
 }
 function value(name, ...extra) {
-  if (extra) return `<value name="${name}">${extra.join("")}</value>`;
-  else return `<value name="${name}"></value>`;
+  return `<value name="${name}">${extra?.join?.("")}</value>`;
 }
-function shadow(type) {
-  return `<shadow type="${type}"></shadow>`;
+function shadow(type, ...extra) {
+  return `<shadow type="${type}">${extra?.join?.("")}</shadow>`;
 }
 function sep(sep) {
   return `<sep gap="${sep}"></sep>`;
@@ -37,7 +35,6 @@ const Toolbox = `
   </category>
 
   <category name="Control" colour="#FFAB19">
-    ${block("wait_one_frame")}
     <block type="wait_block">
       <value name="AMOUNT">
         ${shadowNumber(2)}
@@ -309,6 +306,12 @@ const Toolbox = `
     ${sep("50")}
     ${block("window_size")}
     ${block("system_current_time")}
+    ${block(
+      "system_distance_direction",
+      value("X1", shadow("get_position", `<field name="MENU">x</field>`)),
+      value("Y1", shadow("get_position", `<field name="MENU">y</field>`)),
+      value("X2", shadowNumber()), value("Y2", shadowNumber()), 
+    )}
   </category>
 
   <category name="Lists" colour="#e35340">
@@ -321,6 +324,7 @@ const Toolbox = `
     ${sep("50")}
     ${block("lists_length")}
     ${block("lists_isEmpty")}
+    ${block("lists_has", value("VALUE", shadowText()))}
     ${block("lists_indexOf")}
     <block type="lists_find">
       <value name="item">

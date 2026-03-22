@@ -1,3 +1,4 @@
+import { FieldColourHsvSliders } from "@blockly/field-colour-hsv-sliders";
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 
@@ -129,6 +130,7 @@ Blockly.Blocks["functions_definition"] = {
     this.argTypes_ = [];
     this.argNames_ = [];
     this.blockShape_ = "statement";
+    this.blockColour_ = "#FF6680";
     this.returnTypes_ = [];
 
     this.updateShape_();
@@ -140,6 +142,7 @@ Blockly.Blocks["functions_definition"] = {
     container.setAttribute("functionid", this.functionId_);
     container.setAttribute("items", String(this.itemCount_));
     container.setAttribute("shape", this.blockShape_ || "statement");
+    container.setAttribute("colour", this.blockColour_ || "#FF6680");
 
     for (let i = 0; i < this.itemCount_; i++) {
       const item = Blockly.utils.xml.createElement("item");
@@ -171,6 +174,7 @@ Blockly.Blocks["functions_definition"] = {
     this.functionId_ =
       xmlElement.getAttribute("functionid") || Blockly.utils.idGenerator.genUid();
     this.blockShape_ = xmlElement.getAttribute("shape") || "statement";
+    this.blockColour_ = xmlElement.getAttribute("colour") || "#FF6680";
     this.updateShape_();
   },
 
@@ -181,6 +185,7 @@ Blockly.Blocks["functions_definition"] = {
       argTypes: this.argTypes_,
       argNames: this.argNames_,
       shape: this.blockShape_,
+      colour: this.blockColour_,
       returnTypes: this.returnTypes_,
     };
   },
@@ -191,6 +196,7 @@ Blockly.Blocks["functions_definition"] = {
     this.argTypes_ = state.argTypes || [];
     this.argNames_ = state.argNames || [];
     this.blockShape_ = state.shape || "statement";
+    this.blockColour_ = state.colour || "#FF6680";
     this.returnTypes_ = state.returnTypes || [];
     this.updateShape_();
   },
@@ -206,6 +212,7 @@ Blockly.Blocks["functions_definition"] = {
       block.setEditable(false);
       block.updateType_(type);
       block.updateName_(name);
+      block.setColour(this.blockColour_ || "#FF6680");
 
       if (ws?.rendered) {
         block.initSvg();
@@ -277,6 +284,8 @@ Blockly.Blocks["functions_definition"] = {
         newBody.connection.connect(savedBody);
       } catch (e) { }
     }
+
+    this.setColour(this.blockColour_);
   },
 
   decompose: function (workspace) {
@@ -298,6 +307,7 @@ Blockly.Blocks["functions_definition"] = {
     }
 
     containerBlock.setFieldValue(this.blockShape_, "SHAPEMENU");
+    containerBlock.setFieldValue(this.blockColour_ || "#FF6680", "COLOUR");
 
     return containerBlock;
   },
@@ -337,7 +347,7 @@ Blockly.Blocks["functions_definition"] = {
         if (dups.includes(index)) {
           itemBlock.setWarningText("This argument name is already used for this type.");
         } else if (invalid.includes(index)) {
-          itemBlock.setWarningText("This argument name is not a valid.");
+          itemBlock.setWarningText("This argument name is not valid.");
         } else {
           itemBlock.setWarningText(null);
         }
@@ -348,6 +358,7 @@ Blockly.Blocks["functions_definition"] = {
     }
 
     const newBlockShape = containerBlock.getFieldValue("SHAPEMENU") || "statement";
+    const newBlockColour = containerBlock.getFieldValue("COLOUR") || "#FF6680";
 
     if (dups.length > 0 || invalid.length > 0) return;
 
@@ -355,6 +366,8 @@ Blockly.Blocks["functions_definition"] = {
     this.argTypes_ = newTypes;
     this.argNames_ = newNames;
     this.blockShape_ = newBlockShape;
+    this.blockColour_ = newBlockColour;
+    this.setColour(this.blockColour_);
 
     this.updateShape_();
   },
@@ -403,8 +416,6 @@ Blockly.Blocks["functions_definition"] = {
 Blockly.Blocks["functions_args_container"] = {
   init: function () {
     this.setStyle("procedure_blocks");
-    this.appendDummyInput().appendField("arguments");
-    this.appendStatementInput("STACK");
     this.appendDummyInput()
       .appendField("shape")
       .appendField(
@@ -430,6 +441,11 @@ Blockly.Blocks["functions_args_container"] = {
         ]),
         "SHAPEMENU",
       );
+    this.appendDummyInput()
+      .appendField("colour")
+      .appendField(new FieldColourHsvSliders("#FF6680"), "COLOUR");
+    this.appendDummyInput().appendField("arguments");
+    this.appendStatementInput("STACK");
     this.contextMenu = false;
   },
 };
@@ -468,6 +484,7 @@ Blockly.Blocks["functions_call"] = {
 
     this.functionId_ = null;
     this.blockShape_ = null;
+    this.blockColour_ = "#FF6680";
     this.argTypes_ = [];
     this.argNames_ = [];
     this.previousArgTypes_ = [];
@@ -482,6 +499,7 @@ Blockly.Blocks["functions_call"] = {
     container.setAttribute("functionid", this.functionId_);
     container.setAttribute("items", this.argTypes_.length);
     container.setAttribute("shape", this.blockShape_ || "statement");
+    container.setAttribute("colour", this.blockColour_ || "#FF6680");
     container.setAttribute("returntypes", JSON.stringify(this.returnTypes_ || []));
 
     for (let i = 0; i < this.argTypes_.length; i++) {
@@ -497,12 +515,12 @@ Blockly.Blocks["functions_call"] = {
   domToMutation: function (xmlElement) {
     this.functionId_ = xmlElement.getAttribute("functionid");
     this.blockShape_ = xmlElement.getAttribute("shape") || "statement";
+    this.blockColour_ = xmlElement.getAttribute("colour") || "#FF6680";
     this.previousArgTypes_ = [...this.argTypes_];
     this.previousArgNames_ = [...this.argNames_];
     this.argTypes_ = [];
     this.argNames_ = [];
 
-    this.returnTypes_;
     try {
       this.returnTypes_ = JSON.parse(xmlElement.getAttribute("returntypes") || "[]");
     } catch {
@@ -516,6 +534,7 @@ Blockly.Blocks["functions_call"] = {
       this.argNames_[i] = item.getAttribute("name");
     }
 
+    this.setColour(this.blockColour_);
     this.updateShape_();
   },
 
@@ -526,8 +545,10 @@ Blockly.Blocks["functions_call"] = {
     this.argTypes_ = [...defBlock.argTypes_];
     this.argNames_ = [...defBlock.argNames_];
     this.blockShape_ = defBlock.blockShape_;
+    this.blockColour_ = defBlock.blockColour_ || "#FF6680";
     this.returnTypes_ = [...defBlock.returnTypes_];
 
+    this.setColour(this.blockColour_);
     this.updateShape_();
     if (defBlock.workspace.rendered) this.render();
   },

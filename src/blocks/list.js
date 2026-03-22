@@ -2,6 +2,26 @@ import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 const xmlUtils = Blockly.utils.xml;
 
+Blockly.Blocks["lists_has"] = {
+  init: function () {
+    this.appendValueInput("LIST").setCheck("Array").appendField("does list");
+    this.appendValueInput("VALUE").setCheck(null).appendField("have");
+    this.setOutput(true, "Boolean");
+    this.setInputsInline(true);
+    this.setStyle("list_blocks");
+    this.setTooltip("Returns true if the list contains the value.");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["lists_has"] = function (
+  block,
+  generator
+) {
+  const list = generator.valueToCode(block, "LIST", BlocklyJS.Order.ATOMIC) || "new Array()";
+  const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.ATOMIC);
+  return [`${list}.includes(${value})`, BlocklyJS.Order.NONE];
+};
+
 Blockly.Blocks["lists_extendable"] = {
   init: function () {
     this.setInputsInline(true);

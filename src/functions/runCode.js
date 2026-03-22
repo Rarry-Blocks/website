@@ -246,10 +246,7 @@ export function runCodeWithFunctions({
     const targetY = height / 2 - y * stage.scale.y;
     const spriteX = width / 2 + sprite.x * stage.scale.x;
     const spriteY = height / 2 - sprite.y * stage.scale.y;
-
-    let angle = Math.atan2(targetX - spriteX, targetY - spriteY) * (180 / Math.PI);
-    angle = ((angle % 360) + 360) % 360;
-    sprite.angle = angle;
+    sprite.angle = Math.atan2(-(targetX - spriteX), -(targetY - spriteY)) * (180 / Math.PI) % 360;
   }
 
   function projectTime() {

@@ -145,22 +145,22 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     const roundedCopy = this.ROUNDED;
 
     function makeMainPath(blockHeight, up, right) {
-      const extra = blockHeight > maxH ? blockHeight - maxH : 0;
-      const h_ = Math.min(blockHeight, maxH);
-      const h = h_ + extra;
-      const radius = h / 4;
-      const radiusH = Math.min(h_ / 2, maxH);
       const dirR = right ? 1 : -1;
       const dirU = up ? -1 : 1;
-      const lineWidth = (h_ - extra) / 5;
+
+      const remainingHeight = blockHeight > maxH ? blockHeight - maxH : 0;
+      const height = blockHeight > maxH ? maxH : blockHeight;
+      const totalHeight = height + remainingHeight;
+      const radius = (height / 4) * dirR;
+      const radiusHeight = (totalHeight / 4) * dirU;
 
       return `
-        h ${radiusH * dirR}
-        l ${lineWidth * -dirR} ${radius * dirU}
-        l ${lineWidth * dirR} ${radius * dirU}
-        l ${lineWidth * -dirR} ${radius * dirU}
-        l ${lineWidth * dirR} ${radius * dirU}
-        h ${radiusH * -dirR}
+        h ${radius * 2}
+        l ${-radius} ${radiusHeight}
+        l ${radius} ${radiusHeight}
+        l ${-radius} ${radiusHeight}
+        l ${radius} ${radiusHeight}
+        h ${-radius * 2}
       `;
     }
 

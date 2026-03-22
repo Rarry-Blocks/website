@@ -26,7 +26,7 @@ Blockly.Blocks["key_pressed"] = {
       )
       .appendField("key down");
     this.setOutput(true, "Boolean");
-    this.setColour("#5CB1D6");
+    this.setStyle("system_blocks");
   },
 };
 
@@ -42,7 +42,7 @@ Blockly.Blocks["get_mouse_position"] = {
         "MENU"
       );
     this.setOutput(true, "Number");
-    this.setColour("#5CB1D6");
+    this.setStyle("system_blocks");
   },
 };
 
@@ -63,7 +63,7 @@ Blockly.Blocks["mouse_button_pressed"] = {
       )
       .appendField("mouse button down");
     this.setOutput(true, "Boolean");
-    this.setColour("#5CB1D6");
+    this.setStyle("system_blocks");
   },
 };
 
@@ -71,7 +71,7 @@ Blockly.Blocks["all_keys_pressed"] = {
   init: function () {
     this.appendDummyInput().appendField("keys currently down");
     this.setOutput(true, "Array");
-    this.setColour("#5CB1D6");
+    this.setStyle("system_blocks");
   },
 };
 
@@ -79,7 +79,7 @@ Blockly.Blocks["mouse_over"] = {
   init: function () {
     this.appendDummyInput().appendField("is cursor over me");
     this.setOutput(true, "Boolean");
-    this.setColour("#5CB1D6");
+    this.setStyle("system_blocks");
   },
 };
 
@@ -125,7 +125,7 @@ Blockly.Blocks["window_size"] = {
         "MENU"
       );
     this.setOutput(true, "Number");
-    this.setColour("#5CB1D6");
+    this.setStyle("system_blocks");
   },
 };
 
@@ -153,7 +153,7 @@ Blockly.Blocks["system_current_time"] = {
         "UNIT"
       );
     this.setOutput(true, "Number");
-    this.setColour("#5CB1D6");
+    this.setStyle("system_blocks");
   },
 };
 
@@ -172,4 +172,44 @@ BlocklyJS.javascriptGenerator.forBlock["system_current_time"] = function (block)
     }
   };
   return [getResult(), BlocklyJS.Order.NONE];
+};
+
+Blockly.Blocks["system_distance_direction"] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField(
+        new Blockly.FieldDropdown([
+          ["distance", "distance"],
+          ["direction", "direction"],
+        ]),
+        "MODE"
+      );
+    this.appendValueInput("X1").setCheck("Number").appendField("from");
+    this.appendValueInput("Y1").setCheck("Number");
+    this.appendValueInput("X2").setCheck("Number").appendField("to");
+    this.appendValueInput("Y2").setCheck("Number");
+    this.setInputsInline(true);
+    this.setOutput(true, "Number");
+    this.setStyle("system_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["system_distance_direction"] = function (block, generator) {
+  const mode = block.getFieldValue("MODE");
+  const x1 = generator.valueToCode(block, "X1", BlocklyJS.Order.NONE) || "0";
+  const y1 = generator.valueToCode(block, "Y1", BlocklyJS.Order.NONE) || "0";
+  const x2 = generator.valueToCode(block, "X2", BlocklyJS.Order.NONE) || "0";
+  const y2 = generator.valueToCode(block, "Y2", BlocklyJS.Order.NONE) || "0";
+
+  if (mode === "distance") {
+    return [
+      `Math.sqrt(Math.pow(${x2} - ${x1}, 2) + Math.pow(${y2} - ${y1}, 2))`,
+      BlocklyJS.Order.NONE,
+    ];
+  } else {
+    return [
+      `((Math.atan2(${x2} - ${x1}, ${y2} - ${y1}) * 180 / Math.PI + 360) % 360)`,
+      BlocklyJS.Order.NONE,
+    ];
+  }
 };

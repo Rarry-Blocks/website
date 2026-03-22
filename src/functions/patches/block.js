@@ -2,6 +2,7 @@ import * as Blockly from "blockly";
 
 export class DuplicateOnDrag {
   constructor(block) {
+    /** @type {Blockly.BlockSvg} */
     this.block = block;
   }
 
@@ -33,6 +34,13 @@ export class DuplicateOnDrag {
 
     this.copy = Blockly.clipboard.paste(data, ws);
     this.copy.setShadow(false);
+
+    // Special case for function arguments.
+    if (
+      this.block.type === "functions_argument_block" && this.block.getColour()
+    ) {
+      this.copy.setColour(this.block.getColour());
+    }
 
     this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.copy);
     this.copy.setDragStrategy(this.baseStrat);

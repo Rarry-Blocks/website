@@ -12,6 +12,7 @@
     "vite": "^7.0.4"
   },
   "dependencies": {
+    "@blockly/field-colour-hsv-sliders": "^6.0.11",
     "@blockly/plugin-strict-connection-checker": "^6.0.1",
     "@fortawesome/fontawesome-free": "^7.0.1",
     "blockly": "^12.2.0",

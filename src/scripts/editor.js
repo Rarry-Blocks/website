@@ -273,6 +273,7 @@ function dynamicFunctionsCategory(workspace) {
     const mutation = document.createElement("mutation");
     mutation.setAttribute("functionId", defBlock.functionId_);
     mutation.setAttribute("shape", defBlock.blockShape_);
+    mutation.setAttribute("colour", defBlock.blockColour_);
     mutation.setAttribute("items", defBlock.argTypes_.length);
     mutation.setAttribute("returntypes", JSON.stringify(defBlock.returnTypes_ || []));
 
