@@ -212,7 +212,6 @@ Blockly.Blocks["functions_definition"] = {
       block.setEditable(false);
       block.updateType_(type);
       block.updateName_(name);
-      block.setColour(this.blockColour_ || "#FF6680");
 
       if (ws?.rendered) {
         block.initSvg();
