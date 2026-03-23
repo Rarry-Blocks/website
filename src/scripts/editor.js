@@ -1237,9 +1237,8 @@ const stageDiv = document.getElementById("stage-div");
 
 fullscreenButton.addEventListener("click", () => {
   const isFull = stageDiv.classList.toggle("fullscreen");
-  fullscreenButton.innerHTML = `<img src="icons/${
-    isFull ? "smallscreen.svg" : "fullscreen.svg"
-  }">`;
+  fullscreenButton.innerHTML = `<img src="icons/${isFull ? "smallscreen.svg" : "fullscreen.svg"
+    }">`;
   resizeCanvas();
 });
 
@@ -1607,13 +1606,12 @@ function updateUsersList() {
         <div>
           <img src="${config.apiUrl}/users/${u.id}/avatar">
           <b>${u.isHost ? "👑 " : ""}${u.username}</b>
-          ${
-            canKick
-              ? `<button class="kick-button danger" data-id="${u.id}">
+          ${canKick
+          ? `<button class="kick-button danger" data-id="${u.id}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>`
-              : ""
-          }
+          : ""
+        }
         </div>`;
     })
     .join("");
@@ -1648,17 +1646,17 @@ liveShare.addEventListener("click", async () => {
     const buttons = [
       amHost
         ? {
-            type: "button",
-            label: invitesLabel,
-            onClick: () => {
-              const newStatus = !invitesEnabled;
-              invitesEnabled = newStatus;
-              currentSocket.emit("toggleInvites", {
-                roomId: currentRoom,
-                enabled: newStatus,
-              });
-            },
-          }
+          type: "button",
+          label: invitesLabel,
+          onClick: () => {
+            const newStatus = !invitesEnabled;
+            invitesEnabled = newStatus;
+            currentSocket.emit("toggleInvites", {
+              roomId: currentRoom,
+              enabled: newStatus,
+            });
+          },
+        }
         : null,
       {
         type: "button",
@@ -1821,18 +1819,16 @@ Blockly.registry.register(
 function updateAllFunctionCalls(workspace) {
   const allBlocks = workspace.getAllBlocks(false);
   const defs = allBlocks.filter(b => b.type === "functions_definition");
-  const defMap = {};
-  defs.forEach(def => (defMap[def.functionId_] = def));
-
   const calls = allBlocks.filter(b => b.type === "functions_call");
 
   Blockly.Events.disable();
   try {
+    defs.forEach(def => def.updateReturnState_());
+
     calls.forEach(callBlock => {
       const def = defs.find(d => d.functionId_ === callBlock.functionId_);
       if (!def) return;
 
-      def.updateReturnState_();
       callBlock.matchDefinition(def);
     });
   } finally {
@@ -1841,13 +1837,17 @@ function updateAllFunctionCalls(workspace) {
 }
 
 workspace.addChangeListener(event => {
-  if (event.isUiEvent || event.isBlank) return;
+  if (event.isUiEvent || event.isBlank || event.isNull()) return;
 
-  const block = workspace.getBlockById(
-    event?.newParentId ?? event?.oldParentId ?? event?.blockId,
+  const newRoot = workspace.getBlockById(event?.newParentId)?.getRootBlock();
+  const oldRoot = workspace.getBlockById(event?.oldParentId)?.getRootBlock();
+  const blockRoot = workspace.getBlockById(event?.blockId)?.getRootBlock();
+
+  const anyIsDefinition = [newRoot, oldRoot, blockRoot].some(
+    b => b?.type === "functions_definition"
   );
 
-  if (!block || block?.getRootBlock()?.type !== "functions_definition") return;
+  if (!anyIsDefinition) return;
 
   updateAllFunctionCalls(workspace);
 });

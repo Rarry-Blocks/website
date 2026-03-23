@@ -19,8 +19,8 @@ function findDuplicateArgNames(types, names) {
   const duplicates = [];
 
   for (let i = 0; i < types.length; i++) {
-    const key = types[i] + ":" + names[i];
     if (!names[i]) continue;
+    const key = types[i] + ":" + names[i];
 
     if (used[key]) duplicates.push(i);
     else used[key] = true;
@@ -252,7 +252,8 @@ Blockly.Blocks["functions_definition"] = {
       if (type === "label") {
         this.appendDummyInput().appendField(new Blockly.FieldLabel(name));
       } else {
-        const input = this.appendValueInput(name).setCheck(typeToBlocklyCheck(type));
+        const key = type + "_" + name;
+        const input = this.appendValueInput(key).setCheck(typeToBlocklyCheck(type));
 
         if (!firstArgAdded) {
           input.appendField("my block with");
@@ -266,10 +267,6 @@ Blockly.Blocks["functions_definition"] = {
             reporter.outputConnection.connect(input.connection);
           } catch (e) { }
         }
-
-        try {
-          reporter.outputConnection.connect(input.connection);
-        } catch (e) { }
       }
     }
 
@@ -570,12 +567,10 @@ Blockly.Blocks["functions_call"] = {
 
     if (returnTypes?.length > 0) {
       if (prevConn && prevConn.isConnected()) {
-        const blockAbove = prevConn.targetBlock();
-        blockAbove.unplug(true);
+        prevConn.disconnect();
       }
       if (nextConn && nextConn.isConnected()) {
-        const blockBelow = nextConn.targetBlock();
-        blockBelow.unplug(true);
+        nextConn.disconnect();
       }
 
       this.setPreviousStatement(false);
@@ -592,7 +587,7 @@ Blockly.Blocks["functions_call"] = {
         this.setOutput(false);
       } else if (shape === "terminal") {
         if (nextConn && nextConn.isConnected()) {
-          nextConn.targetBlock().unplug(true);
+          nextConn.disconnect();
         }
 
         this.setNextStatement(false);
@@ -630,6 +625,21 @@ Blockly.Blocks["functions_call"] = {
         input = this.appendStatementInput(key).setCheck("default");
       } else {
         input = this.appendValueInput(key).setCheck(typeToBlocklyCheck(type));
+        
+        if (type === "string" || type === "number") {
+          const shadowType = type === "string" ? "text" : "math_number";
+          const fieldName = type === "string" ? "TEXT" : "NUM";
+          const defaultValue = type === "string" ? "" : "0";
+
+          const shadowDom = Blockly.utils.xml.createElement("shadow");
+          shadowDom.setAttribute("type", shadowType);
+          const fieldDom = Blockly.utils.xml.createElement("field");
+          fieldDom.setAttribute("name", fieldName);
+          fieldDom.textContent = defaultValue;
+          shadowDom.appendChild(fieldDom);
+
+          input.connection.setShadowDom(shadowDom);
+        }
       }
 
       if (oldConnections[key]) {
@@ -653,19 +663,13 @@ Blockly.Blocks["functions_return"] = {
   },
 
   update_() {
-    const def = this.getSurroundParent();
-    if (!def || def.type !== "functions_definition") return;
+    const root = this.getRootBlock();
+    if (!root || root.type !== "functions_definition") return;
 
-    def.updateReturnState_();
+    root.updateReturnState_();
     if (typeof this.workspace.updateAllFunctionCalls === "function") {
       this.workspace.updateAllFunctionCalls();
     }
-  },
-
-  onchange(e) {
-    if (e.isUiEvent || e.isBlank) return;
-
-    this.update_();
   },
 };
 
