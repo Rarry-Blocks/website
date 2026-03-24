@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js-legacy";
-import { spriteManager, setActiveSprite, activeSprite } from "../editor";
+import { spriteManager, setActiveSprite, activeSprite, currentSocket } from "../editor";
 
 const playingAudios = {};
 

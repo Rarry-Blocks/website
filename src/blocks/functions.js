@@ -201,30 +201,6 @@ Blockly.Blocks["functions_definition"] = {
     this.updateShape_();
   },
 
-  createDefaultArgBlock_: function (type, name = "arg") {
-    Blockly.Events.disable();
-
-    var block;
-    try {
-      const ws = this.workspace;
-      block = ws.newBlock("functions_argument_block");
-      block.setShadow(true);
-      block.setEditable(false);
-      block.updateType_(type);
-      block.updateName_(name);
-
-      if (ws?.rendered) {
-        block.initSvg();
-        block.render();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    Blockly.Events.enable();
-    return block;
-  },
-
   updateShape_: function () {
     let savedBody = null;
 
@@ -260,13 +236,15 @@ Blockly.Blocks["functions_definition"] = {
           firstArgAdded = true;
         }
 
-        const reporter = this.createDefaultArgBlock_(type, name);
-        if (reporter) {
-          reporter.setFieldValue(name, "ARG_NAME");
-          try {
-            reporter.outputConnection.connect(input.connection);
-          } catch (e) { }
-        }
+        const shadowDom = Blockly.utils.xml.createElement("shadow");
+        shadowDom.setAttribute("type", "functions_argument_block");
+
+        const mutation = Blockly.utils.xml.createElement("mutation");
+        mutation.setAttribute("type", type);
+        mutation.setAttribute("name", name);
+
+        shadowDom.appendChild(mutation);
+        input.connection.setShadowDom(shadowDom);
       }
     }
 
@@ -278,7 +256,7 @@ Blockly.Blocks["functions_definition"] = {
     if (savedBody) {
       try {
         newBody.connection.connect(savedBody);
-      } catch (e) { }
+      } catch (e) {}
     }
 
     this.setColour(this.blockColour_);
@@ -551,10 +529,16 @@ Blockly.Blocks["functions_call"] = {
 
   updateShape_: function () {
     const oldConnections = {};
+    const oldShadows = {};
 
     [...this.inputList].forEach(input => {
       if (input.connection && input.connection.targetBlock()) {
-        oldConnections[input.name] = input.connection.targetConnection;
+        const targetBlock = input.connection.targetBlock();
+        if (!targetBlock.isShadow()) {
+          oldConnections[input.name] = input.connection.targetConnection;
+        } else {
+          oldShadows[input.name] = Blockly.Xml.blockToDom(targetBlock);
+        }
       }
       this.removeInput(input.name);
     });
@@ -625,8 +609,10 @@ Blockly.Blocks["functions_call"] = {
         input = this.appendStatementInput(key).setCheck("default");
       } else {
         input = this.appendValueInput(key).setCheck(typeToBlocklyCheck(type));
-        
-        if (type === "string" || type === "number") {
+
+        if (oldShadows[key]) {
+          input.connection.setShadowDom(oldShadows[key]);
+        } else if (type === "string" || type === "number") {
           const shadowType = type === "string" ? "text" : "math_number";
           const fieldName = type === "string" ? "TEXT" : "NUM";
           const defaultValue = type === "string" ? "" : "0";
@@ -647,7 +633,7 @@ Blockly.Blocks["functions_call"] = {
           input.connection.connect(
             oldConnections[key].targetBlock()?.outputConnection || oldConnections[key],
           );
-        } catch (e) { }
+        } catch (e) {}
       }
     }
   },

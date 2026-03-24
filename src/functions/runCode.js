@@ -39,7 +39,9 @@ export function runCodeWithFunctions({
   code,
   projectStartedTime,
   spriteData,
-  signal
+  signal,
+  clickRunMode = false,
+  onClickResult = null,
 }) {
   const renderer = app.renderer;
   const stage = app.stage;
@@ -67,6 +69,11 @@ export function runCodeWithFunctions({
 
   function registerEvent(type, key, generatorFunc) {
     if (stopped()) return;
+
+    if (clickRunMode) {
+      vm.execute(generatorFunc, getTargetData());
+      return;
+    }
 
     const entry = {
       type,
@@ -448,6 +455,10 @@ export function runCodeWithFunctions({
     if (data.currentBubble) data.currentBubble.visible = bool;
   }
 
+  function setClickResult(value) {
+    if (onClickResult) onClickResult(value);
+  }
+
   const MyFunctions = {};
   const VM_FUNCTIONS = {
     registerEvent,
@@ -478,6 +489,8 @@ export function runCodeWithFunctions({
     setPenSize,
     clearPen,
     toggleVisibility,
+    soundProperties,
+    setClickResult,  
 
     vm,
     stopped,

@@ -194,7 +194,7 @@ BlocklyJS.javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function 
 };
 
 BlocklyJS.javascriptGenerator.forBlock["looks_isVisible"] = () => [
-  "sprite.visible",
+  "getTarget().visible",
   BlocklyJS.Order.NONE,
 ];
 
