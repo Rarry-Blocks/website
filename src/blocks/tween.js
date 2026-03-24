@@ -36,7 +36,7 @@ Blockly.Blocks["tween_block"] = {
         "EASING_MODE"
       );
 
-    this.appendStatementInput("DO").setCheck("default");
+    this.appendStatementInput("DO").setCheck("default").setCheck("default");
     this.appendDummyInput()
       .setAlign(1)
       .appendField(

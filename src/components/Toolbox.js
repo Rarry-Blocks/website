@@ -42,17 +42,16 @@ const Toolbox = `
     </block>
     ${sep("50")}
     ${block("controls_if")}
+    ${block("controls_switch", value("VALUE", shadowText()))}
+    ${block("controls_switch_case")}
+    ${sep("50")}
     <block type="controls_repeat_ext">
       <value name="TIMES">
         ${shadowNumber(3)}
       </value>
     </block>
     ${block("controls_forever")}
-    <block type="controls_whileUntil">
-      <value name="BOOL">
-        ${shadowBoolean(true)}
-      </value>
-    </block>
+    ${block("controls_whileUntil")}
     <block type="controls_forLoop">
       <value name="VAR">
         ${shadow("controls_forLoop_var")}
@@ -65,12 +64,8 @@ const Toolbox = `
       </value>
     </block>
     ${block("controls_flow_statements")}
+    ${block("controls_stop_sprite", value("ID", shadow("controls_sprites_menu")))}
     ${block("controls_stopblock")}
-    <block type="controls_stop_sprite">
-      <value name="ID">
-        ${shadow("controls_sprites_menu")}
-      </value>
-    </block>
     ${sep("50")}
     ${block("controls_whenstartasclone")}
     <block type="controls_createclone">
@@ -310,7 +305,8 @@ const Toolbox = `
       "system_distance_direction",
       value("X1", shadow("get_position", `<field name="MENU">x</field>`)),
       value("Y1", shadow("get_position", `<field name="MENU">y</field>`)),
-      value("X2", shadowNumber()), value("Y2", shadowNumber()), 
+      value("X2", shadowNumber()),
+      value("Y2", shadowNumber()),
     )}
   </category>
 

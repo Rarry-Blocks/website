@@ -1,6 +1,149 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import { spriteManager } from "../scripts/editor";
+const xmlUtils = Blockly.utils.xml;
+
+Blockly.Blocks["controls_switch"] = {
+  init: function () {
+    this.appendValueInput("VALUE").appendField("switch");
+    this.appendStatementInput("DO").setCheck("switchcase");
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setStyle("control_blocks");
+    this.setTooltip("Make the input be used to be matched inside of cases.");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_switch"] = function (block, generator) {
+  const branch = generator.statementToCode(block, "DO");
+  const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.ATOMIC) || "''";
+  return `switch (${value}) {
+  ${branch}}\n`;
+};
+
+Blockly.Blocks["controls_switch_case"] = {
+  init: function () {
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, "switchcase");
+    this.setNextStatement(true, "switchcase");
+    this.setStyle("control_blocks");
+    this.setTooltip("Adds a case for a switch block.");
+
+    this.itemCount_ = 1;
+    this.messageList = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
+    this.updateShape_();
+  },
+
+  mutationToDom: function () {
+    const container = xmlUtils.createElement("mutation");
+    container.setAttribute("items", this.itemCount_);
+    return container;
+  },
+
+  domToMutation: function (xmlElement) {
+    this.itemCount_ = parseInt(xmlElement.getAttribute("items"), 10);
+    this.updateShape_();
+  },
+
+  updateShape_: function () {
+    const doInput = this.getInput("DO");
+    const savedDoConnection = doInput?.connection.targetConnection ?? null;
+    if (savedDoConnection) savedDoConnection.disconnect();
+    if (doInput) this.removeInput("DO");
+
+    if (this.getInput("ARROWS")) this.removeInput("ARROWS");
+
+    for (let i = 0; i < this.itemCount_; i++) {
+      let input = this.getInput("CASE" + i);
+
+      if (!input) {
+        const shadow = document.createElement("shadow");
+        shadow.setAttribute("type", "text");
+
+        const field = document.createElement("field");
+        field.setAttribute("name", "TEXT");
+        field.textContent = this.messageList[i] || "..";
+        shadow.append(field);
+
+        input = this.appendValueInput("CASE" + i);
+        input.setAlign(Blockly.inputs.Align.RIGHT);
+        input.connection.setShadowDom(shadow);
+      }
+
+      if (i === 0) {
+        if (!input.fieldRow.length) {
+          input.appendField("case");
+        }
+      }
+    }
+
+    for (let i = this.itemCount_; this.getInput("CASE" + i); i++) {
+      this.removeInput("CASE" + i);
+    }
+
+    const arrowsInput = this.appendDummyInput("ARROWS").setAlign(
+      Blockly.inputs.Align.RIGHT,
+    );
+
+    if (this.itemCount_ === 0) {
+      arrowsInput.appendField("default");
+    }
+
+    arrowsInput
+      .appendField(
+        new Blockly.FieldImage(
+          "/icons/blocks/caretLeft.svg",
+          18,
+          25,
+          "remove an input",
+          this.decrease_.bind(this),
+        ),
+      )
+      .appendField(
+        new Blockly.FieldImage(
+          "/icons/blocks/caretRight.svg",
+          18,
+          25,
+          "add an input",
+          this.increase_.bind(this),
+        ),
+      );
+
+    const newDo = this.appendStatementInput("DO").setCheck("default");
+    if (savedDoConnection) newDo.connection.connect(savedDoConnection);
+  },
+
+  increase_: function () {
+    if (this.itemCount_ > 99) return;
+    this.itemCount_++;
+    this.updateShape_();
+  },
+
+  decrease_: function () {
+    if (this.itemCount_ < 1) return; // 0 is now the minimum
+    this.itemCount_--;
+    this.updateShape_();
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_switch_case"] = function (
+  block,
+  generator,
+) {
+  const branch = generator.statementToCode(block, "DO");
+
+  if (block.itemCount_ === 0) {
+    return `default: {\n  ${branch}break;\n}`;
+  }
+
+  const parts = [];
+  for (let i = 0; i < block.itemCount_; i++) {
+    const value = generator.valueToCode(block, "CASE" + i, BlocklyJS.Order.NONE) || "";
+    parts.push(`case ${value}:`);
+  }
+
+  return `${parts.join(" ")} {\n  ${branch}break;\n}`;
+};
 
 Blockly.Blocks["wait_one_frame"] = {
   init: function () {
@@ -140,10 +283,10 @@ Blockly.Blocks["controls_run_instantly"] = {
   init: function () {
     this.appendDummyInput().appendField("run instantly");
     this.appendStatementInput("do");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
     this.setStyle("control_blocks");
-    this.setTooltip("Run inside code without frame delay");
+    this.setTooltip("Run inside code without frame delay.");
   },
 };
 

@@ -238,7 +238,7 @@ Blockly.Blocks["sets_create_with_container"] = {
   init: function () {
     this.setStyle("set_blocks");
     this.appendDummyInput().appendField("set");
-    this.appendStatementInput("STACK");
+    this.appendStatementInput("STACK").setCheck("default");
     this.contextMenu = false;
   },
 };
@@ -528,7 +528,7 @@ Blockly.Blocks["sets_foreach"] = {
     this.appendValueInput("SET")
       .setCheck("Set")
       .appendField("in set");
-    this.appendStatementInput("DO").appendField("do");
+    this.appendStatementInput("DO").appendField("do").setCheck("default");
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
