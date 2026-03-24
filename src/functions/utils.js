@@ -176,6 +176,8 @@ export class Popup {
             }
 
             const dataAttr = tabIndex !== null ? `data-tab="${tabIndex}"` : "";
+            let inputMin = item.min ? `min="${item.min}"` : "";
+            let inputMax = item.max ? `max="${item.max}"` : "";
 
             switch (item.type) {
               case "custom":
@@ -183,7 +185,7 @@ export class Popup {
               case "button":
                 return `<button class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} ${item.disabled ? "disabled" : ""}>${item.label}</button>`;
               case "input":
-                return `<input type="${item.inputType || "text"}" placeholder="${item.placeholder || ""}" value="${item.value || ""}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} />`;
+                return `<input type="${item.inputType || "text"}" placeholder="${item.placeholder || ""}" value="${item.value || ""}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} ${inputMin} ${inputMax} />`;
               case "checkbox":
                 return `<input type="checkbox" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} ${item.checked ? "checked" : ""} />`;
               case "textarea":

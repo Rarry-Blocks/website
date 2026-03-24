@@ -11,6 +11,10 @@ const icons = localStorage.getItem("removeIcons") === "true" ?? false;
 const rarryToolbar = localStorage.getItem("removeRarryToolbar") === "true" ?? false;
 const toolboxPosition = localStorage.getItem("toolboxPosition") || "space-between";
 const stageLeft = localStorage.getItem("stageLeft") === "true" ?? false;
+const hats = localStorage.getItem("startHats") === "true" ?? false;
+const snapToGrid = localStorage.getItem("snapToGrid") === "true" ?? false;
+const scrollbars = localStorage.getItem("scrollbars") !== "false";
+const sounds = localStorage.getItem("sounds") !== "false";
 
 const blockStyles = {
   logic_blocks: {
@@ -35,7 +39,7 @@ const blockStyles = {
     colourPrimary: "#FF6680",
   },
   system_blocks: {
-    colourPrimary: "#5CB1D6"
+    colourPrimary: "#5CB1D6",
   },
   motion_blocks: {
     colourPrimary: "#4C97FF",
@@ -63,6 +67,7 @@ const blockStyles = {
 const lightTheme = Blockly.Theme.defineTheme("customLightTheme", {
   base: Blockly.Themes.Classic,
   blockStyles: blockStyles,
+  startHats: hats,
 });
 
 const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
@@ -81,15 +86,22 @@ const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
     scrollbarOpacity: 0.4,
     cursorColour: "#d0d0d0",
   },
+  startHats: hats,
 });
 
 const baseColorKeys = ["toolbar-header", "dark", "primary", "danger", "color"];
 const allColorKeys = [
   "toolbar-header",
-  "dark", "dark-light",
-  "primary", "primary-dark",
-  "danger", "danger-dark",
-  "color1", "color2", "color3", "color4"
+  "dark",
+  "dark-light",
+  "primary",
+  "primary-dark",
+  "danger",
+  "danger-dark",
+  "color1",
+  "color2",
+  "color3",
+  "color4",
 ];
 
 export function applyCustomColors() {
@@ -197,12 +209,42 @@ export function toggleStageLeft(left) {
   else root.classList.remove("stageLeft");
 }
 
+export function toggleHats(enabled, workspace) {
+  localStorage.setItem("startHats", String(enabled));
+
+  lightTheme.startHats = enabled;
+  darkTheme.startHats = enabled;
+
+  if (workspace) {
+    const isDark = localStorage.getItem("theme") === "dark";
+    workspace.setTheme(isDark ? darkTheme : lightTheme);
+    workspace.getAllBlocks(false).forEach(block => block.render());
+  }
+}
+
+export function toggleSnapToGrid(enabled, workspace) {
+  localStorage.setItem("snapToGrid", String(enabled));
+}
+
+export function toggleScrollbars(enabled, workspace) {
+  localStorage.setItem("scrollbars", String(enabled));
+  workspace?.scrollbar?.setVisible(enabled);
+}
+
+export function toggleSounds(enabled, workspace) {
+  localStorage.setItem("sounds", String(enabled));
+}
+
 export function setupSettingsButton(workspace) {
   toggleTheme(theme, workspace);
   toggleIcons(icons);
   toggleRarryToolbar(rarryToolbar);
   toggleStageLeft(stageLeft);
   setToolboxPosition(toolboxPosition);
+  toggleHats(hats, workspace);
+  toggleSnapToGrid(snapToGrid, workspace);
+  toggleScrollbars(scrollbars, workspace);
+  toggleSounds(sounds, workspace);
 
   const settingsButton = document.getElementById("settings-button");
   if (settingsButton)
@@ -212,7 +254,7 @@ export function setupSettingsButton(workspace) {
       const popup = new Popup({
         title: "Settings",
         beforeRender: () => {
-          currentColors = JSON.parse(localStorage.getItem("colors") || "{}")
+          currentColors = JSON.parse(localStorage.getItem("colors") || "{}");
         },
         tabs: () => [
           {
@@ -263,7 +305,7 @@ export function setupSettingsButton(workspace) {
                 {
                   type: "button",
                   label: '<i class="fa-solid fa-sun"></i> Light',
-                  onClick: (popup) => {
+                  onClick: popup => {
                     localStorage.removeItem("colors");
                     allColorKeys.forEach(c => root.style.removeProperty(`--${c}`));
                     toggleTheme(false, workspace);
@@ -273,7 +315,7 @@ export function setupSettingsButton(workspace) {
                 {
                   type: "button",
                   label: '<i class="fa-solid fa-moon"></i> Dark',
-                  onClick: (popup) => {
+                  onClick: popup => {
                     localStorage.removeItem("colors");
                     allColorKeys.forEach(c => root.style.removeProperty(`--${c}`));
                     toggleTheme(true, workspace);
@@ -282,12 +324,12 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               ...baseColorKeys.map(key => {
-                let cssVar = key === 'color' ? 'color1' : key;
+                let cssVar = key === "color" ? "color1" : key;
                 return [
                   {
                     type: "button",
                     label: '<i class="fa-solid fa-arrows-rotate stay"></i>',
-                    onClick: (popup) => {
+                    onClick: popup => {
                       updateCustomColor(key, "");
                       popup.refresh();
                     },
@@ -295,12 +337,14 @@ export function setupSettingsButton(workspace) {
                   `${capitalizeFirstLetter(key).replaceAll("-", " ")}:`,
                   {
                     type: "color",
-                    value: currentColors?.[key] || getComputedStyle(root).getPropertyValue(`--${cssVar}`).trim(),
+                    value:
+                      currentColors?.[key] ||
+                      getComputedStyle(root).getPropertyValue(`--${cssVar}`).trim(),
                     onChange: value => updateCustomColor(key, value),
                   },
-                ]
-              })
-            ]
+                ];
+              }),
+            ],
           },
           {
             label: "Editor",
@@ -313,6 +357,40 @@ export function setupSettingsButton(workspace) {
                   onChange: checked => {
                     toggleStageLeft(checked);
                   },
+                },
+              ],
+              [
+                "Event hat bumps:",
+                {
+                  type: "checkbox",
+                  checked: localStorage.getItem("startHats") === "true",
+                  onChange: checked => {
+                    toggleHats(checked, workspace);
+                  },
+                },
+              ],
+              [
+                "Scrollbars:",
+                {
+                  type: "checkbox",
+                  checked: localStorage.getItem("scrollbars") !== "false",
+                  onChange: checked => toggleScrollbars(checked, workspace),
+                },
+              ],
+              [
+                "Snap blocks to grid (applies after refresh):",
+                {
+                  type: "checkbox",
+                  checked: localStorage.getItem("snapToGrid") === "true",
+                  onChange: checked => toggleSnapToGrid(checked, workspace),
+                },
+              ],
+              [
+                "Block sounds (applies after refresh):",
+                {
+                  type: "checkbox",
+                  checked: localStorage.getItem("sounds") !== "false",
+                  onChange: checked => toggleSounds(checked, workspace),
                 },
               ],
             ],

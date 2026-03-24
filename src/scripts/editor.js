@@ -106,12 +106,17 @@ export let activeSprite = null;
 
 Blockly.blockRendering.register("custom_zelos", CustomRenderer);
 
+const snapToGrid = localStorage.getItem("snapToGrid") === "true" ?? false;
+const scrollbars = localStorage.getItem("scrollbars") !== "false";
+const sounds = localStorage.getItem("sounds") !== "false";
+
 const blocklyDiv = document.getElementById("blocklyDiv");
 const toolbox = document.getElementById("toolbox");
 toolbox.innerHTML = Toolbox;
 export const workspace = Blockly.inject(blocklyDiv, {
   toolbox: toolbox,
-  scrollbars: true,
+  scrollbars,
+  sounds,
   trashcan: true,
   renderer: "custom_zelos",
   zoom: {
@@ -126,11 +131,11 @@ export const workspace = Blockly.inject(blocklyDiv, {
     spacing: 20,
     length: 3,
     colour: "#7e7e7e40",
-    snap: false,
+    snap: snapToGrid,
   },
   plugins: {
     connectionChecker: "CustomChecker",
-  },
+  }
 });
 
 const observer = new ResizeObserver(() => {
