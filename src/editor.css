@@ -411,7 +411,8 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   text-overflow: ellipsis;
   pointer-events: auto;
   white-space: pre;
-  background: #fff;
+  background: var(--dark);
+  color: var(--color1);
   z-index: 9999;
   gap: 6px;
   border-radius: 8px;
@@ -445,13 +446,13 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   height: 0;
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
-  border-bottom: 9px solid #fff; 
+  border-bottom: 9px solid var(--dark); 
 }
 
 .block-run-bubble i {
   cursor: pointer;
   font-size: 13px;
-  color: rgba(0, 0, 0, 0.8);
+  color: var(--color4);
   line-height: 1;
   flex-shrink: 0;
   transition: scale 0.1s ease;
