@@ -1,5 +1,3 @@
-import * as Blockly from "blockly";
-
 export function showNotification({ message = "", duration = 5000, closable = true }) {
   const notification = document.createElement("div");
   notification.className = "notification";
@@ -302,7 +300,6 @@ async function encodeOggFast(dataURL) {
 
   const rendered = await offlineCtx.startRendering();
 
-  // 🔥 Feed to MediaRecorder
   const liveCtx = new AudioContext();
   const liveSrc = liveCtx.createBufferSource();
   liveSrc.buffer = rendered;
