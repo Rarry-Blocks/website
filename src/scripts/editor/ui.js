@@ -1,5 +1,11 @@
 import * as PIXI from "pixi.js-legacy";
-import { spriteManager, setActiveSprite, activeSprite, currentSocket } from "../editor";
+import {
+  spriteManager,
+  setActiveSprite,
+  activeSprite,
+  currentSocket,
+  app,
+} from "../editor";
 
 const playingAudios = {};
 
@@ -397,4 +403,29 @@ export function renderSoundsList() {
     if (sizeLabel) container.appendChild(sizeLabel);
     soundsList.appendChild(container);
   });
+}
+
+const spriteImageCache = new WeakMap();
+export function spriteToImage(sprite) {
+  const texture = sprite?.pixiSprite?.texture;
+  if (!texture) return null;
+
+  const renderer = app?.renderer;
+  if (!renderer) return null;
+
+  let dataURL = spriteImageCache.get(texture);
+  if (!dataURL) {
+    const canvas = renderer.extract.canvas(sprite.pixiSprite);
+    dataURL = canvas.toDataURL();
+    spriteImageCache.set(texture, dataURL);
+  }
+
+  const img = document.createElement("img");
+  img.src = dataURL;
+  img.style.width = "32px";
+  img.style.height = "32px";
+  img.style.objectFit = "contain";
+  img.style.verticalAlign = "middle";
+  img.title = sprite?.name || "";
+  return img;
 }

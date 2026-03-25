@@ -420,28 +420,36 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   font-size: 13px;
   font-weight: 600;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
-  max-width: 320px;
-  overflow-x: auto;
+  max-width: max(33%, 300px);
   transform: translateX(-50%);
   animation: blockRunBubbleFadeIn 0.12s ease;
 }
 
-.block-run-bubble::-webkit-scrollbar {
+.block-run-content {
+  display: flex;
+  flex-direction: row; 
+  align-items: center;  
+  justify-content: center; 
+  text-align: center; 
+  overflow: auto;  
+}
+
+.block-run-content::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.block-run-bubble::-webkit-scrollbar-track {
+.block-run-content::-webkit-scrollbar-track {
   background: var(--dark-light);
   border-radius: 8px;
 }
 
-.block-run-bubble::-webkit-scrollbar-thumb {
+.block-run-content::-webkit-scrollbar-thumb {
   background: var(--color1);
   border-radius: 8px;
 }
 
-.block-run-bubble::-webkit-scrollbar-thumb:hover {
+.block-run-content::-webkit-scrollbar-thumb:hover {
   background: var(--color2);
 }
 

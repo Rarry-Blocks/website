@@ -35,6 +35,7 @@ import {
   renderSpriteInfo,
   resetSpriteInfo,
   updateSpriteInfoValues,
+  spriteToImage,
 } from "./editor/ui.js";
 
 BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
@@ -1271,9 +1272,8 @@ const stageDiv = document.getElementById("stage-div");
 
 fullscreenButton.addEventListener("click", () => {
   const isFull = stageDiv.classList.toggle("fullscreen");
-  fullscreenButton.innerHTML = `<img src="icons/${
-    isFull ? "smallscreen.svg" : "fullscreen.svg"
-  }">`;
+  fullscreenButton.innerHTML = `<img src="icons/${isFull ? "smallscreen.svg" : "fullscreen.svg"
+    }">`;
   resizeCanvas();
 });
 
@@ -1641,13 +1641,12 @@ function updateUsersList() {
         <div>
           <img src="${config.apiUrl}/users/${u.id}/avatar">
           <b>${u.isHost ? "👑 " : ""}${u.username}</b>
-          ${
-            canKick
-              ? `<button class="kick-button danger" data-id="${u.id}">
+          ${canKick
+          ? `<button class="kick-button danger" data-id="${u.id}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>`
-              : ""
-          }
+          : ""
+        }
         </div>`;
     })
     .join("");
@@ -1682,17 +1681,17 @@ liveShare.addEventListener("click", async () => {
     const buttons = [
       amHost
         ? {
-            type: "button",
-            label: invitesLabel,
-            onClick: () => {
-              const newStatus = !invitesEnabled;
-              invitesEnabled = newStatus;
-              currentSocket.emit("toggleInvites", {
-                roomId: currentRoom,
-                enabled: newStatus,
-              });
-            },
-          }
+          type: "button",
+          label: invitesLabel,
+          onClick: () => {
+            const newStatus = !invitesEnabled;
+            invitesEnabled = newStatus;
+            currentSocket.emit("toggleInvites", {
+              roomId: currentRoom,
+              enabled: newStatus,
+            });
+          },
+        }
         : null,
       {
         type: "button",
@@ -1825,8 +1824,7 @@ workspace.addChangeListener(event => {
   if (ignoredEvents.has(event.type)) {
     if (event.type === Blockly.Events.SELECTED) return;
     return hideBlockRunBubble();
-  }
-  else if (!activeSprite) return;
+  } else if (!activeSprite) return;
 
   activeSprite.code = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
 
@@ -1841,6 +1839,65 @@ workspace.addChangeListener(event => {
   }
 });
 
+const MAX_ARRAY_ITEMS = 7;
+
+function formatBubbleValue(value) {
+  try {
+    return typeof value === "object" && value !== null
+      ? JSON.stringify(value)
+      : String(value ?? "");
+  } catch {
+    return String(value);
+  }
+}
+
+function appendValue(container, value, layer = 1) {
+  if (Array.isArray(value)) {
+    if (layer >= 2) {
+      const text = document.createElement("span");
+      text.textContent = `Array(${value.length})`;
+      text.style.fontStyle = "italic";
+      container.appendChild(text);
+      return;
+    }
+
+    const items = value.slice(0, MAX_ARRAY_ITEMS);
+    items.forEach((item, i) => {
+      appendValue(container, item, layer + 1);
+      if (i < items.length - 1) {
+        container.appendChild(document.createTextNode(", "));
+      }
+    });
+
+    if (value.length > MAX_ARRAY_ITEMS) {
+      if (items.length > 0) container.appendChild(document.createTextNode(", "));
+      container.appendChild(
+        document.createTextNode(`+${value.length - MAX_ARRAY_ITEMS} more`),
+      );
+    }
+
+    return;
+  }
+
+  if (value instanceof Sprite) {
+    const wrapper = document.createElement("span");
+    wrapper.style.display = "inline-flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "4px";
+
+    const img = spriteToImage(value);
+    if (img) {
+      wrapper.appendChild(img);
+      container.appendChild(wrapper);
+      return;
+    }
+  }
+
+  const text = document.createElement("span");
+  text.textContent = formatBubbleValue(value, layer);
+  container.appendChild(text);
+}
+
 function showBlockRunBubble(block, value) {
   hideBlockRunBubble();
   if (!block) return;
@@ -1853,26 +1910,18 @@ function showBlockRunBubble(block, value) {
   const div = document.createElement("div");
   div.className = "block-run-bubble";
 
-  const label = document.createElement("span");
-  let display;
-  try {
-    display =
-      typeof value === "object" && value !== null
-        ? JSON.stringify(value)
-        : String(value ?? "");
-  } catch (_) {
-    display = String(value);
-  }
-  label.textContent = display;
+  const content = document.createElement("div");
+  content.className = "block-run-content";
+  appendValue(content, value);
 
   const copy = document.createElement("i");
   copy.className = "fa-regular fa-copy";
   copy.title = "Copy result";
   copy.addEventListener("click", () => {
-    navigator.clipboard.writeText(display);
+    navigator.clipboard.writeText(formatBubbleValue(value));
   });
 
-  div.appendChild(label);
+  div.appendChild(content);
   div.appendChild(copy);
   document.body.appendChild(div);
 
@@ -1897,16 +1946,20 @@ function executeClickedBlock(blockId) {
   if (!block) return;
 
   hideBlockRunBubble();
-  
+
   const generator = BlocklyJS.javascriptGenerator;
   generator.init(workspace);
 
   let rawCode = generator.blockToCode(block);
-  
+
   const allBlocks = workspace.getAllBlocks(false);
-  let functionsCode = '';
+  let functionsCode = "";
   allBlocks.forEach(b => {
-    if (b.type === 'functions_definition' || b.type === 'procedures_defnoreturn' || b.type === 'procedures_defreturn') {
+    if (
+      b.type === "functions_definition" ||
+      b.type === "procedures_defnoreturn" ||
+      b.type === "procedures_defreturn"
+    ) {
       functionsCode += generator.blockToCode(b);
     }
   });
@@ -1934,7 +1987,7 @@ function executeClickedBlock(blockId) {
     projectStartedTime: Date.now(),
     spriteData: activeSprite,
     signal: controller.signal,
-    clickRunMode: true, 
+    clickRunMode: true,
     onClickResult: val => {
       showBlockRunBubble(block, val);
     },
