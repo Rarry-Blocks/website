@@ -260,18 +260,55 @@ export function promiseWithAbort(promiseOrFn, signal) {
   }
 }
 
-async function encodeOggWithMediaRecorder(dataURL) {
+async function encodeOggFast(dataURL) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
   const base64 = dataURL.split(",")[1];
   const raw = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
   const buffer = await audioCtx.decodeAudioData(raw.buffer);
 
-  const src = audioCtx.createBufferSource();
-  src.buffer = buffer;
+  const targetRate = 22050;
 
-  const dest = audioCtx.createMediaStreamDestination();
-  src.connect(dest);
+  const offlineCtx = new OfflineAudioContext(
+    1, 
+    Math.ceil(buffer.duration * targetRate),
+    targetRate
+  );
+
+  const src = offlineCtx.createBufferSource();
+
+  if (buffer.numberOfChannels === 1) {
+    src.buffer = buffer;
+  } else {
+    const mono = offlineCtx.createBuffer(
+      1,
+      buffer.length,
+      buffer.sampleRate
+    );
+
+    const ch0 = buffer.getChannelData(0);
+    const ch1 = buffer.getChannelData(1);
+    const out = mono.getChannelData(0);
+
+    for (let i = 0; i < out.length; i++) {
+      out[i] = (ch0[i] + ch1[i]) * 0.5;
+    }
+
+    src.buffer = mono;
+  }
+
+  src.connect(offlineCtx.destination);
+  src.start();
+
+  const rendered = await offlineCtx.startRendering();
+
+  // 🔥 Feed to MediaRecorder
+  const liveCtx = new AudioContext();
+  const liveSrc = liveCtx.createBufferSource();
+  liveSrc.buffer = rendered;
+
+  const dest = liveCtx.createMediaStreamDestination();
+  liveSrc.connect(dest);
 
   const recorder = new MediaRecorder(dest.stream, {
     mimeType: "audio/ogg",
@@ -289,20 +326,17 @@ async function encodeOggWithMediaRecorder(dataURL) {
     };
 
     recorder.start();
-    src.start();
-    src.onended = () => recorder.stop();
+    liveSrc.start();
+    liveSrc.onended = () => recorder.stop();
   });
 }
 
 export async function compressAudio(dataURL) {
-  if (window.MediaRecorder && MediaRecorder.isTypeSupported("audio/ogg")) {
-    try {
-      return await encodeOggWithMediaRecorder(dataURL);
-    } catch (e) {
-      console.warn("OGG recording failed, falling back:", e);
-    }
+  try {
+    return await encodeOggFast(dataURL);
+  } catch (e) {
+    console.warn("OGG recording failed, falling back:", e);
   }
-
   return dataURL;
 }
 
@@ -322,53 +356,6 @@ export async function compressImage(dataURL) {
     };
     img.src = dataURL;
   });
-}
-
-export class DuplicateOnDragWithType {
-  constructor(block, outputTypes = null) {
-    this.block = block;
-    this.outputTypes = outputTypes;
-  }
-
-  isMovable() {
-    return true;
-  }
-
-  startDrag(e) {
-    const ws = this.block.workspace;
-    const data = this.block.toCopyData();
-
-    data.blockState = {
-      ...(data.blockState ?? {}),
-      type: this.block.type,
-    };
-
-    if (this.block.saveExtraState) {
-      data.blockState.extraState = this.block.saveExtraState();
-    }
-
-    this.copy = Blockly.clipboard.paste(data, ws);
-    this.copy.setShadow(false);
-    if (this.outputTypes && this.copy.outputConnection) {
-      this.copy.setOutput(true, this.outputTypes);
-    }
-    this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.copy);
-    this.copy.setDragStrategy(this.baseStrat);
-    this.baseStrat.startDrag(e);
-  }
-
-  drag(e) {
-    this.block.workspace.getGesture(e).getCurrentDragger().setDraggable(this.copy);
-    this.baseStrat.drag(e);
-  }
-
-  endDrag(e) {
-    this.baseStrat?.endDrag(e);
-  }
-
-  revertDrag(e) {
-    this.copy?.dispose();
-  }
 }
 
 export const tweenEasing = {

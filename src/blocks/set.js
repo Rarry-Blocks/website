@@ -1,6 +1,5 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
-import { DuplicateOnDragWithType } from "../functions/utils";
 const xmlUtils = Blockly.utils.xml;
 
 Blockly.Blocks["sets_create_extendable"] = {
