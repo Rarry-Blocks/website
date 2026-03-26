@@ -42,12 +42,11 @@ export class Thread {
   }
 }
 
-export let currentThread = null;
-
 export class VM {
   constructor() {
     this.threads = [];
     this.stepStart = 0;
+    this.currentThread = null;
   }
 
   execute(generatorFunc, target) {
@@ -67,7 +66,7 @@ export class VM {
         continue;
       }
 
-      currentThread = thread;
+      this.currentThread = thread;
 
       try {
         const result = thread.generator.next();
@@ -78,7 +77,7 @@ export class VM {
         console.error("Thread Error:", e);
         this.threads.splice(i, 1);
       } finally {
-        currentThread = null;
+        this.currentThread = null;
       }
     }
   }
@@ -89,7 +88,7 @@ export class VM {
 
   stopAll() {
     this.threads = [];
-    currentThread = null;
+    this.currentThread = null;
   }
 
   stopForTarget(target) {
@@ -100,7 +99,7 @@ export class VM {
 
   stopOtherScriptsForTarget(target) {
     for (const thread of this.threads) {
-      if (thread.target === target && thread !== currentThread) thread.stop();
+      if (thread.target === target && thread !== this.currentThread) thread.stop();
     }
   }
 

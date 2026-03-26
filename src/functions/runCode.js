@@ -14,7 +14,6 @@ import {
 } from "../scripts/editor";
 import { tweenEasing } from "./utils";
 import { extensions } from "./extensionManager";
-import { currentThread } from "../components/VM";
 
 const BUBBLE_PADDING = 10;
 const BUBBLE_TAIL_HEIGHT = 15;
@@ -46,16 +45,13 @@ export function runCodeWithFunctions({
   const renderer = app.renderer;
   const stage = app.stage;
 
-  const costumeMap = new Map((spriteData.costumes || []).map((c) => [c.name, c]));
-  const soundMap = new Map((spriteData.sounds || []).map((s) => [s.name, s]));
-
   function getTarget() {
     if (vm.currentThread && vm.currentThread.target) {
       return vm.currentThread.target.pixiSprite;
     }
     return spriteData.pixiSprite;
   }
-
+  
   function getTargetData() {
     if (vm.currentThread && vm.currentThread.target) {
       return vm.currentThread.target;
@@ -504,7 +500,7 @@ export function runCodeWithFunctions({
   };
 
   Object.defineProperty(VM_FUNCTIONS, 'currentThread', {
-    get: () => currentThread,
+    get: () => vm.currentThread,
     enumerable: true,
   });
 
