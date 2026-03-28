@@ -660,12 +660,12 @@ Blockly.Blocks["functions_return"] = {
 };
 
 BlocklyJS.javascriptGenerator.forBlock["functions_argument_block"] = block => [
-  block.argType_ + "_" + block.argName_,
+  "__" + block.argType_ + "_" + block.argName_,
   BlocklyJS.Order.NONE,
 ];
 
 BlocklyJS.javascriptGenerator.forBlock["functions_statement_argument_block"] = block =>
-  "yield* statement_" + block.argName_ + "();\n";
+  "yield* __statement_" + block.argName_ + "();\n";
 
 BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
   block,
@@ -679,7 +679,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
     .filter(Boolean);
 
   const body = BlocklyJS.javascriptGenerator.statementToCode(block, "BODY");
-  return `MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) {\n${body}};\n`;
+  return `__MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) {\n${body}};\n`;
 };
 
 BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (block, generator) {
@@ -697,7 +697,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (block, gene
     else args.push(generator.valueToCode(block, key, BlocklyJS.Order.NONE) || "null");
   }
 
-  const callExpr = `yield* MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
+  const callExpr = `yield* __MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
     ", ",
   )})`;
 

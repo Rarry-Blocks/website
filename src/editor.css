@@ -407,13 +407,12 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   display: flex;
   align-items: center;
   position: fixed;
-  overflow: visible;
-  text-overflow: ellipsis;
+  overflow: hidden;
   pointer-events: auto;
-  white-space: pre;
+  white-space: nowrap;
   background: var(--dark);
   color: var(--color1);
-  z-index: 9999;
+  z-index: 10;
   gap: 6px;
   border-radius: 8px;
   padding: 6px 8px;
@@ -426,12 +425,13 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
 }
 
 .block-run-content {
-  display: flex;
-  flex-direction: row; 
-  align-items: center;  
-  justify-content: center; 
-  text-align: center; 
-  overflow: auto;  
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  text-align: left;
 }
 
 .block-run-content::-webkit-scrollbar {
@@ -474,7 +474,7 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   height: 0;
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
-  border-bottom: 9px solid var(--dark); 
+  border-bottom: 9px solid var(--dark);
 }
 
 .block-run-bubble i {

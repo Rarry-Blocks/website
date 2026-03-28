@@ -1,10 +1,34 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { spriteManager } from "../scripts/editor";
 
 const normalKeys = [
   ..."abcdefghijklmnopqrstuvwxyz",
   ..."abcdefghijklmnopqrstuvwxyz0123456789".toUpperCase(),
 ];
+
+Blockly.Blocks["system_sprites_menu"] = {
+  init: function () {
+    this.appendDummyInput().appendField(
+      new Blockly.FieldDropdown(() => {
+        const sprites = spriteManager.getOriginals();
+        return sprites.length < 1
+          ? [["No sprites.", ""]]
+          : sprites.map(i => [i.name, i.id]);
+      }),
+      "MENU",
+    );
+    this.setOutput(true, "String");
+    this.setStyle("system_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["system_sprites_menu"] = function (
+  block,
+  generator,
+) {
+  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+};
 
 Blockly.Blocks["key_pressed"] = {
   init: function () {
@@ -20,9 +44,9 @@ Blockly.Blocks["key_pressed"] = {
           ["down arrow", "ArrowDown"],
           ["left arrow", "ArrowLeft"],
           ["right arrow", "ArrowRight"],
-          ...normalKeys.map((i) => [i, i]),
+          ...normalKeys.map(i => [i, i]),
         ]),
-        "KEY"
+        "KEY",
       )
       .appendField("key down");
     this.setOutput(true, "Boolean");
@@ -39,7 +63,7 @@ Blockly.Blocks["get_mouse_position"] = {
           ["x", "x"],
           ["y", "y"],
         ]),
-        "MENU"
+        "MENU",
       );
     this.setOutput(true, "Number");
     this.setStyle("system_blocks");
@@ -59,7 +83,7 @@ Blockly.Blocks["mouse_button_pressed"] = {
           ["forward", "4"],
           ["any", "any"],
         ]),
-        "BUTTON"
+        "BUTTON",
       )
       .appendField("mouse button down");
     this.setOutput(true, "Boolean");
@@ -96,7 +120,7 @@ BlocklyJS.javascriptGenerator.forBlock["get_mouse_position"] = function (block) 
 
 BlocklyJS.javascriptGenerator.forBlock["mouse_button_pressed"] = function (
   block,
-  generator
+  generator,
 ) {
   const button = block.getFieldValue("BUTTON");
   const safeButton = generator.quote_(button);
@@ -122,7 +146,7 @@ Blockly.Blocks["window_size"] = {
           ["width", "width"],
           ["height", "height"],
         ]),
-        "MENU"
+        "MENU",
       );
     this.setOutput(true, "Number");
     this.setStyle("system_blocks");
@@ -149,8 +173,10 @@ Blockly.Blocks["system_current_time"] = {
           ["hour", "hour"],
           ["minute", "minute"],
           ["second", "second"],
+          ["millisecond", "millisecond"],
+          ["timestamp", "timestamp"],
         ]),
-        "UNIT"
+        "UNIT",
       );
     this.setOutput(true, "Number");
     this.setStyle("system_blocks");
@@ -161,14 +187,26 @@ BlocklyJS.javascriptGenerator.forBlock["system_current_time"] = function (block)
   const getResult = () => {
     const unit = block.getFieldValue("UNIT");
     switch (unit) {
-      case "year": return "new Date().getFullYear()";
-      case "month": return "new Date().getMonth() + 1";
-      case "date": return "new Date().getDate()";
-      case "day": return "new Date().getDay()";
-      case "hour": return "new Date().getHours()";
-      case "minute": return "new Date().getMinutes()";
-      case "second": return "new Date().getSeconds()";
-      default: return "0";
+      case "year":
+        return "new Date().getFullYear()";
+      case "month":
+        return "new Date().getMonth() + 1";
+      case "date":
+        return "new Date().getDate()";
+      case "day":
+        return "new Date().getDay()";
+      case "hour":
+        return "new Date().getHours()";
+      case "minute":
+        return "new Date().getMinutes()";
+      case "second":
+        return "new Date().getSeconds()";
+      case "millisecond":
+        return "new Date().getMilliseconds()";
+      case "timestamp":
+        return "Date.now()";
+      default:
+        return "0";
     }
   };
   return [getResult(), BlocklyJS.Order.NONE];
@@ -176,14 +214,13 @@ BlocklyJS.javascriptGenerator.forBlock["system_current_time"] = function (block)
 
 Blockly.Blocks["system_distance_direction"] = {
   init: function () {
-    this.appendDummyInput()
-      .appendField(
-        new Blockly.FieldDropdown([
-          ["distance", "distance"],
-          ["direction", "direction"],
-        ]),
-        "MODE"
-      );
+    this.appendDummyInput().appendField(
+      new Blockly.FieldDropdown([
+        ["distance", "distance"],
+        ["direction", "direction"],
+      ]),
+      "MODE",
+    );
     this.appendValueInput("X1").setCheck("Number").appendField("from");
     this.appendValueInput("Y1").setCheck("Number");
     this.appendValueInput("X2").setCheck("Number").appendField("to");
@@ -194,7 +231,10 @@ Blockly.Blocks["system_distance_direction"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["system_distance_direction"] = function (block, generator) {
+BlocklyJS.javascriptGenerator.forBlock["system_distance_direction"] = function (
+  block,
+  generator,
+) {
   const mode = block.getFieldValue("MODE");
   const x1 = generator.valueToCode(block, "X1", BlocklyJS.Order.NONE) || "0";
   const y1 = generator.valueToCode(block, "Y1", BlocklyJS.Order.NONE) || "0";
@@ -212,4 +252,85 @@ BlocklyJS.javascriptGenerator.forBlock["system_distance_direction"] = function (
       BlocklyJS.Order.NONE,
     ];
   }
+};
+
+// Used to be in controls
+Blockly.Blocks["controls_clones_list"] = {
+  init: function () {
+    this.appendValueInput("ID").setCheck("String").appendField("list clones of");
+    this.setOutput(true, "Array");
+    this.setStyle("system_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["controls_clones_list"] = function (
+  block,
+  generator,
+) {
+  const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC);
+  return [`spriteManager.get(${ID})?.getAllClones()`, BlocklyJS.Order.NONE];
+};
+
+Blockly.Blocks["system_sprites_list"] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("list all")
+      .appendField(
+        new Blockly.FieldDropdown([
+          ["sprites", "SPRITES"],
+          ["sprites and clones", "ALL"],
+        ]),
+        "TYPE",
+      );
+    this.setOutput(true, "Array");
+    this.setStyle("system_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["system_sprites_list"] = function (block) {
+  const TYPE = block.getFieldValue("TYPE");
+
+  let code = "new Array()";
+  if (TYPE === "SPRITES") {
+    code = "spriteManager.getOriginals()";
+  } else {
+    code = "spriteManager.getAll()";
+  }
+
+  return [code, BlocklyJS.Order.NONE];
+};
+
+Blockly.Blocks["system_sprite_property"] = {
+  init: function () {
+    this.appendValueInput("ID")
+      .setCheck("String")
+      .appendField(
+        new Blockly.FieldDropdown([
+          ["name", "name"],
+          ["id", "id"],
+          ["x", "pixiSprite.x"],
+          ["y", "pixiSprite.y"],
+          ["scale", "pixiSprite.scale.x"],
+          ["rotation", "pixiSprite.rotation"],
+          ["current costume", "currentCostume"],
+          ["costumes", "costumes"],
+          ["sounds", "sounds"],
+          ["code", "code"],
+        ]),
+        "PROP",
+      )
+      .appendField("of");
+    this.setInputsInline(true);
+    this.setOutput(true, null);
+    this.setStyle("system_blocks");
+  },
+};
+
+BlocklyJS.javascriptGenerator.forBlock["system_sprite_property"] = function (
+  block,
+  generator,
+) {
+  const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.NONE);
+  const PROP = block.getFieldValue("PROP");
+  return [`spriteManager.get(${ID})?.${PROP}`, BlocklyJS.Order.NONE];
 };

@@ -455,7 +455,7 @@ export function runCodeWithFunctions({
     if (onClickResult) onClickResult(value);
   }
 
-  const MyFunctions = {};
+  const __MyFunctions = {};
   const VM_FUNCTIONS = {
     registerEvent,
     triggerCustomEvent,
@@ -496,7 +496,7 @@ export function runCodeWithFunctions({
     projectVariables,
     projectBlockValues,
     extensions,
-    MyFunctions
+    __MyFunctions
   };
 
   Object.defineProperty(VM_FUNCTIONS, 'currentThread', {
@@ -504,7 +504,7 @@ export function runCodeWithFunctions({
     enumerable: true,
   });
 
-  console.info('Compiling code:\n', code);
+  console.info('Compiling code:\n', code.trim());
   try {
     const factory = new Function('VM_FUNCTIONS', `
       with (VM_FUNCTIONS) {

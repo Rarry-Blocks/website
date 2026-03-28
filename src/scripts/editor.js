@@ -9,6 +9,7 @@ import { io } from "socket.io-client";
 
 import "../functions/patches/block.js";
 import "../functions/patches/connectionchecker.js";
+import "../functions/patches/dragger.js";
 
 import Toolbox from "../components/Toolbox.js";
 import { setupSettingsButton } from "../functions/theme.js";
@@ -192,7 +193,7 @@ workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (_) {
 });
 
 function isValidIdentifier(name) {
-  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
+  return !name.startsWith("__") && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
 }
 
 function makeUniqueName(base) {
@@ -1821,10 +1822,7 @@ function sanitizeEvent(event) {
 }
 
 workspace.addChangeListener(event => {
-  if (ignoredEvents.has(event.type)) {
-    if (event.type === Blockly.Events.SELECTED) return;
-    return hideBlockRunBubble();
-  } else if (!activeSprite) return;
+  if (ignoredEvents.has(event.type) || !activeSprite)
 
   activeSprite.code = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
 
@@ -2005,19 +2003,6 @@ workspace.addChangeListener(event => {
   executeClickedBlock(event.blockId);
 });
 
-class TheDragger extends Blockly.dragging.Dragger {
-  setDraggable(draggable) {
-    this.draggable = draggable;
-  }
-}
-
-Blockly.registry.register(
-  Blockly.registry.Type.BLOCK_DRAGGER,
-  Blockly.registry.DEFAULT,
-  TheDragger,
-  true,
-);
-
 function updateAllFunctionCalls(workspace) {
   const allBlocks = workspace.getAllBlocks(false);
   const defs = allBlocks.filter(b => b.type === "functions_definition");
@@ -2039,6 +2024,7 @@ function updateAllFunctionCalls(workspace) {
 }
 
 workspace.addChangeListener(event => {
+  if (event.type !== Blockly.Events.SELECTED) hideBlockRunBubble();
   if (event.isUiEvent || event.isBlank || event.isNull()) return;
 
   const newRoot = workspace.getBlockById(event?.newParentId)?.getRootBlock();

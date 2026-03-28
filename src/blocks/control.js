@@ -292,9 +292,7 @@ Blockly.Blocks["controls_run_instantly"] = {
 
 BlocklyJS.javascriptGenerator.forBlock["controls_run_instantly"] = function (block) {
   const branch = BlocklyJS.javascriptGenerator.statementToCode(block, "do");
-  return `/* let _prevFast = fastExecution;
-fastExecution = true; */
-${branch}/* fastExecution = _prevFast; */\n`;
+  return `const __prevFast = thread.fastExecution;\nthread.fastExecution = true;\n${branch}thread.fastExecution = __prevFast;\n`;
 };
 
 Blockly.Blocks["controls_stopscript"] = {
@@ -471,22 +469,6 @@ BlocklyJS.javascriptGenerator.forBlock["controls_is_clone"] = function () {
   return ["getTargetData().clone", BlocklyJS.Order.ATOMIC];
 };
 
-Blockly.Blocks["controls_clones_list"] = {
-  init: function () {
-    this.appendValueInput("ID").setCheck("String").appendField("list clones of");
-    this.setOutput(true, "Array");
-    this.setStyle("control_blocks");
-  },
-};
-
-BlocklyJS.javascriptGenerator.forBlock["controls_clones_list"] = function (
-  block,
-  generator,
-) {
-  const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC);
-  return [`spriteManager.get(${ID})?.getAllClones()`, BlocklyJS.Order.NONE];
-};
-
 Blockly.Blocks["controls_whenstartasclone"] = {
   init: function () {
     this.appendDummyInput().appendField("when I start as a clone");
@@ -550,7 +532,7 @@ Blockly.Blocks["controls_forLoop_var"] = {
 };
 
 BlocklyJS.javascriptGenerator.forBlock["controls_forLoop_var"] = () => [
-  `controlsForLoopVar`,
+  `__controlsForLoopVar`,
   BlocklyJS.Order.ATOMIC,
 ];
 
@@ -574,7 +556,7 @@ BlocklyJS.javascriptGenerator.forBlock["controls_forLoop"] = function (block, ge
   const branch = generator.statementToCode(block, "DO");
   const loopTrap = generator.addLoopTrap(branch, block);
 
-  const code = `for (let controlsForLoopVar = ${start}; controlsForLoopVar <= ${end}; controlsForLoopVar++) {
+  const code = `for (let __controlsForLoopVar = ${start}; __controlsForLoopVar <= ${end}; __controlsForLoopVar++) {
   ${loopTrap}}\n`;
 
   return code;

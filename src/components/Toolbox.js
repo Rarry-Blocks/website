@@ -80,11 +80,6 @@ const Toolbox = `
     </block>
     ${block("controls_delete_this_clone")}
     ${block("controls_is_clone")}
-    <block type="controls_clones_list">
-      <value name="ID">
-        ${shadow("controls_sprites_menu")}
-      </value>
-    </block>
     <block type="controls_as_sprite">
       <value name="ID">
         ${shadow("controls_sprites_menu")}
@@ -92,6 +87,7 @@ const Toolbox = `
     </block>
     ${sep("50")}
     ${block("controls_thread_create")}
+    ${block("controls_run_instantly")}
   </category>
 
   <category name="Functions" colour="#FF6680" custom="FUNCTIONS_CATEGORY"></category>
@@ -213,7 +209,7 @@ const Toolbox = `
   <category name="Operators" colour="#59ba57">
     <label text="Logic"></label>
     ${block("logic_compare")}
-    ${block("logic_operation")}
+    ${block("logic_operation_extra")}
     ${block("logic_negate")}
     ${block("logic_boolean")}
     ${block("logic_ternary")}
@@ -308,6 +304,10 @@ const Toolbox = `
       value("X2", shadowNumber()),
       value("Y2", shadowNumber()),
     )}
+    ${sep("50")}
+    ${block("system_sprite_property", value("ID", shadow("system_sprites_menu")))}
+    ${block("controls_clones_list", value("ID", shadow("system_sprites_menu")))}
+    ${block("system_sprites_list", value("ID", shadow("system_sprites_menu")))}
   </category>
 
   <category name="Lists" colour="#e35340">
