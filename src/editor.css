@@ -407,7 +407,6 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   display: flex;
   align-items: center;
   position: fixed;
-  overflow: hidden;
   pointer-events: auto;
   white-space: nowrap;
   background: var(--dark);
@@ -422,6 +421,12 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   max-width: max(33%, 300px);
   transform: translateX(-50%);
   animation: blockRunBubbleFadeIn 0.12s ease;
+}
+
+.block-run-bubble.error {
+  background: var(--danger);
+  color: var(--color1);
+  box-shadow: 0 0 6px var(--danger-dark);
 }
 
 .block-run-content {
@@ -475,6 +480,10 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
   border-bottom: 9px solid var(--dark);
+}
+
+.block-run-bubble.error::after {
+  border-bottom: 9px solid var(--danger);
 }
 
 .block-run-bubble i {

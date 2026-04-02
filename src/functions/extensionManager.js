@@ -1,7 +1,8 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
-import { activeExtensions } from "../scripts/editor";
+import { activeExtensions, workspace } from "../scripts/editor";
 import { DuplicateOnDrag } from "./patches/block";
+import { customShapeRegistry } from "./render";
 
 export const extensions = {};
 
@@ -57,16 +58,17 @@ function buildShadowElement(type, defaultValue) {
       field: "BOOL",
       value: defaultValue ? "TRUE" : "FALSE",
     },
-    [null]: { type: "math_number", field: "NUM", value: defaultValue },
   };
 
-  const cfg = SHADOW_CONFIG[type] ?? SHADOW_CONFIG[null];
+  const config = SHADOW_CONFIG[type] ?? SHADOW_CONFIG[null];
+  if (!config) return null;
+
   const shadow = document.createElement("shadow");
-  shadow.setAttribute("type", cfg.type);
+  shadow.setAttribute("type", config.type);
 
   const field = document.createElement("field");
-  field.setAttribute("name", cfg.field);
-  field.textContent = cfg.value;
+  field.setAttribute("name", config.field);
+  field.textContent = config.value;
   shadow.appendChild(field);
 
   return shadow;
@@ -84,7 +86,7 @@ function buildBlockElement(blockType, fields = {}) {
     const valueEl = document.createElement("value");
     valueEl.setAttribute("name", name.trim());
     const shadow = buildShadowElement(spec.type ?? null, spec.default);
-    valueEl.appendChild(shadow);
+    if (shadow) valueEl.appendChild(shadow);
     blockEl.appendChild(valueEl);
   }
 
@@ -192,7 +194,7 @@ function registerCodeGenerators(id, codeGen, blockDefs) {
         .map(([k, v]) => `${JSON.stringify(k)}:${v}`)
         .join(",")}}`;
 
-      const call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, currentThread)`;
+      const call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, thread)`;
       const expr = def.promise ? `await ${call}` : call;
 
       return block.outputConnection ? [expr, BlocklyJS.Order.NONE] : `${expr};\n`;
@@ -205,8 +207,18 @@ export async function registerExtension(ExtClass) {
   const id = ext.id ?? ext.constructor.name;
 
   if (activeExtensions.some(i => (i?.id ?? i) === id)) {
-    console.warn(`Extension "${id}" is already registered, skipping`);
+    console.warn(`Extension "${id}" is already registered; skipping`);
     return;
+  }
+
+  const shapes = ext.registerShapes?.() ?? {};
+  for (const [typeName, factory] of Object.entries(shapes)) {
+    if (customShapeRegistry.has(typeName)) {
+      console.warn(`Shape type "${typeName}" already registered; overwriting`);
+    }
+    customShapeRegistry.set(typeName, factory);
+    const provider = workspace?.getRenderer()?.getConstants();
+    provider?._customShapeCache?.delete(typeName);
   }
 
   const categoryDescriptor = ext.registerCategory?.();
@@ -216,8 +228,13 @@ export async function registerExtension(ExtClass) {
   const blockDefs = registerBlocks(id, blocks, categoryColor, categoryEl);
 
   if (categoryEl) {
-    document.getElementById("toolbox").appendChild(categoryEl);
-    Blockly.getMainWorkspace().updateToolbox(document.getElementById("toolbox"));
+    const toolbox = document.getElementById("toolbox")
+    if (!toolbox) {
+      console.warn("Toolbox is missing; cannot add extension blocks to toolbox");
+      return;
+    }
+    toolbox.appendChild(categoryEl);
+    workspace.updateToolbox(toolbox);
   }
 
   const codeGen = ext.registerCode?.() ?? {};

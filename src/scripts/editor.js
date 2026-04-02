@@ -1273,8 +1273,9 @@ const stageDiv = document.getElementById("stage-div");
 
 fullscreenButton.addEventListener("click", () => {
   const isFull = stageDiv.classList.toggle("fullscreen");
-  fullscreenButton.innerHTML = `<img src="icons/${isFull ? "smallscreen.svg" : "fullscreen.svg"
-    }">`;
+  fullscreenButton.innerHTML = `<img src="icons/${
+    isFull ? "smallscreen.svg" : "fullscreen.svg"
+  }">`;
   resizeCanvas();
 });
 
@@ -1642,12 +1643,13 @@ function updateUsersList() {
         <div>
           <img src="${config.apiUrl}/users/${u.id}/avatar">
           <b>${u.isHost ? "👑 " : ""}${u.username}</b>
-          ${canKick
-          ? `<button class="kick-button danger" data-id="${u.id}">
+          ${
+            canKick
+              ? `<button class="kick-button danger" data-id="${u.id}">
                   <i class="fa-solid fa-xmark"></i>
                 </button>`
-          : ""
-        }
+              : ""
+          }
         </div>`;
     })
     .join("");
@@ -1682,17 +1684,17 @@ liveShare.addEventListener("click", async () => {
     const buttons = [
       amHost
         ? {
-          type: "button",
-          label: invitesLabel,
-          onClick: () => {
-            const newStatus = !invitesEnabled;
-            invitesEnabled = newStatus;
-            currentSocket.emit("toggleInvites", {
-              roomId: currentRoom,
-              enabled: newStatus,
-            });
-          },
-        }
+            type: "button",
+            label: invitesLabel,
+            onClick: () => {
+              const newStatus = !invitesEnabled;
+              invitesEnabled = newStatus;
+              currentSocket.emit("toggleInvites", {
+                roomId: currentRoom,
+                enabled: newStatus,
+              });
+            },
+          }
         : null,
       {
         type: "button",
@@ -1823,8 +1825,7 @@ function sanitizeEvent(event) {
 
 workspace.addChangeListener(event => {
   if (ignoredEvents.has(event.type) || !activeSprite)
-
-  activeSprite.code = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
+    activeSprite.code = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
 
   if (currentSocket && currentRoom) {
     const json = sanitizeEvent(event);
@@ -1877,6 +1878,7 @@ function appendValue(container, value, layer = 1) {
     return;
   }
 
+  if (value instanceof Error) value = value.toString();
   if (value instanceof Sprite) {
     const wrapper = document.createElement("span");
     wrapper.style.display = "inline-flex";
@@ -1896,7 +1898,7 @@ function appendValue(container, value, layer = 1) {
   container.appendChild(text);
 }
 
-function showBlockRunBubble(block, value) {
+function showBlockRunBubble(block, value, error = false) {
   hideBlockRunBubble();
   if (!block) return;
 
@@ -1906,7 +1908,7 @@ function showBlockRunBubble(block, value) {
   const rect = svgRoot.getBoundingClientRect();
 
   const div = document.createElement("div");
-  div.className = "block-run-bubble";
+  div.className = error === true ? "block-run-bubble error" : "block-run-bubble";
 
   const content = document.createElement("div");
   content.className = "block-run-content";
@@ -1948,30 +1950,45 @@ function executeClickedBlock(blockId) {
   const generator = BlocklyJS.javascriptGenerator;
   generator.init(workspace);
 
-  let rawCode = generator.blockToCode(block);
+  let rawCode, functionsCode;
+  try {
+    rawCode = generator.blockToCode(block);
 
-  const allBlocks = workspace.getAllBlocks(false);
-  let functionsCode = "";
-  allBlocks.forEach(b => {
-    if (
-      b.type === "functions_definition" ||
-      b.type === "procedures_defnoreturn" ||
-      b.type === "procedures_defreturn"
-    ) {
-      functionsCode += generator.blockToCode(b);
-    }
-  });
+    const allBlocks = workspace.getAllBlocks(false);
+    functionsCode = "";
+    allBlocks.forEach(b => {
+      if (
+        b.type === "functions_definition" ||
+        b.type === "procedures_defnoreturn" ||
+        b.type === "procedures_defreturn"
+      ) {
+        functionsCode += generator.blockToCode(b);
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    return;
+  }
 
   let code;
   if (Array.isArray(rawCode)) {
     const [expression] = rawCode;
-    rawCode = `${functionsCode}registerEvent('clickRun', null, function* (thread) {\n  setClickResult(${expression})});`;
+    rawCode = `${functionsCode}registerEvent('clickRun', null, function* (thread) {
+  try {
+    setClickResult((${expression}), false);
+  } catch (err) {
+    setClickResult(err, true);
+  }
+});`;
     code = generator.finish(rawCode);
   } else if (rawCode) {
-    rawCode = `${functionsCode}registerEvent('clickRun', null, function* (thread) {\n  ${rawCode}});`;
+    rawCode = `${functionsCode}registerEvent('clickRun', null, function* (thread) {
+  try {
+    ${rawCode}  } catch (err) {
+    setClickResult(err, true);
+  }
+});`;
     code = generator.finish(rawCode);
-  } else {
-    return;
   }
 
   if (currentClickRunController) {
@@ -1986,8 +2003,8 @@ function executeClickedBlock(blockId) {
     spriteData: activeSprite,
     signal: controller.signal,
     clickRunMode: true,
-    onClickResult: val => {
-      showBlockRunBubble(block, val);
+    onClickResult: (val, error) => {
+      showBlockRunBubble(block, val, error);
     },
   });
 }

@@ -1,12 +1,14 @@
 import * as Blockly from "blockly";
 const svgPaths = Blockly.utils.svgPaths;
 
+export const customShapeRegistry = new Map();
 class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   init() {
     super.init();
     this.BOWL = this.makeBowl();
     this.PILLOW = this.makePillow();
     this.SPIKEY = this.makeSpikey();
+    this._customShapeCache = new Map();
   }
 
   makeBowl() {
@@ -221,6 +223,43 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       ) {
         return this.SQUARED;
       }*/
+
+      for (const typeName of checks) {
+        if (!customShapeRegistry.has(typeName)) continue;
+
+        if (!this._customShapeCache.has(typeName)) {
+          const path = customShapeRegistry.get(typeName);
+          const maxWidth = this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH;
+          const maxHeight = maxWidth * 2;
+          const shapes = this.SHAPES;
+
+          function buildShape() {
+            function resolve(blockHeight, up, right) {
+              const height = Math.min(blockHeight, maxHeight);
+              const extra = blockHeight > maxHeight ? blockHeight - maxHeight : 0;
+              return path(height, extra, up ? -1 : 1, right ? 1 : -1, svgPaths);
+            }
+
+            return {
+              type: shapes.ROUND,
+              isDynamic: true,
+              width: h => Math.min(h / 2, maxWidth),
+              height: h => h,
+              connectionOffsetY: h => h / 2,
+              connectionOffsetX: w => -w,
+              pathDown: h => resolve(h, false, false),
+              pathUp: h => resolve(h, true, false),
+              pathRightDown: h => resolve(h, false, true),
+              pathRightUp: h => resolve(h, true, true),
+            };
+          }
+
+          const shape = typeof path === "function" ? buildShape() : entry;
+          this._customShapeCache.set(typeName, shape);
+        }
+
+        return this._customShapeCache.get(typeName);
+      }
     }
 
     return super.shapeFor(connection);

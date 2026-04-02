@@ -451,8 +451,8 @@ export function runCodeWithFunctions({
     if (data.currentBubble) data.currentBubble.visible = bool;
   }
 
-  function setClickResult(value) {
-    if (onClickResult) onClickResult(value);
+  function setClickResult(value, error = false) {
+    if (onClickResult) onClickResult(value, error);
   }
 
   const __MyFunctions = {};
@@ -499,7 +499,7 @@ export function runCodeWithFunctions({
     __MyFunctions
   };
 
-  Object.defineProperty(VM_FUNCTIONS, 'currentThread', {
+  Object.defineProperty(VM_FUNCTIONS, 'thread', {
     get: () => vm.currentThread,
     enumerable: true,
   });
@@ -508,7 +508,6 @@ export function runCodeWithFunctions({
   try {
     const factory = new Function('VM_FUNCTIONS', `
       with (VM_FUNCTIONS) {
-        var fastExecution = false;
         ${code}
       }
     `);
@@ -516,5 +515,6 @@ export function runCodeWithFunctions({
     factory(VM_FUNCTIONS);
   } catch (err) {
     console.error("Error compiling sprite code:", err);
+    setClickResult(err, true);
   }
 }

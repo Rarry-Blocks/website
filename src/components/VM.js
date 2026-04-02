@@ -3,6 +3,7 @@ export class Thread {
     this.target = target;
     this.status = "running";
     this.variables = new Map();
+    this.fastExecution = false;
     this.generator = generatorFunc(this);
   }
 

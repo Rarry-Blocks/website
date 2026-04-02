@@ -6,6 +6,20 @@ class Extension {
       color: "#858585",
     };
   }
+  registerShapes() {
+    return {
+      yabadaba: (height, extra, up, right, svg) => {
+        const radius = height / 4;
+        const half = height / 2 + extra / 2;
+        return (
+          svg.lineOnAxis("h", radius * right) +
+          svg.line([svg.point(radius * right, half * up)]) +
+          svg.line([svg.point(-radius * right, half * up)]) +
+          svg.lineOnAxis("h", -radius * right)
+        );
+      },
+    };
+  }
   registerBlocks() {
     return [
       {
@@ -95,18 +109,36 @@ class Extension {
         text: "random (output shape 5)",
         outputShape: 5,
       },
+      {
+        type: "output",
+        id: "yabadaba",
+        text: "yabadaba (custom shape)",
+        outputType: "yabadaba",
+      },
+      {
+        type: "statement",
+        id: "errorStatement",
+        text: "throw an error",
+        color: "#f54b4b",
+      },
+      {
+        type: "output",
+        id: "errorOutput",
+        text: "throw an error",
+        color: "#f54b4b",
+      },
     ];
   }
   registerCode() {
     return {
-      statement: (inputs) => {
+      statement: inputs => {
         console.log(inputs.poop?.());
       },
-      if: (inputs) => {
+      if: inputs => {
         console.log(inputs);
         if (inputs.bool) inputs.code?.();
       },
-      ifElse: (inputs) => {
+      ifElse: inputs => {
         console.log(inputs);
         if (inputs.bool) inputs.code?.();
         else inputs.codeElse?.();
@@ -120,7 +152,14 @@ class Extension {
       random4: () => Math.random(),
       random5: () => Math.random(),
       actuallyBoolean: () => true,
-      menu: (inputs) => window.alert(inputs.hi),
+      menu: inputs => window.alert(inputs.hi),
+      yabadaba: () => "yabadaba",
+      errorStatement: () => {
+        throw new Error('error (statement)');
+      },
+      errorOutput: () => {
+        throw new Error('error (output)');
+      }
     };
   }
 }
