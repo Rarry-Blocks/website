@@ -373,6 +373,52 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   height: 1.25rem;
 }
 
+html.category-bubble-line .categoryBubble {
+  border-radius: 0;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  border: none;
+  width: 0.5rem;
+  height: 32px;
+}
+
+html.category-bubble-line .blocklyToolboxCategory {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+html.category-bubble-line .blocklyTreeRowContentContainer {
+  position: relative;
+  z-index: 1;
+  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+}
+
+html.category-bubble-line .categoryBubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0.5rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  transition: width 0.15s ease, border-radius 0.2s ease;
+  z-index: -1;
+}
+
+html.category-bubble-line .blocklyToolboxCategory.blocklyToolboxSelected .categoryBubble {
+  width: 100%;
+  border-radius: 0;
+}
+
+html.category-bubble-none .categoryBubble {
+  display: none;
+}
+
 #room-users {
   display: flex;
   flex-direction: column;

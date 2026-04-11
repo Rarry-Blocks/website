@@ -4,6 +4,7 @@ import config from "../config";
 import { cache } from "../cache";
 import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";
 import { attachAvatarChanger } from "./avatar";
+import { workspace } from "../scripts/editor";
 
 const root = document.documentElement;
 const theme = localStorage.getItem("theme") === "dark" ?? false;
@@ -192,14 +193,23 @@ export function toggleRarryToolbar(removeIcon) {
 export function setToolboxPosition(pos) {
   localStorage.setItem("toolboxPosition", pos);
 
-  const header = document.querySelector("header");
-  if (!header) return;
-
   root.classList.remove("toolbox-left", "toolbox-center", "toolbox-right");
-
   if (pos === "default") return;
-
   root.classList.add(`toolbox-${pos}`);
+}
+
+export function setCategoryBubble(style) {
+  try {
+    localStorage.setItem("categoryBubble", style);
+
+    root.classList.remove("category-bubble-line", "category-bubble-none");
+    if (style === "default") return;
+    root.classList.add(`category-bubble-${style}`);
+  } finally {
+    requestAnimationFrame(() => {
+      Blockly.svgResize(workspace);
+    });
+  }
 }
 
 export function toggleStageLeft(left) {
@@ -293,6 +303,19 @@ export function setupSettingsButton(workspace) {
                     { label: "Right", value: "right" },
                   ],
                   onChange: value => setToolboxPosition(value),
+                },
+              ],
+              [
+                "Category bubble:",
+                {
+                  type: "menu",
+                  value: localStorage.getItem("categoryBubble") || "default",
+                  options: [
+                    { label: "Circle (default)", value: "default" },
+                    { label: "Line", value: "line" },
+                    { label: "None", value: "none" },
+                  ],
+                  onChange: value => setCategoryBubble(value),
                 },
               ],
             ],
