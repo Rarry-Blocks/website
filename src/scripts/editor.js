@@ -39,6 +39,23 @@ import {
   spriteToImage,
 } from "./editor/ui.js";
 
+const loadingScreen = document.getElementById("editor-loading");
+
+export function showLoading(message = "Loading...") {
+  if (loadingScreen) {
+    loadingScreen.querySelector("p").textContent = message;
+    loadingScreen.classList.remove("hidden");
+  }
+}
+
+export function hideLoading() {
+  if (loadingScreen) {
+    loadingScreen.classList.add("hidden");
+  }
+}
+
+showLoading("Initializing editor...");
+
 BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
@@ -776,92 +793,118 @@ async function saveProject() {
 }
 
 async function loadProject(ev) {
-  const [file] = ev.target.files ?? [];
-  if (!file) return;
-  if (file.name.endsWith(".rarry")) return oldLoadProject(ev);
+  showLoading("Loading project...");
 
-  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  try {
+    const [file] = ev.target.files ?? [];
+    if (!file) return;
 
-  const projectFile = zip.file("project.json");
-  if (!projectFile) {
-    return alert("project.rarryz missing project.json");
-  }
-  const json = JSON.parse(await projectFile.async("string"));
-
-  if (!Array.isArray(json.sprites)) {
-    return alert("No valid sprites found in project.");
-  }
-
-  const sprites = [];
-
-  for (const entry of json.sprites) {
-    const sprite = { ...entry };
-    sprite.costumes = [];
-    sprite.sounds = [];
-
-    if (Array.isArray(entry.costumes)) {
-      for (const c of entry.costumes) {
-        const srcCandidate = c.texture ?? c.path ?? c.data;
-        if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
-          sprite.costumes.push({ name: c.name, texture: srcCandidate });
-          continue;
-        }
-
-        if (typeof srcCandidate === "string") {
-          const fileEntry = zip.file(srcCandidate);
-          if (!fileEntry) {
-            throw new Error(`Missing costume file in archive: ${srcCandidate}`);
-          }
-          const base64 = await fileEntry.async("base64");
-          const dataUrl = `data:image/webp;base64,${base64}`;
-          sprite.costumes.push({ name: c.name, texture: dataUrl });
-          continue;
-        }
-
-        throw new Error(
-          `Invalid costume entry for sprite ${entry.id ?? "<unknown>"}: ${JSON.stringify(c)}`,
-        );
-      }
+    if (file.name.endsWith(".rarry")) {
+      await oldLoadProject(ev);
+      return;
     }
 
-    if (Array.isArray(entry.sounds)) {
-      for (const s of entry.sounds) {
-        const srcCandidate = s.data ?? s.path;
-        if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
-          sprite.sounds.push({ name: s.name, data: srcCandidate });
-          continue;
-        }
-        if (typeof srcCandidate === "string") {
-          const fileEntry = zip.file(srcCandidate);
-          if (!fileEntry) {
-            throw new Error(`Missing sound file in archive: ${srcCandidate}`);
-          }
-          const base64 = await fileEntry.async("base64");
-          const dataUrl = `data:audio/ogg;base64,${base64}`;
-          sprite.sounds.push({ name: s.name, data: dataUrl });
-          continue;
-        }
-        throw new Error(
-          `Invalid sound entry for sprite ${entry.id ?? "<unknown>"}: ${JSON.stringify(s)}`,
-        );
-      }
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+
+    const projectFile = zip.file("project.json");
+    if (!projectFile) {
+      throw new Error("project.rarryz missing project.json");
     }
 
-    sprite.code = entry.code ?? "";
-    sprite.x = entry.x ?? entry.data?.x ?? 0;
-    sprite.y = entry.y ?? entry.data?.y ?? 0;
-    sprite.scale = entry.scale ?? entry.data?.scale?.x ?? 1;
-    sprite.rotation = entry.rotation ?? entry.data?.angle ?? entry.data?.rotation ?? 0;
-    sprite.currentCostume = entry.currentCostume ?? entry.data?.currentCostume ?? 0;
+    const json = JSON.parse(await projectFile.async("string"));
 
-    sprites.push(sprite);
+    if (!Array.isArray(json.sprites)) {
+      throw new Error("No valid sprites found in project.");
+    }
+
+    const sprites = await Promise.all(
+      json.sprites.map(async (entry) => {
+        const sprite = { ...entry };
+        sprite.costumes = [];
+        sprite.sounds = [];
+
+        if (Array.isArray(entry.costumes)) {
+          await Promise.all(
+            entry.costumes.map(async (c) => {
+              const srcCandidate = c.texture ?? c.path ?? c.data;
+
+              if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
+                sprite.costumes.push({ name: c.name, texture: srcCandidate });
+                return;
+              }
+
+              if (typeof srcCandidate === "string") {
+                const fileEntry = zip.file(srcCandidate);
+                if (!fileEntry) {
+                  throw new Error(`Missing costume file: ${srcCandidate}`);
+                }
+
+                const base64 = await fileEntry.async("base64");
+                const dataUrl = `data:image/webp;base64,${base64}`;
+                sprite.costumes.push({ name: c.name, texture: dataUrl });
+                return;
+              }
+
+              throw new Error(
+                `Invalid costume entry for sprite ${entry.id ?? "<unknown>"}`
+              );
+            })
+          );
+        }
+
+        if (Array.isArray(entry.sounds)) {
+          await Promise.all(
+            entry.sounds.map(async (s) => {
+              const srcCandidate = s.data ?? s.path;
+
+              if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
+                sprite.sounds.push({ name: s.name, data: srcCandidate });
+                return;
+              }
+
+              if (typeof srcCandidate === "string") {
+                const fileEntry = zip.file(srcCandidate);
+                if (!fileEntry) {
+                  throw new Error(`Missing sound file: ${srcCandidate}`);
+                }
+
+                const base64 = await fileEntry.async("base64");
+                const dataUrl = `data:audio/ogg;base64,${base64}`;
+                sprite.sounds.push({ name: s.name, data: dataUrl });
+                return;
+              }
+
+              throw new Error(
+                `Invalid sound entry for sprite ${entry.id ?? "<unknown>"}`
+              );
+            })
+          );
+        }
+
+        sprite.code = entry.code ?? "";
+        sprite.x = entry.x ?? entry.data?.x ?? 0;
+        sprite.y = entry.y ?? entry.data?.y ?? 0;
+        sprite.scale = entry.scale ?? entry.data?.scale?.x ?? 1;
+        sprite.rotation =
+          entry.rotation ?? entry.data?.angle ?? entry.data?.rotation ?? 0;
+        sprite.currentCostume =
+          entry.currentCostume ?? entry.data?.currentCostume ?? 0;
+
+        return sprite;
+      })
+    );
+
+    await handleProjectData({
+      sprites,
+      extensions: json.extensions,
+      variables: json.variables,
+    });
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "Failed to load project.");
+  } finally {
+    hideLoading();
   }
-
-  handleProjectData({
-    sprites,
-    extensions: json.extensions,
-    variables: json.variables,
-  });
 }
 
 export async function oldLoadProject(input) {
@@ -2060,6 +2103,8 @@ workspace.addChangeListener(event => {
 workspace.updateAllFunctionCalls = () => {
   updateAllFunctionCalls(workspace);
 };
+
+hideLoading();
 
 // tools for dev :3
 if (window.location.hostname === "localhost") {

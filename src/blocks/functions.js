@@ -674,7 +674,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
   const params = block.argTypes_
     .map((type, i) => {
       if (type === "label") return null;
-      return type + "_" + block.argNames_[i];
+      return "__" + type + "_" + block.argNames_[i];
     })
     .filter(Boolean);
 
