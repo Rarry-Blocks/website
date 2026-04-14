@@ -202,8 +202,54 @@ function registerCodeGenerators(id, codeGen, blockDefs) {
   }
 }
 
-export async function registerExtension(ExtClass) {
-  const ext = new ExtClass();
+const SANDBOX_API = {
+  console,
+  Math,
+  Date,
+  Object,
+  Array,
+  String,
+  Number,
+  Boolean,
+  RegExp,
+  JSON,
+  Map,
+  Set,
+  Promise,
+  parseInt,
+  parseFloat,
+  isNaN,
+  isFinite,
+  encodeURIComponent,
+  decodeURIComponent,
+};
+
+function evaluateSandboxed(code) {
+  try {
+    const factory = new Function(...Object.keys(SANDBOX_API), `
+      with (arguments[arguments.length - 1]) {
+        return (${code});
+      }
+    `);
+    return factory(...Object.values(SANDBOX_API), SANDBOX_API);
+  } catch (err) {
+    throw new Error(`Sandbox evaluation failed: ${err.message}`);
+  }
+}
+
+export async function registerExtension(ExtClass, trusted = false) {
+  let ExtensionClass = ExtClass;
+  
+  if (!trusted) {
+    try {
+      ExtensionClass = evaluateSandboxed(ExtClass.toString());
+    } catch (err) {
+      console.warn("Extension failed sandbox evaluation, trying untrusted:", err);
+      ExtensionClass = ExtClass;
+    }
+  }
+
+  const ext = new ExtensionClass();
   const id = ext.id ?? ext.constructor.name;
 
   if (activeExtensions.some(i => (i?.id ?? i) === id)) {
@@ -240,5 +286,5 @@ export async function registerExtension(ExtClass) {
   const codeGen = ext.registerCode?.() ?? {};
   registerCodeGenerators(id, codeGen, blockDefs);
 
-  activeExtensions.push({ id, code: ExtClass.toString() });
+  activeExtensions.push({ id, code: ExtClass.toString(), trusted: !!trusted });
 }

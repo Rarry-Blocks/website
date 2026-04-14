@@ -974,7 +974,7 @@ async function handleProjectData(data) {
           if (typeof ext === "string") addExtension(ext);
           else if (ext?.id) {
             const Cls = await eval("(" + ext.code + ")");
-            if (Cls) await registerExtension(Cls);
+            if (Cls) await registerExtension(Cls, ext.trusted ?? false);
           }
         } catch (err) {
           console.error("Failed to load extension", ext, err);
@@ -1246,7 +1246,7 @@ function addExtension(id, emit = false) {
         case "registerExtension":
           try {
             const ExtensionClass = eval("(" + event.data.code + ")");
-            registerExtension(ExtensionClass);
+            registerExtension(ExtensionClass, event.data.trusted ?? false);
             finalize();
           } catch (error) {
             console.error("Error loading built-in extension:", error);
@@ -1340,12 +1340,20 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
       ],
       [
         {
+          type: "checkbox",
+          label: "Run without sandbox (trusted)",
+          checked: false,
+        },
+      ],
+      [
+        {
           type: "button",
           label: '<i class="fa-solid fa-plus"></i> Add',
           className: "primary",
           disabled: isSharing,
           onClick: popup => {
             const input = popup.element.querySelector('[data-row="1"][data-col="1"]');
+            const trusted = popup.element.querySelector('[data-row="2"][data-col="1"]')?.checked ?? false;
             const userCode = input ? input.value : "";
 
             const iframe = document.createElement("iframe");
@@ -1355,7 +1363,7 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
                 <script>
                   "use strict";
                   const registerExtension = (def) => {
-                    parent.postMessage({ type: "registerExtension", code: def.toString() }, "*");
+                    parent.postMessage({ type: "registerExtension", code: def.toString(), trusted: ${trusted} }, "*");
                   };
                   window.addEventListener("message", (event) => {
                     if (event.data && event.data.type === "runCode") {
@@ -1379,7 +1387,7 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
                   try {
                     const extensionCode = "(" + event.data.code + ")";
                     const ExtensionClass = eval(extensionCode);
-                    registerExtension(ExtensionClass);
+                    registerExtension(ExtensionClass, event.data.trusted ?? false);
 
                     console.log("extension registered:", ExtensionClass);
                   } catch (error) {

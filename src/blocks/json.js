@@ -469,7 +469,7 @@ BlocklyJS.javascriptGenerator.forBlock["json_key_value_statement"] = function (
       BlocklyJS.Order.ATOMIC,
     ) || "null";
 
-  if (key) return `${key}: ${value},\n`;
+  if (key) return `[${key}]: ${value},\n`;
   else return "";
 };
 

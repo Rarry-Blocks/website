@@ -4,13 +4,13 @@ import config from "../config";
 import { cache } from "../cache";
 import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";
 import { attachAvatarChanger } from "./avatar";
-import { workspace } from "../scripts/editor";
 
 const root = document.documentElement;
 const theme = localStorage.getItem("theme") === "dark" ?? false;
 const icons = localStorage.getItem("removeIcons") === "true" ?? false;
 const rarryToolbar = localStorage.getItem("removeRarryToolbar") === "true" ?? false;
-const toolboxPosition = localStorage.getItem("toolboxPosition") || "space-between";
+const toolboxPosition = localStorage.getItem("toolboxPosition") || "default";
+const categoryBubble = localStorage.getItem("categoryBubble") || "default";
 const stageLeft = localStorage.getItem("stageLeft") === "true" ?? false;
 const hats = localStorage.getItem("startHats") === "true" ?? false;
 const snapToGrid = localStorage.getItem("snapToGrid") === "true" ?? false;
@@ -198,18 +198,28 @@ export function setToolboxPosition(pos) {
   root.classList.add(`toolbox-${pos}`);
 }
 
-export function setCategoryBubble(style) {
-  try {
-    localStorage.setItem("categoryBubble", style);
+export function setCategoryBubble(style, workspace) {
+  localStorage.setItem("categoryBubble", style);
 
-    root.classList.remove("category-bubble-line", "category-bubble-none");
-    if (style === "default") return;
-    root.classList.add(`category-bubble-${style}`);
-  } finally {
-    requestAnimationFrame(() => {
-      Blockly.svgResize(workspace);
-    });
+  root.classList.remove("category-bubble-line", "category-bubble-none");
+  if (style !== "bubble") root.classList.add(`category-bubble-${style}`);
+
+  if (!workspace) return;
+
+  const toolbox = workspace.toolbox_?.HtmlDiv;
+  if (!toolbox) {
+    Blockly.svgResize(workspace);
+    return;
   }
+
+  const observer = new MutationObserver(() => {
+    observer.disconnect();
+    Blockly.svgResize(workspace);
+  });
+  observer.observe(toolbox, {
+    childList: true,
+    subtree: true,
+  });
 }
 
 export function toggleStageLeft(left) {
@@ -232,7 +242,7 @@ export function toggleHats(enabled, workspace) {
   }
 }
 
-export function toggleSnapToGrid(enabled, workspace) {
+export function toggleSnapToGrid(enabled) {
   localStorage.setItem("snapToGrid", String(enabled));
 }
 
@@ -241,7 +251,7 @@ export function toggleScrollbars(enabled, workspace) {
   workspace?.scrollbar?.setVisible(enabled);
 }
 
-export function toggleSounds(enabled, workspace) {
+export function toggleSounds(enabled) {
   localStorage.setItem("sounds", String(enabled));
 }
 
@@ -255,6 +265,7 @@ export function setupSettingsButton(workspace) {
   toggleSnapToGrid(snapToGrid, workspace);
   toggleScrollbars(scrollbars, workspace);
   toggleSounds(sounds, workspace);
+  setCategoryBubble(categoryBubble, workspace)
 
   const settingsButton = document.getElementById("settings-button");
   if (settingsButton)
@@ -309,13 +320,13 @@ export function setupSettingsButton(workspace) {
                 "Category bubble:",
                 {
                   type: "menu",
-                  value: localStorage.getItem("categoryBubble") || "default",
+                  value: localStorage.getItem("categoryBubble") || "line",
                   options: [
-                    { label: "Circle (default)", value: "default" },
-                    { label: "Line", value: "line" },
+                    { label: "Line (default)", value: "line" },
+                    { label: "Circle", value: "bubble" },
                     { label: "None", value: "none" },
                   ],
-                  onChange: value => setCategoryBubble(value),
+                  onChange: value => setCategoryBubble(value, workspace),
                 },
               ],
             ],
