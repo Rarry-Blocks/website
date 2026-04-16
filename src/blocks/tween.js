@@ -1,5 +1,6 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { quickBlockMaker } from "./quickblockmaker";
 
 const tweensList = [
   ["linear", "Linear"],
@@ -15,8 +16,9 @@ const tweensList = [
   ["bounce", "Bounce"],
 ];
 
-Blockly.Blocks["tween_block"] = {
-  init: function () {
+quickBlockMaker(
+  "tween_block",
+  function () {
     this.appendValueInput("FROM").setCheck("Number").appendField("tween from");
     this.appendValueInput("TO").setCheck("Number").appendField("to");
     this.appendDummyInput().appendField("in");
@@ -55,23 +57,19 @@ Blockly.Blocks["tween_block"] = {
       "Tween a value from one number to another over time using easing"
     );
   },
-};
+  function (block, generator) {
+    const easingType = block.getFieldValue("EASING_TYPE");
+    const easingMode = block.getFieldValue("EASING_MODE");
+    const from =
+      generator.valueToCode(block, "FROM", BlocklyJS.Order.ATOMIC) || "0";
+    const to =
+      generator.valueToCode(block, "TO", BlocklyJS.Order.ATOMIC) || "0";
+    const duration =
+      generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) || "1";
+    const waitMode = block.getFieldValue("WAIT_MODE");
+    const branch = BlocklyJS.javascriptGenerator.statementToCode(block, "DO");
 
-BlocklyJS.javascriptGenerator.forBlock["tween_block"] = function (block, generator) {
-  const easingType = block.getFieldValue("EASING_TYPE");
-  const easingMode = block.getFieldValue("EASING_MODE");
-  const from =
-    generator.valueToCode(block, "FROM", BlocklyJS.Order.ATOMIC) ||
-    "0";
-  const to =
-    generator.valueToCode(block, "TO", BlocklyJS.Order.ATOMIC) || "0";
-  const duration =
-    generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) ||
-    "1";
-  const waitMode = block.getFieldValue("WAIT_MODE");
-  const branch = BlocklyJS.javascriptGenerator.statementToCode(block, "DO");
-
-  const code = `yield* startTween({
+    const code = `yield* startTween({
   from: ${from},
   to: ${to},
   duration: ${duration},
@@ -81,25 +79,27 @@ BlocklyJS.javascriptGenerator.forBlock["tween_block"] = function (block, generat
     ${branch}  }
 });\n`;
 
-  return code;
-};
+    return code;
+  }
+);
 
-Blockly.Blocks["tween_block_value"] = {
-  init: function () {
+quickBlockMaker(
+  "tween_block_value",
+  function () {
     this.appendDummyInput("name").appendField("current tween value");
     this.setInputsInline(true);
     this.setColour("#32a2c0");
     this.setOutput(true, "Number");
   },
-};
+  () => [
+    "tweenValue",
+    BlocklyJS.Order.NONE,
+  ]
+);
 
-BlocklyJS.javascriptGenerator.forBlock["tween_block_value"] = () => [
-  "tweenValue",
-  BlocklyJS.Order.NONE,
-];
-
-Blockly.Blocks["tween_sprite_property"] = {
-  init: function () {
+quickBlockMaker(
+  "tween_sprite_property",
+  function () {
     this.appendValueInput("TO")
       .setCheck("Number")
       .appendField("tween")
@@ -136,34 +136,29 @@ Blockly.Blocks["tween_sprite_property"] = {
       "Tween a sprite property to a target value over time using easing"
     );
   },
-};
+  function (block, generator) {
+    const prop = block.getFieldValue("PROPERTY");
+    const to =
+      generator.valueToCode(block, "TO", BlocklyJS.Order.ATOMIC) || "0";
+    const duration =
+      generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) || "1";
+    const easingType = block.getFieldValue("EASING_TYPE");
+    const easingMode = block.getFieldValue("EASING_MODE");
 
-BlocklyJS.javascriptGenerator.forBlock["tween_sprite_property"] = function (
-  block,
-  generator
-) {
-  const prop = block.getFieldValue("PROPERTY");
-  const to =
-    generator.valueToCode(block, "TO", BlocklyJS.Order.ATOMIC) || "0";
-  const duration =
-    generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) ||
-    "1";
-  const easingType = block.getFieldValue("EASING_TYPE");
-  const easingMode = block.getFieldValue("EASING_MODE");
+    let fromGetter;
+    let setter;
+    if (prop === "size") {
+      fromGetter = "getSpriteScale()";
+      setter = `setSize(tweenValue, false)`;
+    } else if (prop === "angle") {
+      fromGetter = `getTarget().angle`;
+      setter = `setAngle(tweenValue, false)`;
+    } else {
+      fromGetter = `getTarget().${prop}`;
+      setter = `getTarget().${prop} = tweenValue`;
+    }
 
-  let fromGetter, setter;
-  if (prop === "size") {
-    fromGetter = "getSpriteScale()";
-    setter = `setSize(tweenValue, false)`;
-  } else if (prop === "angle") {
-    fromGetter = `getTarget().angle`;
-    setter = `setAngle(tweenValue, false)`;
-  } else {
-    fromGetter = `getTarget().${prop}`;
-    setter = `getTarget().${prop} = tweenValue`;
-  }
-
-  const code = `yield* startTween({
+    const code = `yield* startTween({
   from: ${fromGetter},
   to: ${to},
   duration: ${duration},
@@ -173,5 +168,6 @@ BlocklyJS.javascriptGenerator.forBlock["tween_sprite_property"] = function (
   }
 });\n`;
 
-  return code;
-};
+    return code;
+  }
+);

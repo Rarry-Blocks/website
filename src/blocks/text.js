@@ -1,5 +1,6 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { quickBlockMaker } from "./quickblockmaker";
 const xmlUtils = Blockly.utils.xml;
 
 function shadow(type, fieldName, value) {
@@ -119,8 +120,9 @@ BlocklyJS.javascriptGenerator.forBlock["text_join_extendable"] = function (
   return [code, BlocklyJS.Order.NONE];
 };
 
-Blockly.Blocks["text_indexOf"] = {
-  init: function () {
+quickBlockMaker(
+  "text_indexOf",
+  function () {
     this.setStyle("text_blocks");
     this.setInputsInline(true);
     this.setOutput(true, "Number");
@@ -151,18 +153,17 @@ Blockly.Blocks["text_indexOf"] = {
       .setCheck("String")
       .connection.setShadowDom(shadow("text", "TEXT", ""));
   },
-};
-
-BlocklyJS.javascriptGenerator.forBlock["text_indexOf"] = function (block, generator) {
-  const operator = block.getFieldValue("END") === "FIRST" ? "indexOf" : "lastIndexOf";
-  const substring = generator.valueToCode(block, "FIND", BlocklyJS.Order.NONE) || "''";
-  const text = generator.valueToCode(block, "VALUE", BlocklyJS.Order.MEMBER) || "''";
-  const code = `${text}.${operator}(${substring})`;
-  if (block.workspace.options.oneBasedIndex) {
-    return [`${code} + 1`, BlocklyJS.Order.ADDITION];
+  function (block, generator) {
+    const operator = block.getFieldValue("END") === "FIRST" ? "indexOf" : "lastIndexOf";
+    const substring = generator.valueToCode(block, "FIND", BlocklyJS.Order.NONE) || "''";
+    const text = generator.valueToCode(block, "VALUE", BlocklyJS.Order.MEMBER) || "''";
+    const code = `${text}.${operator}(${substring})`;
+    if (block.workspace.options.oneBasedIndex) {
+      return [`${code} + 1`, BlocklyJS.Order.ADDITION];
+    }
+    return [code, BlocklyJS.Order.MEMBER];
   }
-  return [code, BlocklyJS.Order.MEMBER];
-};
+);
 
 Blockly.Blocks["text_charAt"] = {
   isAt_: false,

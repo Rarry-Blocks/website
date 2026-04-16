@@ -1,8 +1,10 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { quickBlockMaker } from "./quickblockmaker";
 
-Blockly.Blocks["logic_operation_extra"] = {
-	init: function () {
+quickBlockMaker(
+	"logic_operation_extra",
+	function () {
 		this.appendValueInput("A").setCheck("Boolean");
 		this.appendValueInput("B")
 			.setCheck("Boolean")
@@ -21,40 +23,36 @@ Blockly.Blocks["logic_operation_extra"] = {
 		this.setOutput(true, "Boolean");
 		this.setStyle("text_blocks");
 	},
-};
+	function (block, generator) {
+		const A = generator.valueToCode(block, "A", BlocklyJS.Order.LOGICAL_AND) || "false";
+		const B = generator.valueToCode(block, "B", BlocklyJS.Order.LOGICAL_AND) || "false";
+		const OP = block.getFieldValue("OP");
 
-BlocklyJS.javascriptGenerator.forBlock["logic_operation_extra"] = function (
-	block,
-	generator,
-) {
-	const A = generator.valueToCode(block, "A", BlocklyJS.Order.LOGICAL_AND) || "false";
-	const B = generator.valueToCode(block, "B", BlocklyJS.Order.LOGICAL_AND) || "false";
-	const OP = block.getFieldValue("OP");
+		let code;
 
-	let code;
+		switch (OP) {
+			case "and":
+				code = `${A} && ${B}`;
+				break;
+			case "or":
+				code = `${A} || ${B}`;
+				break;
+			case "xor":
+				code = `(${A} !== ${B})`;
+				break;
+			case "nand":
+				code = `!(${A} && ${B})`;
+				break;
+			case "nor":
+				code = `!(${A} || ${B})`;
+				break;
+			case "xnor":
+				code = `(${A} === ${B})`;
+				break;
+			default:
+				code = "false";
+		}
 
-	switch (OP) {
-		case "and":
-			code = `${A} && ${B}`;
-			break;
-		case "or":
-			code = `${A} || ${B}`;
-			break;
-		case "xor":
-			code = `(${A} !== ${B})`;
-			break;
-		case "nand":
-			code = `!(${A} && ${B})`;
-			break;
-		case "nor":
-			code = `!(${A} || ${B})`;
-			break;
-		case "xnor":
-			code = `(${A} === ${B})`;
-			break;
-		default:
-			code = "false";
-	}
-
-	return [code, BlocklyJS.Order.LOGICAL_OR];
-};
+		return [code, BlocklyJS.Order.LOGICAL_OR];
+	},
+);
