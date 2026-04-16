@@ -1,9 +1,11 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
+import { quickBlockMaker } from "./quickblockmaker";
 const xmlUtils = Blockly.utils.xml;
 
-Blockly.Blocks["lists_has"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_has",
+  function () {
     this.appendValueInput("LIST").setCheck("Array").appendField("does list");
     this.appendValueInput("VALUE").setCheck(null).appendField("have");
     this.setOutput(true, "Boolean");
@@ -11,16 +13,13 @@ Blockly.Blocks["lists_has"] = {
     this.setStyle("list_blocks");
     this.setTooltip("Returns true if the list contains the value.");
   },
-};
-
-BlocklyJS.javascriptGenerator.forBlock["lists_has"] = function (
-  block,
-  generator
-) {
-  const list = generator.valueToCode(block, "LIST", BlocklyJS.Order.ATOMIC) || "new Array()";
-  const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.ATOMIC);
-  return [`${list}.includes(${value})`, BlocklyJS.Order.NONE];
-};
+  function (block, generator) {
+    const list =
+      generator.valueToCode(block, "LIST", BlocklyJS.Order.ATOMIC) || "new Array()";
+    const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.ATOMIC);
+    return [`${list}.includes(${value})`, BlocklyJS.Order.NONE];
+  }
+);
 
 Blockly.Blocks["lists_extendable"] = {
   init: function () {
@@ -126,8 +125,9 @@ BlocklyJS.javascriptGenerator.forBlock["lists_extendable"] = function (block, ge
   return [`[${parts.join(", ")}]`, BlocklyJS.Order.NONE];
 };
 
-Blockly.Blocks["lists_filter"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_filter",
+  function () {
     this.appendValueInput("list").setCheck("Array").appendField("filter list");
     this.appendValueInput("item").appendField("by");
     this.appendValueInput("method").setCheck("Boolean").appendField("⇒");
@@ -138,24 +138,21 @@ Blockly.Blocks["lists_filter"] = {
       "Remove all items in a list which doesn't match the boolean"
     );
   },
-};
+  function (block, generator) {
+    const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
+    const method = generator.valueToCode(
+      block,
+      "method",
+      BlocklyJS.Order.ATOMIC
+    );
+    const code = `${list}.filter(async (findOrFilterItem) => ${method})`;
+    return [code, BlocklyJS.Order.NONE];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["lists_filter"] = function (
-  block,
-  generator
-) {
-  const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
-  const method = generator.valueToCode(
-    block,
-    "method",
-    BlocklyJS.Order.ATOMIC
-  );
-  const code = `${list}.filter(async (findOrFilterItem) => ${method})`;
-  return [code, BlocklyJS.Order.NONE];
-};
-
-Blockly.Blocks["lists_find"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_find",
+  function () {
     this.appendValueInput("list").setCheck("Array").appendField("in list");
     this.appendValueInput("item").appendField("find first");
     this.appendValueInput("method")
@@ -168,24 +165,21 @@ Blockly.Blocks["lists_find"] = {
       "Returns the first item in a list that matches the boolean"
     );
   },
-};
+  function (block, generator) {
+    const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
+    const method = generator.valueToCode(
+      block,
+      "method",
+      BlocklyJS.Order.ATOMIC
+    );
+    const code = `${list}.find(findOrFilterItem => ${method})`;
+    return [code, BlocklyJS.Order.NONE];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["lists_find"] = function (
-  block,
-  generator
-) {
-  const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
-  const method = generator.valueToCode(
-    block,
-    "method",
-    BlocklyJS.Order.ATOMIC
-  );
-  const code = `${list}.find(findOrFilterItem => ${method})`;
-  return [code, BlocklyJS.Order.NONE];
-};
-
-Blockly.Blocks["lists_map"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_map",
+  function () {
     this.appendValueInput("list").setCheck("Array").appendField("map list");
     this.appendValueInput("item").appendField("by");
     this.appendValueInput("method").setCheck(null).appendField("⇒");
@@ -193,59 +187,50 @@ Blockly.Blocks["lists_map"] = {
     this.setInputsInline(true);
     this.setStyle("list_blocks");
   },
-};
+  function (block, generator) {
+    const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
+    const method = generator.valueToCode(block, "method", BlocklyJS.Order.ATOMIC);
+    const code = `${list}.map(findOrFilterItem => ${method})`;
+    return [code, BlocklyJS.Order.NONE];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["lists_map"] = function (
-  block,
-  generator
-) {
-  const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
-  const method = generator.valueToCode(block, "method", BlocklyJS.Order.ATOMIC);
-  const code = `${list}.map(findOrFilterItem => ${method})`;
-  return [code, BlocklyJS.Order.NONE];
-};
-
-Blockly.Blocks["lists_filter_item"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_filter_item",
+  function () {
     this.appendDummyInput("name").appendField("item");
     this.setInputsInline(true);
     this.setOutput(true, null);
     this.setDuplicateOnDrag(true);
     this.setStyle("list_blocks");
   },
-};
+  () => ["findOrFilterItem", BlocklyJS.Order.NONE]
+);
 
-BlocklyJS.javascriptGenerator.forBlock["lists_filter_item"] = () => [
-  "findOrFilterItem",
-  BlocklyJS.Order.NONE,
-];
-
-Blockly.Blocks["lists_merge"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_merge",
+  function () {
     this.appendValueInput("list").setCheck("Array").appendField("merge list");
     this.appendValueInput("list2").setCheck("Array").appendField("with");
     this.setInputsInline(true);
     this.setOutput(true, "Array");
     this.setStyle("list_blocks");
   },
-};
+  function (block, generator) {
+    const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
+    const list2 = generator.valueToCode(
+      block,
+      "list2",
+      BlocklyJS.Order.ATOMIC
+    );
+    const code = `${list}.concat(${list2})`;
+    return [code, BlocklyJS.Order.NONE];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["lists_merge"] = function (
-  block,
-  generator
-) {
-  const list = generator.valueToCode(block, "list", BlocklyJS.Order.ATOMIC);
-  const list2 = generator.valueToCode(
-    block,
-    "list2",
-    BlocklyJS.Order.ATOMIC
-  );
-  const code = `${list}.concat(${list2})`;
-  return [code, BlocklyJS.Order.NONE];
-};
-
-Blockly.Blocks["lists_foreach"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_foreach",
+  function () {
     this.appendValueInput("ITEM").appendField("for each");
     this.appendValueInput("INDEX");
     this.appendValueInput("LIST")
@@ -260,33 +245,26 @@ Blockly.Blocks["lists_foreach"] = {
       "Loops through every item in a list and runs the code inside for each one."
     );
   },
-};
+  function (block, generator) {
+    const list =
+      generator.valueToCode(block, "LIST", BlocklyJS.Order.NONE) || "[]";
+    const branch = generator.statementToCode(block, "DO");
+    const code = `${list}.forEach(async (findOrFilterItem, indexForEach) => {\n${branch}});\n`;
+    return code;
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["lists_foreach"] = function (
-  block,
-  generator
-) {
-  const list =
-    generator.valueToCode(block, "LIST", BlocklyJS.Order.NONE) || "[]";
-  const branch = generator.statementToCode(block, "DO");
-  const code = `${list}.forEach(async (findOrFilterItem, indexForEach) => {\n${branch}});\n`;
-  return code;
-};
-
-Blockly.Blocks["lists_foreach_index"] = {
-  init: function () {
+quickBlockMaker(
+  "lists_foreach_index",
+  function () {
     this.appendDummyInput("name").appendField("index");
     this.setInputsInline(true);
     this.setOutput(true, "Number");
     this.setDuplicateOnDrag(true);
     this.setStyle("list_blocks");
   },
-};
-
-BlocklyJS.javascriptGenerator.forBlock["lists_foreach_index"] = () => [
-  "indexForEach",
-  BlocklyJS.Order.NONE,
-];
+  () => ["indexForEach", BlocklyJS.Order.NONE]
+);
 
 Blockly.Blocks["lists_getIndex_modified"] = {
   init: function () {

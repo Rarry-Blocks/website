@@ -1,9 +1,11 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import { activeSprite } from "../scripts/editor";
+import { quickBlockMaker } from "./quickblockmaker";
 
-Blockly.Blocks["sound_sounds_menu"] = {
-  init: function () {
+quickBlockMaker(
+  "sound_sounds_menu",
+  function () {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown(() => {
         const sounds = activeSprite.sounds;
@@ -16,17 +18,14 @@ Blockly.Blocks["sound_sounds_menu"] = {
     this.setOutput(true, "String");
     this.setStyle("sound_blocks");
   },
-};
+  function (block, generator) {
+    return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["sound_sounds_menu"] = function (
-  block,
-  generator,
-) {
-  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
-};
-
-Blockly.Blocks["play_sound"] = {
-  init: function () {
+quickBlockMaker(
+  "play_sound",
+  function () {
     this.appendValueInput("name").setCheck("String").appendField("play sound");
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown([
@@ -39,38 +38,30 @@ Blockly.Blocks["play_sound"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
-};
+  function (block, generator) {
+    const name = generator.valueToCode(block, "name", BlocklyJS.Order.ATOMIC);
+    const wait = block.getFieldValue("wait");
+    return `yield* playSound(${name}, ${wait});\n`;
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["play_sound"] = function (block, generator) {
-  var name = generator.valueToCode(
-    block,
-    "name",
-    BlocklyJS.Order.ATOMIC
-  );
-  var wait = block.getFieldValue("wait");
-  return `yield* playSound(${name}, ${wait});\n`;
-};
-
-Blockly.Blocks["stop_sound"] = {
-  init: function () {
+quickBlockMaker(
+  "stop_sound",
+  function () {
     this.appendValueInput("name").setCheck("String").appendField("stop sound");
     this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
-};
+  function (block, generator) {
+    const name = generator.valueToCode(block, "name", BlocklyJS.Order.ATOMIC);
+    return `stopSound(${name});\n`;
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["stop_sound"] = function (block, generator) {
-  var name = generator.valueToCode(
-    block,
-    "name",
-    BlocklyJS.Order.ATOMIC
-  );
-  return `stopSound(${name});\n`;
-};
-
-Blockly.Blocks["stop_all_sounds"] = {
-  init: function () {
+quickBlockMaker(
+  "stop_all_sounds",
+  function () {
     this.appendDummyInput()
       .appendField("stop")
       .appendField(
@@ -85,16 +76,15 @@ Blockly.Blocks["stop_all_sounds"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
-};
+  function (block) {
+    const who = block.getFieldValue("who");
+    return `stopAllSounds(${who});\n`;
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["stop_all_sounds"] = function (block) {
-  var who = block.getFieldValue("who");
-  var code = `stopAllSounds(${who});\n`;
-  return code;
-};
-
-Blockly.Blocks["set_sound_property"] = {
-  init: function () {
+quickBlockMaker(
+  "set_sound_property",
+  function () {
     this.appendValueInput("value")
       .setCheck("Number")
       .appendField("set")
@@ -111,23 +101,16 @@ Blockly.Blocks["set_sound_property"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
   },
-};
+  function (block, generator) {
+    const value = generator.valueToCode(block, "value", BlocklyJS.Order.ATOMIC);
+    const property = block.getFieldValue("property");
+    return `setSoundProperty("${property}", ${value});\n`;
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["set_sound_property"] = function (
-  block,
-  generator
-) {
-  var value = generator.valueToCode(
-    block,
-    "value",
-    BlocklyJS.Order.ATOMIC
-  );
-  var property = block.getFieldValue("property");
-  return `setSoundProperty("${property}", ${value});\n`;
-};
-
-Blockly.Blocks["get_sound_property"] = {
-  init: function () {
+quickBlockMaker(
+  "get_sound_property",
+  function () {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown([
         ["volume", "volume"],
@@ -138,9 +121,8 @@ Blockly.Blocks["get_sound_property"] = {
     this.setStyle("sound_blocks");
     this.setOutput(true, "Number");
   },
-};
-
-BlocklyJS.javascriptGenerator.forBlock["get_sound_property"] = function (block) {
-  var property = block.getFieldValue("property");
-  return [`soundProperties["${property}"]`, BlocklyJS.Order.NONE];
-};
+  function (block) {
+    const property = block.getFieldValue("property");
+    return [`soundProperties["${property}"]`, BlocklyJS.Order.NONE];
+  }
+);

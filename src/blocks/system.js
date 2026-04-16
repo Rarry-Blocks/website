@@ -1,14 +1,16 @@
 import * as Blockly from "blockly";
 import * as BlocklyJS from "blockly/javascript";
 import { spriteManager } from "../scripts/editor";
+import { quickBlockMaker } from "./quickblockmaker";
 
 const normalKeys = [
   ..."abcdefghijklmnopqrstuvwxyz",
   ..."abcdefghijklmnopqrstuvwxyz0123456789".toUpperCase(),
 ];
 
-Blockly.Blocks["system_sprites_menu"] = {
-  init: function () {
+quickBlockMaker(
+  "system_sprites_menu",
+  function () {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown(() => {
         const sprites = spriteManager.getOriginals();
@@ -21,17 +23,14 @@ Blockly.Blocks["system_sprites_menu"] = {
     this.setOutput(true, "String");
     this.setStyle("system_blocks");
   },
-};
+  function (block, generator) {
+    return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["system_sprites_menu"] = function (
-  block,
-  generator,
-) {
-  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
-};
-
-Blockly.Blocks["key_pressed"] = {
-  init: function () {
+quickBlockMaker(
+  "key_pressed",
+  function () {
     this.appendDummyInput()
       .appendField("is")
       .appendField(
@@ -52,10 +51,16 @@ Blockly.Blocks["key_pressed"] = {
     this.setOutput(true, "Boolean");
     this.setStyle("system_blocks");
   },
-};
+  function (block, generator) {
+    const key = block.getFieldValue("KEY");
+    const safeKey = generator.quote_(key);
+    return [`isKeyPressed(${safeKey})`, BlocklyJS.Order.NONE];
+  }
+);
 
-Blockly.Blocks["get_mouse_position"] = {
-  init: function () {
+quickBlockMaker(
+  "get_mouse_position",
+  function () {
     this.appendDummyInput()
       .appendField("mouse")
       .appendField(
@@ -68,10 +73,15 @@ Blockly.Blocks["get_mouse_position"] = {
     this.setOutput(true, "Number");
     this.setStyle("system_blocks");
   },
-};
+  function (block) {
+    const menu = block.getFieldValue("MENU");
+    return [`getMousePosition("${menu}")`, BlocklyJS.Order.NONE];
+  }
+);
 
-Blockly.Blocks["mouse_button_pressed"] = {
-  init: function () {
+quickBlockMaker(
+  "mouse_button_pressed",
+  function () {
     this.appendDummyInput()
       .appendField("is")
       .appendField(
@@ -89,56 +99,42 @@ Blockly.Blocks["mouse_button_pressed"] = {
     this.setOutput(true, "Boolean");
     this.setStyle("system_blocks");
   },
-};
+  function (block, generator) {
+    const button = block.getFieldValue("BUTTON");
+    const safeButton = generator.quote_(button);
+    return [`isMouseButtonPressed(${safeButton})`, BlocklyJS.Order.NONE];
+  }
+);
 
-Blockly.Blocks["all_keys_pressed"] = {
-  init: function () {
+quickBlockMaker(
+  "all_keys_pressed",
+  function () {
     this.appendDummyInput().appendField("keys currently down");
     this.setOutput(true, "Array");
     this.setStyle("system_blocks");
   },
-};
+  () => [
+    "Object.keys(keysPressed).filter(k => keysPressed[k])",
+    BlocklyJS.Order.NONE,
+  ]
+);
 
-Blockly.Blocks["mouse_over"] = {
-  init: function () {
+quickBlockMaker(
+  "mouse_over",
+  function () {
     this.appendDummyInput().appendField("is cursor over me");
     this.setOutput(true, "Boolean");
     this.setStyle("system_blocks");
   },
-};
+  () => [
+    "isMouseTouchingSprite()",
+    BlocklyJS.Order.NONE,
+  ]
+);
 
-BlocklyJS.javascriptGenerator.forBlock["key_pressed"] = function (block, generator) {
-  const key = block.getFieldValue("KEY");
-  const safeKey = generator.quote_(key);
-  return [`isKeyPressed(${safeKey})`, BlocklyJS.Order.NONE];
-};
-
-BlocklyJS.javascriptGenerator.forBlock["get_mouse_position"] = function (block) {
-  const menu = block.getFieldValue("MENU");
-  return [`getMousePosition("${menu}")`, BlocklyJS.Order.NONE];
-};
-
-BlocklyJS.javascriptGenerator.forBlock["mouse_button_pressed"] = function (
-  block,
-  generator,
-) {
-  const button = block.getFieldValue("BUTTON");
-  const safeButton = generator.quote_(button);
-  return [`isMouseButtonPressed(${safeButton})`, BlocklyJS.Order.NONE];
-};
-
-BlocklyJS.javascriptGenerator.forBlock["all_keys_pressed"] = () => [
-  "Object.keys(keysPressed).filter(k => keysPressed[k])",
-  BlocklyJS.Order.NONE,
-];
-
-BlocklyJS.javascriptGenerator.forBlock["mouse_over"] = () => [
-  "isMouseTouchingSprite()",
-  BlocklyJS.Order.NONE,
-];
-
-Blockly.Blocks["window_size"] = {
-  init: function () {
+quickBlockMaker(
+  "window_size",
+  function () {
     this.appendDummyInput()
       .appendField("window")
       .appendField(
@@ -151,17 +147,17 @@ Blockly.Blocks["window_size"] = {
     this.setOutput(true, "Number");
     this.setStyle("system_blocks");
   },
-};
+  function (block) {
+    return [
+      `window.inner${block.getFieldValue("MENU") === "width" ? "Width" : "Height"}`,
+      BlocklyJS.Order.NONE,
+    ];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["window_size"] = function (block) {
-  return [
-    `window.inner${block.getFieldValue("MENU") === "width" ? "Width" : "Height"}`,
-    BlocklyJS.Order.NONE,
-  ];
-};
-
-Blockly.Blocks["system_current_time"] = {
-  init: function () {
+quickBlockMaker(
+  "system_current_time",
+  function () {
     this.appendDummyInput()
       .appendField("current")
       .appendField(
@@ -181,39 +177,39 @@ Blockly.Blocks["system_current_time"] = {
     this.setOutput(true, "Number");
     this.setStyle("system_blocks");
   },
-};
+  function (block) {
+    const getResult = () => {
+      const unit = block.getFieldValue("UNIT");
+      switch (unit) {
+        case "year":
+          return "new Date().getFullYear()";
+        case "month":
+          return "new Date().getMonth() + 1";
+        case "date":
+          return "new Date().getDate()";
+        case "day":
+          return "new Date().getDay()";
+        case "hour":
+          return "new Date().getHours()";
+        case "minute":
+          return "new Date().getMinutes()";
+        case "second":
+          return "new Date().getSeconds()";
+        case "millisecond":
+          return "new Date().getMilliseconds()";
+        case "timestamp":
+          return "Date.now()";
+        default:
+          return "0";
+      }
+    };
+    return [getResult(), BlocklyJS.Order.NONE];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["system_current_time"] = function (block) {
-  const getResult = () => {
-    const unit = block.getFieldValue("UNIT");
-    switch (unit) {
-      case "year":
-        return "new Date().getFullYear()";
-      case "month":
-        return "new Date().getMonth() + 1";
-      case "date":
-        return "new Date().getDate()";
-      case "day":
-        return "new Date().getDay()";
-      case "hour":
-        return "new Date().getHours()";
-      case "minute":
-        return "new Date().getMinutes()";
-      case "second":
-        return "new Date().getSeconds()";
-      case "millisecond":
-        return "new Date().getMilliseconds()";
-      case "timestamp":
-        return "Date.now()";
-      default:
-        return "0";
-    }
-  };
-  return [getResult(), BlocklyJS.Order.NONE];
-};
-
-Blockly.Blocks["system_distance_direction"] = {
-  init: function () {
+quickBlockMaker(
+  "system_distance_direction",
+  function () {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown([
         ["distance", "distance"],
@@ -229,50 +225,43 @@ Blockly.Blocks["system_distance_direction"] = {
     this.setOutput(true, "Number");
     this.setStyle("system_blocks");
   },
-};
+  function (block, generator) {
+    const mode = block.getFieldValue("MODE");
+    const x1 = generator.valueToCode(block, "X1", BlocklyJS.Order.NONE) || "0";
+    const y1 = generator.valueToCode(block, "Y1", BlocklyJS.Order.NONE) || "0";
+    const x2 = generator.valueToCode(block, "X2", BlocklyJS.Order.NONE) || "0";
+    const y2 = generator.valueToCode(block, "Y2", BlocklyJS.Order.NONE) || "0";
 
-BlocklyJS.javascriptGenerator.forBlock["system_distance_direction"] = function (
-  block,
-  generator,
-) {
-  const mode = block.getFieldValue("MODE");
-  const x1 = generator.valueToCode(block, "X1", BlocklyJS.Order.NONE) || "0";
-  const y1 = generator.valueToCode(block, "Y1", BlocklyJS.Order.NONE) || "0";
-  const x2 = generator.valueToCode(block, "X2", BlocklyJS.Order.NONE) || "0";
-  const y2 = generator.valueToCode(block, "Y2", BlocklyJS.Order.NONE) || "0";
-
-  if (mode === "distance") {
-    return [
-      `Math.sqrt(Math.pow(${x2} - ${x1}, 2) + Math.pow(${y2} - ${y1}, 2))`,
-      BlocklyJS.Order.NONE,
-    ];
-  } else {
+    if (mode === "distance") {
+      return [
+        `Math.sqrt(Math.pow(${x2} - ${x1}, 2) + Math.pow(${y2} - ${y1}, 2))`,
+        BlocklyJS.Order.NONE,
+      ];
+    }
     return [
       `((Math.atan2(${x2} - ${x1}, ${y2} - ${y1}) * 180 / Math.PI + 360) % 360)`,
       BlocklyJS.Order.NONE,
     ];
   }
-};
+);
 
 // Used to be in controls
-Blockly.Blocks["controls_clones_list"] = {
-  init: function () {
+quickBlockMaker(
+  "controls_clones_list",
+  function () {
     this.appendValueInput("ID").setCheck("String").appendField("list clones of");
     this.setOutput(true, "Array");
     this.setStyle("system_blocks");
   },
-};
+  function (block, generator) {
+    const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC);
+    return [`spriteManager.get(${ID})?.getAllClones()`, BlocklyJS.Order.NONE];
+  }
+);
 
-BlocklyJS.javascriptGenerator.forBlock["controls_clones_list"] = function (
-  block,
-  generator,
-) {
-  const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC);
-  return [`spriteManager.get(${ID})?.getAllClones()`, BlocklyJS.Order.NONE];
-};
-
-Blockly.Blocks["system_sprites_list"] = {
-  init: function () {
+quickBlockMaker(
+  "system_sprites_list",
+  function () {
     this.appendDummyInput()
       .appendField("list all")
       .appendField(
@@ -285,23 +274,23 @@ Blockly.Blocks["system_sprites_list"] = {
     this.setOutput(true, "Array");
     this.setStyle("system_blocks");
   },
-};
+  function (block) {
+    const TYPE = block.getFieldValue("TYPE");
 
-BlocklyJS.javascriptGenerator.forBlock["system_sprites_list"] = function (block) {
-  const TYPE = block.getFieldValue("TYPE");
+    let code = "new Array()";
+    if (TYPE === "SPRITES") {
+      code = "spriteManager.getOriginals()";
+    } else {
+      code = "spriteManager.getAll()";
+    }
 
-  let code = "new Array()";
-  if (TYPE === "SPRITES") {
-    code = "spriteManager.getOriginals()";
-  } else {
-    code = "spriteManager.getAll()";
+    return [code, BlocklyJS.Order.NONE];
   }
+);
 
-  return [code, BlocklyJS.Order.NONE];
-};
-
-Blockly.Blocks["system_sprite_property"] = {
-  init: function () {
+quickBlockMaker(
+  "system_sprite_property",
+  function () {
     this.appendValueInput("ID")
       .setCheck("String")
       .appendField(
@@ -324,13 +313,9 @@ Blockly.Blocks["system_sprite_property"] = {
     this.setOutput(true, null);
     this.setStyle("system_blocks");
   },
-};
-
-BlocklyJS.javascriptGenerator.forBlock["system_sprite_property"] = function (
-  block,
-  generator,
-) {
-  const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.NONE);
-  const PROP = block.getFieldValue("PROP");
-  return [`spriteManager.get(${ID})?.${PROP}`, BlocklyJS.Order.NONE];
-};
+  function (block, generator) {
+    const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.NONE);
+    const PROP = block.getFieldValue("PROP");
+    return [`spriteManager.get(${ID})?.${PROP}`, BlocklyJS.Order.NONE];
+  }
+);
