@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - "v*" # Triggers on tags like v1.0.0, v1.1.0-alpha, etc.
+  workflow_dispatch:
 
 jobs:
   publish:
