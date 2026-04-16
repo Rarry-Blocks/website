@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "rarry",
-  "version": "0.1.0",
+  "version": "1.6.4",
   "identifier": "link.rarry.desktop",
   "build": {
     "frontendDist": "../dist",
