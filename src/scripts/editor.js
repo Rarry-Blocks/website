@@ -7,6 +7,9 @@ import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
 
+import { save as tauriSave } from "@tauri-apps/plugin-dialog";
+import { writeFile } from "@tauri-apps/plugin-fs";
+
 import "../functions/patches/block.js";
 import "../functions/patches/connectionchecker.js";
 import "../functions/patches/dragger.js";
@@ -39,6 +42,7 @@ import {
   spriteToImage,
 } from "./editor/ui.js";
 
+const isDesktop = window.__TAURI_INTERNALS__ !== undefined;
 const loadingScreen = document.getElementById("editor-loading");
 
 export function showLoading(message = "Loading...") {
@@ -699,8 +703,13 @@ tabButtons.forEach(button => {
   });
 });
 
+function getProjectName() {
+  return String(document.getElementById("project-name-input").value ?? "Untitled");
+}
+
 function getProject() {
   return {
+    projectName: getProjectName(),
     sprites: spriteManager.toJSON(),
     extensions: activeExtensions,
     variables: projectVariables ?? {},
@@ -710,6 +719,7 @@ function getProject() {
 async function saveProject() {
   const zip = new JSZip();
   const json = {
+    projectName: getProjectName(),
     sprites: [],
     extensions: activeExtensions,
     variables: projectVariables ?? {},
@@ -738,13 +748,14 @@ async function saveProject() {
             if (!processed) return null;
 
             const base64 = processed.split(",")[1];
-            zip.file(`${spriteId}.c.${c.name}.webp`, toUint8Array(base64), {
+            zip.file(`${spriteId}.c.${c.id}.webp`, toUint8Array(base64), {
               binary: true,
             });
 
             return {
+              id: c.id,
               name: c.name,
-              texture: `${spriteId}.c.${c.name}.webp`,
+              texture: `${spriteId}.c.${c.id}.webp`,
             };
           }),
         )
@@ -757,13 +768,14 @@ async function saveProject() {
             if (!processed) return null;
 
             const base64 = processed.split(",")[1];
-            zip.file(`${spriteId}.s.${s.name}.ogg`, toUint8Array(base64), {
+            zip.file(`${spriteId}.s.${s.id}.ogg`, toUint8Array(base64), {
               binary: true,
             });
 
             return {
+              id: s.id,
               name: s.name,
-              path: `${spriteId}.s.${s.name}.ogg`,
+              path: `${spriteId}.s.${s.id}.ogg`,
             };
           }),
         )
@@ -779,17 +791,35 @@ async function saveProject() {
 
   zip.file("project.json", JSON.stringify(json));
 
-  const blob = await zip.generateAsync({
-    type: "blob",
-    compression: "DEFLATE",
-    compressionOptions: { level: 9 },
-  });
+  if (isDesktop) {
+    const filePath = await tauriSave({
+      title: "Save Rarry Project",
+      defaultPath: json.projectName,
+      filters: [{ name: "Rarry Project", extensions: ["rarryz"] }],
+    });
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "project.rarryz";
-  a.click();
-  URL.revokeObjectURL(a.href);
+    if (filePath) {
+      const content = await zip.generateAsync({
+        type: "uint8array",
+        compression: "DEFLATE",
+        compressionOptions: { level: 9 },
+      });
+
+      await writeFile(filePath, content);
+    }
+  } else {
+    const blob = await zip.generateAsync({
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 9 },
+    });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = json.projectName + ".rarryz";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 }
 
 async function loadProject(ev) {
@@ -799,33 +829,40 @@ async function loadProject(ev) {
     const [file] = ev.target.files ?? [];
     if (!file) return;
 
-    if (file.name.endsWith(".rarry")) {
-      await oldLoadProject(ev);
-      return;
-    }
+    const fileName = file.name;
+    const projectName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+    console.info(`Loading project: ${projectName}`);
+
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8View = new Uint8Array(arrayBuffer);
+
+    const isZip = uint8View[0] === 0x50 && uint8View[1] === 0x4B;
+    if (!isZip) return await oldLoadProject(ev);
 
     const zip = await JSZip.loadAsync(await file.arrayBuffer());
 
     const projectFile = zip.file("project.json");
     if (!projectFile) {
-      throw new Error("project.rarryz missing project.json");
+      throw new Error("Invalid project: Missing project.json");
     }
 
     const json = JSON.parse(await projectFile.async("string"));
 
     if (!Array.isArray(json.sprites)) {
-      throw new Error("No valid sprites found in project.");
+      throw new Error("Invalid project: No valid sprites found");
     }
 
+    spriteManager.clear();
+
     const sprites = await Promise.all(
-      json.sprites.map(async (entry) => {
+      json.sprites.map(async entry => {
         const sprite = { ...entry };
         sprite.costumes = [];
         sprite.sounds = [];
 
         if (Array.isArray(entry.costumes)) {
           await Promise.all(
-            entry.costumes.map(async (c) => {
+            entry.costumes.map(async c => {
               const srcCandidate = c.texture ?? c.path ?? c.data;
 
               if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
@@ -846,15 +883,15 @@ async function loadProject(ev) {
               }
 
               throw new Error(
-                `Invalid costume entry for sprite ${entry.id ?? "<unknown>"}`
+                `Invalid costume entry for sprite ${entry.id ?? "<unknown>"}`,
               );
-            })
+            }),
           );
         }
 
         if (Array.isArray(entry.sounds)) {
           await Promise.all(
-            entry.sounds.map(async (s) => {
+            entry.sounds.map(async s => {
               const srcCandidate = s.data ?? s.path;
 
               if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
@@ -875,9 +912,9 @@ async function loadProject(ev) {
               }
 
               throw new Error(
-                `Invalid sound entry for sprite ${entry.id ?? "<unknown>"}`
+                `Invalid sound entry for sprite ${entry.id ?? "<unknown>"}`,
               );
-            })
+            }),
           );
         }
 
@@ -887,14 +924,14 @@ async function loadProject(ev) {
         sprite.scale = entry.scale ?? entry.data?.scale?.x ?? 1;
         sprite.rotation =
           entry.rotation ?? entry.data?.angle ?? entry.data?.rotation ?? 0;
-        sprite.currentCostume =
-          entry.currentCostume ?? entry.data?.currentCostume ?? 0;
+        sprite.currentCostume = entry.currentCostume ?? entry.data?.currentCostume ?? 0;
 
         return sprite;
-      })
+      }),
     );
 
     await handleProjectData({
+      projectName,
       sprites,
       extensions: json.extensions,
       variables: json.variables,
@@ -958,6 +995,8 @@ async function handleProjectData(data) {
     alert("Invalid project data.");
     return;
   }
+
+  document.getElementById("project-name-input").value = data.projectName ?? "Untitled";
 
   if (!data.sprites && !data.extensions) {
     data = { sprites: data, extensions: [] };
@@ -1353,7 +1392,9 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
           disabled: isSharing,
           onClick: popup => {
             const input = popup.element.querySelector('[data-row="1"][data-col="1"]');
-            const trusted = popup.element.querySelector('[data-row="2"][data-col="1"]')?.checked ?? false;
+            const trusted =
+              popup.element.querySelector('[data-row="2"][data-col="1"]')?.checked ??
+              false;
             const userCode = input ? input.value : "";
 
             const iframe = document.createElement("iframe");

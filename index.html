@@ -93,6 +93,10 @@
     </p>
   </footer>
 
+  <script>
+    // redirect to editor if running in tauri
+    if (window.__TAURI_INTERNALS__ !== undefined) window.location.replace("/editor");
+  </script>
   <script type="module" src="src/scripts/index.js"></script>
 </body>
 

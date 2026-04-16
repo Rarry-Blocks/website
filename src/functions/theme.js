@@ -320,10 +320,10 @@ export function setupSettingsButton(workspace) {
                 "Category bubble:",
                 {
                   type: "menu",
-                  value: localStorage.getItem("categoryBubble") || "line",
+                  value: localStorage.getItem("categoryBubble") || "default",
                   options: [
-                    { label: "Line (default)", value: "line" },
-                    { label: "Circle", value: "bubble" },
+                    { label: "Circle (default)", value: "default" },
+                    { label: "Line", value: "line" },
                     { label: "None", value: "none" },
                   ],
                   onChange: value => setCategoryBubble(value, workspace),

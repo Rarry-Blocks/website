@@ -50,7 +50,7 @@ async function onSignupClick(e) {
     const data = await response.json();
     if (data.token) localStorage.setItem("tooken", data.token);
 
-    window.location.href = "/";
+    window.location.href = window.__TAURI_INTERNALS__ !== undefined ? "/editor" : "/";
   } catch (err) {
     console.error(err);
 

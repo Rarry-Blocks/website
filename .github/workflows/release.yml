@@ -1,0 +1,49 @@
+name: "Publish Release"
+on:
+  push:
+    tags:
+      - "v*" # Triggers on tags like v1.0.0, v1.1.0-alpha, etc.
+
+jobs:
+  publish:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest" 
+          - platform: 'macos-latest'   
+          - platform: 'ubuntu-22.04'   
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: "npm"
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: install dependencies
+        run: npm install
+
+      - name: build and release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "Rarry v__VERSION__"
+          releaseBody: "Automated release for Rarry Desktop."
+          releaseDraft: true
+          prerelease: false
