@@ -1292,9 +1292,9 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
         },
       ],
       [
+        "Run as trusted extension:",
         {
           type: "checkbox",
-          label: "Run without sandbox (trusted)",
           checked: false,
         },
       ],
