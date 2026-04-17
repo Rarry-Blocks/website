@@ -3,7 +3,6 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { Application, Graphics, Texture, Sprite as PixiSprite } from "pixi.js-legacy";
-import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
 
@@ -837,7 +836,7 @@ async function loadProject(ev) {
     const uint8View = new Uint8Array(arrayBuffer);
 
     const isZip = uint8View[0] === 0x50 && uint8View[1] === 0x4B;
-    if (!isZip) return await oldLoadProject(ev);
+    if (!isZip) throw new Error("Invalid project: Not a valid ZIP file");
 
     const zip = await JSZip.loadAsync(await file.arrayBuffer());
 
@@ -944,49 +943,16 @@ async function loadProject(ev) {
   }
 }
 
-export async function oldLoadProject(input) {
-  if (typeof input === "object" && !input.target) {
-    return await handleProjectData(input);
-  }
-  if (typeof input === "string") {
-    try {
-      const data = JSON.parse(input);
-      return await handleProjectData(data);
-    } catch (err) {
-      console.error("Invalid JSON string passed to loadProject:", err);
-      return alert("Invalid JSON string provided.");
-    }
-  }
+async function compressData(data, format = 'deflate') {
+  const stream = new Blob([data]).stream();
+  const compressedStream = stream.pipeThrough(new CompressionStream(format));
+  return new Uint8Array(await new Response(compressedStream).arrayBuffer());
+}
 
-  const file = input?.target?.files?.[0];
-  if (!file) return;
-
-  stopAllScripts();
-
-  const reader = new FileReader();
-  reader.onload = async () => {
-    input.target.value = "";
-
-    const buffer = reader.result;
-
-    let data;
-    try {
-      const text = new TextDecoder().decode(buffer);
-      data = JSON.parse(text);
-    } catch {
-      try {
-        const inflated = pako.inflate(new Uint8Array(buffer));
-        const json = new TextDecoder().decode(inflated);
-        data = JSON.parse(json);
-      } catch (err) {
-        console.error("Failed to parse file", err);
-        return alert("Invalid or corrupted project file.");
-      }
-    }
-
-    await handleProjectData(data);
-  };
-  reader.readAsArrayBuffer(file);
+async function decompressData(data, format = 'deflate') {
+  const stream = new Blob([data]).stream();
+  const decompressedStream = stream.pipeThrough(new DecompressionStream(format));
+  return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
 }
 
 async function handleProjectData(data) {
@@ -1049,7 +1015,7 @@ loadButton.addEventListener("click", () => {
 });
 loadInput.addEventListener("change", loadProject);
 
-document.getElementById("costume-upload").addEventListener("change", e => {
+document.getElementById("costume-upload").addEventListener("change", async e => {
   const file = e.target.files[0];
   if (!file || !activeSprite) return;
 
@@ -1083,7 +1049,7 @@ document.getElementById("costume-upload").addEventListener("change", e => {
         texture: reader.result,
       };
 
-      const compressedData = pako.deflate(JSON.stringify(payload));
+      const compressedData = compressData(JSON.stringify(payload));
 
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
@@ -1133,7 +1099,7 @@ document.getElementById("sound-upload").addEventListener("change", async e => {
         dataURL,
       };
 
-      const compressedData = pako.deflate(JSON.stringify(payload));
+      const compressedData = await decompressData(JSON.stringify(payload));
 
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
@@ -1499,10 +1465,10 @@ function createSession() {
     connectedUsers = users;
     updateUsersList();
   });
-  currentSocket.on("userJoined", ({ username, socketId }) => {
+  currentSocket.on("userJoined", async ({ username, socketId }) => {
     console.log(`${username} joined to room`);
     if (amHost) {
-      const compressedData = pako.deflate(JSON.stringify(getProject()));
+      const compressedData = compressData(JSON.stringify(getProject()));
       currentSocket.emit("sendProjectData", {
         to: socketId,
         data: compressedData,
@@ -1511,10 +1477,10 @@ function createSession() {
     updateUsersList();
   });
 
-  function optionalDecompressData(data) {
+  async function optionalDecompressData(data) {
     if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
       try {
-        const decompressed = pako.inflate(new Uint8Array(data), { to: "string" });
+        const decompressed = await decompressData(new Uint8Array(data), { to: "string" });
         return JSON.parse(decompressed);
       } catch (err) {
         throw new Error("Failed to decompress data: " + err);
@@ -1526,12 +1492,12 @@ function createSession() {
   currentSocket.on("projectData", async data => {
     console.log("received project data from host");
 
-    data = optionalDecompressData(data);
+    data = await optionalDecompressData(data);
     await handleProjectData(data);
   });
 
-  currentSocket.on("projectUpdate", ({ type, data }) => {
-    data = optionalDecompressData(data);
+  currentSocket.on("projectUpdate", async ({ type, data }) => {
+    data = await optionalDecompressData(data);
 
     switch (type) {
       case "addVariable": {

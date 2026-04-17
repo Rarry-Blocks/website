@@ -1,9 +1,7 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig({
-  plugins: [visualizer()],
   build: {
     rollupOptions: {
       input: {
@@ -15,8 +13,7 @@ export default defineConfig({
       },
       output: {
         manualChunks: {
-          "vendor-pixi": ["pixi.js-legacy"],
-          "vendor-utils": ["jszip", "pako"],
+          "vendor-pixi": ["pixi.js-legacy"]
         },
       },
       treeshake: true,
@@ -33,7 +30,6 @@ export default defineConfig({
       "@pixi/filter-blur": resolve(__dirname, "stub.js"),
       "@pixi/filter-color-matrix": resolve(__dirname, "stub.js"),
       "@pixi/filter-displacement": resolve(__dirname, "stub.js"),
-      "@pixi/compressed-textures": resolve(__dirname, "stub.js"),
       "@pixi/text-bitmap": resolve(__dirname, "stub.js"), 
       "@pixi/mesh-extras": resolve(__dirname, "stub.js"), 
       "@pixi/particle-container": resolve(__dirname, "stub.js"), 

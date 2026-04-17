@@ -2,7 +2,6 @@ export const AccessibilityManager = class {};
 export const Prepare = {};
 export const BlurFilter = class {};
 export const BlurFilterPass = class {};
-export const CompressedTextures = class {};
 export const ColorMatrixFilter = class {};
 export const DisplacementFilter = class {};
 export const ParticleContainer = class {};
