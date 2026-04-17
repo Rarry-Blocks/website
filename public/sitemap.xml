@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://rarry.vercel.app/</loc>
+    <loc>https://rarry.link/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/editor/</loc>
+    <loc>https://rarry.link/editor/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/login/</loc>
+    <loc>https://rarry.link/login/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/signup/</loc>
+    <loc>https://rarry.link/signup/</loc>
   </url>
   <url>
-    <loc>https://rarry.vercel.app/user/</loc>
+    <loc>https://rarry.link/user/</loc>
   </url>
 </urlset>
