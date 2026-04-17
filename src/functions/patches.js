@@ -11,6 +11,7 @@ Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
   "controls_if_elseif",
   "controls_if_else",
 ].forEach((type) => {
+  if (!Blockly.Blocks[type]) return;
   Blockly.Blocks[type].init = (function (original) {
     return function () {
       original.call(this);

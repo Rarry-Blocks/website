@@ -1,4 +1,12 @@
-import { requestPermission } from "../extensions/permissions.js";
+async function requestPermission(extId, action, showPopup) {
+  return new Promise((resolve, reject) => {
+    if (confirm(`Extension "${extId}" is requesting permission to use the "${action}" API. Do you allow this?`)) {
+      resolve(true);
+    } else {
+      reject(new Error("Permission denied"));
+    }
+  });
+}
 
 export class ExtensionBridge {
   constructor(extId, code, onReady) {
@@ -6,7 +14,7 @@ export class ExtensionBridge {
     this.pendingRuns = new Map();
     this.runCounter = 0;
 
-    this.worker = new Worker(new URL("../extensions/worker.js", import.meta.url), {
+    this.worker = new Worker(new URL("./worker.js", import.meta.url), {
       type: "module",
     });
 
@@ -15,11 +23,11 @@ export class ExtensionBridge {
   }
 
   async handleMessage(e, onReady) {
-    const { type, id, action, payload, blocks, result, error } = e.data;
+    const { type, id, action, payload, extInfo, result, error } = e.data;
 
     if (type === "ready") {
-      console.log(`Extension ${this.extId} ready.`);
-      if (onReady) onReady(blocks);
+      console.log(`Extension ${this.extId} worker ready.`);
+      if (onReady) onReady(extInfo);
       return;
     }
 
@@ -32,9 +40,14 @@ export class ExtensionBridge {
       return;
     }
 
+    if (type === "error") {
+      console.error(`Extension ${this.extId} worker error:`, error);
+      return;
+    }
+
     if (type === "syscall") {
       try {
-        await requestPermission(this.extId, action, window.showPermissionPopup);
+        await requestPermission(this.extId, action, null);
 
         let apiResult;
         switch (action) {
@@ -50,7 +63,7 @@ export class ExtensionBridge {
             apiResult = true;
             break;
           case "log":
-            console.log(`[Ext: ${this.extId}]`, ...payload.args);
+            console.log(`[${this.extId}]`, ...payload.args);
             apiResult = true;
             break;
           default:

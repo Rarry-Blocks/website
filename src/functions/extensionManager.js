@@ -3,8 +3,10 @@ import { javascriptGenerator, Order } from "blockly/javascript";
 import { activeExtensions, workspace } from "../scripts/editor";
 import { DuplicateOnDrag } from "./patches/block";
 import { customShapeRegistry } from "./render";
+import { ExtensionBridge } from "../components/extensions/bridge";
 
 export const extensions = {};
+export const extensionBridges = new Map();
 
 const INPUT_TYPE = {
   VALUE: 1,
@@ -160,11 +162,7 @@ function collectInputs(block, fields) {
     const name = input.name;
 
     if (input.type === INPUT_TYPE.VALUE || input.type === INPUT_TYPE.DUMMY) {
-      const code = javascriptGenerator.valueToCode(
-        block,
-        name,
-        Order.ATOMIC,
-      );
+      const code = javascriptGenerator.valueToCode(block, name, Order.ATOMIC);
       if (code) inputs[name] = code;
     } else if (input.type === INPUT_TYPE.STATEMENT) {
       const code = javascriptGenerator.statementToCode(block, name);
@@ -181,10 +179,13 @@ function collectInputs(block, fields) {
   return inputs;
 }
 
-function registerCodeGenerators(id, codeGen, blockDefs) {
-  for (const [blockId, handler] of Object.entries(codeGen)) {
+function registerCodeGenerators(id, codeGen, blockDefs, isTrusted) {
+  for (const blockId of Object.keys(codeGen)) {
     const fullType = `${id}_${blockId}`;
-    extensions[fullType] = handler;
+
+    if (isTrusted) {
+      extensions[fullType] = codeGen[blockId];
+    }
 
     const def = blockDefs[fullType] ?? {};
 
@@ -194,97 +195,104 @@ function registerCodeGenerators(id, codeGen, blockDefs) {
         .map(([k, v]) => `${JSON.stringify(k)}:${v}`)
         .join(",")}}`;
 
-      const call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, thread)`;
-      const expr = def.promise ? `await ${call}` : call;
+      let call, expr;
+      if (isTrusted) {
+        call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, thread)`;
+        expr = def.promise ? `(yield* waitForPromise(${call}))` : call;
+      } else {
+        call = `extensionBridges.get(${JSON.stringify(id)}).runBlock(${JSON.stringify(blockId)}, ${argsLiteral})`;
+        expr = `(yield* waitForPromise(${call}))`;
+      }
 
       return block.outputConnection ? [expr, Order.NONE] : `${expr};\n`;
     };
   }
 }
 
-const SANDBOX_API = {
-  console,
-  Math,
-  Date,
-  Object,
-  Array,
-  String,
-  Number,
-  Boolean,
-  RegExp,
-  JSON,
-  Map,
-  Set,
-  Promise,
-  parseInt,
-  parseFloat,
-  isNaN,
-  isFinite,
-  encodeURIComponent,
-  decodeURIComponent,
-};
-
-function evaluateSandboxed(code) {
-  try {
-    const factory = new Function(...Object.keys(SANDBOX_API), `
-      with (arguments[arguments.length - 1]) {
-        return (${code});
-      }
-    `);
-    return factory(...Object.values(SANDBOX_API), SANDBOX_API);
-  } catch (err) {
-    throw new Error(`Sandbox evaluation failed: ${err.message}`);
-  }
-}
-
-export async function registerExtension(ExtClass, trusted = false) {
-  let ExtensionClass = ExtClass;
-  
-  if (!trusted) {
+export async function registerExtension(codeString, trusted = false) {
+  if (trusted) {
     try {
-      ExtensionClass = evaluateSandboxed(ExtClass.toString());
+      const ExtensionClass = eval(`(${codeString})`);
+      const ext = new ExtensionClass();
+      const id = ext.id ?? ext.constructor.name;
+
+      if (activeExtensions.some(i => (i?.id ?? i) === id)) {
+        console.warn(`Extension "${id}" is already registered; skipping`);
+        return Promise.resolve();
+      }
+
+      const shapes = ext.registerShapes?.() ?? {};
+      for (const [typeName, factory] of Object.entries(shapes)) {
+        if (customShapeRegistry.has(typeName)) {
+          console.warn(`Shape type "${typeName}" already registered; overwriting`);
+        }
+        customShapeRegistry.set(typeName, factory);
+        const provider = workspace?.getRenderer()?.getConstants();
+        provider?._customShapeCache?.delete(typeName);
+      }
+
+      const categoryDescriptor = ext.registerCategory?.();
+      const categoryEl = buildCategoryElement(categoryDescriptor);
+      const categoryColor = categoryDescriptor?.color ?? "#888";
+      const blocks = ext.registerBlocks?.() ?? [];
+      const blockDefs = registerBlocks(id, blocks, categoryColor, categoryEl);
+
+      if (categoryEl) {
+        const toolbox = document.getElementById("toolbox");
+        if (toolbox) {
+          toolbox.appendChild(categoryEl);
+          workspace.updateToolbox(toolbox);
+        }
+      }
+
+      const codeGen = ext.registerCode?.() ?? {};
+      registerCodeGenerators(id, codeGen, blockDefs, true);
+
+      activeExtensions.push({ id, code: codeString, trusted: true });
+      return Promise.resolve();
     } catch (err) {
-      console.warn("Extension failed sandbox evaluation, trying untrusted:", err);
-      ExtensionClass = ExtClass;
+      console.error("Failed to register trusted extension:", err);
+      return Promise.reject(err);
     }
+  } else {
+    return new Promise((resolve, reject) => {
+      const bridge = new ExtensionBridge("temp_id", codeString, extInfo => {
+        const id = extInfo.id;
+        if (activeExtensions.some(i => (i?.id ?? i) === id)) {
+          console.warn(`Extension "${id}" is already registered; skipping`);
+          bridge.terminate();
+          resolve();
+          return;
+        }
+
+        bridge.extId = id;
+        extensionBridges.set(id, bridge);
+
+        const categoryEl = buildCategoryElement(extInfo.category);
+        const categoryColor = extInfo.category?.color ?? "#888";
+        const blockDefs = registerBlocks(id, extInfo.blocks, categoryColor, categoryEl);
+
+        if (categoryEl) {
+          const toolbox = document.getElementById("toolbox");
+          if (toolbox) {
+            toolbox.appendChild(categoryEl);
+            workspace.updateToolbox(toolbox);
+          }
+        }
+
+        const mockCodeGen = {};
+        for (const blockId of extInfo.codeGen) {
+          mockCodeGen[blockId] = true;
+        }
+
+        registerCodeGenerators(id, mockCodeGen, blockDefs, false);
+        activeExtensions.push({ id, code: codeString, trusted: false });
+        resolve();
+      });
+
+      bridge.worker.addEventListener("error", err => {
+        reject(err);
+      });
+    });
   }
-
-  const ext = new ExtensionClass();
-  const id = ext.id ?? ext.constructor.name;
-
-  if (activeExtensions.some(i => (i?.id ?? i) === id)) {
-    console.warn(`Extension "${id}" is already registered; skipping`);
-    return;
-  }
-
-  const shapes = ext.registerShapes?.() ?? {};
-  for (const [typeName, factory] of Object.entries(shapes)) {
-    if (customShapeRegistry.has(typeName)) {
-      console.warn(`Shape type "${typeName}" already registered; overwriting`);
-    }
-    customShapeRegistry.set(typeName, factory);
-    const provider = workspace?.getRenderer()?.getConstants();
-    provider?._customShapeCache?.delete(typeName);
-  }
-
-  const categoryDescriptor = ext.registerCategory?.();
-  const categoryEl = buildCategoryElement(categoryDescriptor);
-  const categoryColor = categoryDescriptor?.color ?? "#888";
-  const blocks = ext.registerBlocks?.() ?? [];
-  const blockDefs = registerBlocks(id, blocks, categoryColor, categoryEl);
-
-  if (categoryEl) {
-    const toolbox = document.getElementById("toolbox")
-    if (!toolbox) {
-      console.warn("Toolbox is missing; cannot add extension blocks to toolbox");
-      return;
-    }
-    toolbox.appendChild(categoryEl);
-    workspace.updateToolbox(toolbox);
-  }
-
-  const codeGen = ext.registerCode?.() ?? {};
-  registerCodeGenerators(id, codeGen, blockDefs);
-
-  activeExtensions.push({ id, code: ExtClass.toString(), trusted: !!trusted });
 }

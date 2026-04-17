@@ -458,14 +458,12 @@ export function setupUserTag() {
   }
 
   const login = document.getElementById("login-button");
-  if (login && localStorage.getItem("tooken") !== null) {
+  if (login) {
     if (cache.user) {
       setUserTag(cache.user);
     } else {
       fetch(`${config.apiUrl}/users/me`, {
-        headers: {
-          Authorization: localStorage.getItem("tooken"),
-        },
+        credentials: "include",
       })
         .then(response => {
           if (!response.ok)

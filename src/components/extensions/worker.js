@@ -25,13 +25,20 @@ self.onmessage = async e => {
 
   if (type === "init") {
     try {
-      const extFn = new Function("api", `"use strict"; return (${payload.code})`);
-      userExtension = extFn(api);
+      const ExtClass = new Function("api", `"use strict"; return (${payload.code})`)();
+      userExtension = new ExtClass(api);
+
+      const codeGen = userExtension.registerCode ? userExtension.registerCode() : {};
 
       postMessage({
         type: "ready",
         id: payload.extId,
-        blocks: userExtension.blocks || [],
+        extInfo: {
+          id: userExtension.id || userExtension.constructor.name,
+          category: userExtension.registerCategory ? userExtension.registerCategory() : null,
+          blocks: userExtension.registerBlocks ? userExtension.registerBlocks() :[],
+          codeGen: Object.keys(codeGen)
+        }
       });
     } catch (err) {
       postMessage({ type: "error", error: err.message });
@@ -44,9 +51,17 @@ self.onmessage = async e => {
     }
   } else if (type === "runBlock") {
     try {
-      if (!userExtension || !userExtension.run)
+      if (!userExtension || !userExtension.registerCode) {
         throw new Error("Extension not initialized properly");
-      const blockResult = await userExtension.run(action, payload.args);
+      }
+      
+      const handlers = userExtension.registerCode();
+      const handler = handlers[action];
+      if (!handler) {
+        throw new Error(`Unknown block action: ${action}`);
+      }
+      
+      const blockResult = await handler(payload.args);
       postMessage({ type: "blockResult", id, result: blockResult });
     } catch (err) {
       postMessage({ type: "blockResult", id, error: err.message });

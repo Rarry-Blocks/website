@@ -13,7 +13,7 @@ import {
   projectBlockValues
 } from "../scripts/editor";
 import { tweenEasing } from "./utils";
-import { extensions } from "./extensionManager";
+import { extensionBridges, extensions } from "./extensionManager";
 
 const BUBBLE_PADDING = 10;
 const BUBBLE_TAIL_HEIGHT = 15;
@@ -455,6 +455,26 @@ export function runCodeWithFunctions({
     if (onClickResult) onClickResult(value, error);
   }
 
+  function* waitForPromise(promise) {
+    if (!promise || typeof promise.then !== "function") return promise;
+
+    let done = false;
+    let res, err;
+    
+    promise.then(
+      v => { res = v; done = true; },
+      e => { err = e; done = true; }
+    );
+
+    while (!done) {
+      if (stopped()) return;
+      yield;
+    }
+
+    if (err) throw err;
+    return res;
+  }
+
   const __MyFunctions = {};
   const VM_FUNCTIONS = {
     registerEvent,
@@ -464,6 +484,7 @@ export function runCodeWithFunctions({
     sayMessage,
     waitOneFrame,
     wait,
+    waitForPromise,
     switchCostume,
     setSize,
     setAngle,
@@ -496,6 +517,7 @@ export function runCodeWithFunctions({
     projectVariables,
     projectBlockValues,
     extensions,
+    extensionBridges,
     __MyFunctions
   };
 

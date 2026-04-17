@@ -41,9 +41,7 @@ export function attachAvatarChanger(imgEl) {
                     `${config.apiUrl}/users/me/avatar`,
                     {
                       method: "POST",
-                      headers: {
-                        Authorization: localStorage.getItem("tooken"),
-                      },
+                      credentials: "include",
                       body: formData,
                     }
                   );
@@ -74,9 +72,7 @@ export function attachAvatarChanger(imgEl) {
                   `${config.apiUrl}/users/me/avatar`,
                   {
                     method: "DELETE",
-                    headers: {
-                      Authorization: localStorage.getItem("tooken"),
-                    },
+                    credentials: "include",
                   }
                 );
 

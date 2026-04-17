@@ -1,6 +1,9 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 import * as Blockly from "blockly/core";
+import * as En from "blockly/msg/en";
+Blockly.setLocale(En);
+import "blockly/blocks";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { Application, Graphics, Texture, Sprite as PixiSprite } from "pixi.js-legacy";
 import JSZip from "jszip";
@@ -829,13 +832,13 @@ async function loadProject(ev) {
     if (!file) return;
 
     const fileName = file.name;
-    const projectName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+    const projectName = fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
     console.info(`Loading project: ${projectName}`);
 
     const arrayBuffer = await file.arrayBuffer();
     const uint8View = new Uint8Array(arrayBuffer);
 
-    const isZip = uint8View[0] === 0x50 && uint8View[1] === 0x4B;
+    const isZip = uint8View[0] === 0x50 && uint8View[1] === 0x4b;
     if (!isZip) throw new Error("Invalid project: Not a valid ZIP file");
 
     const zip = await JSZip.loadAsync(await file.arrayBuffer());
@@ -943,13 +946,13 @@ async function loadProject(ev) {
   }
 }
 
-async function compressData(data, format = 'deflate') {
+async function compressData(data, format = "deflate") {
   const stream = new Blob([data]).stream();
   const compressedStream = stream.pipeThrough(new CompressionStream(format));
   return new Uint8Array(await new Response(compressedStream).arrayBuffer());
 }
 
-async function decompressData(data, format = 'deflate') {
+async function decompressData(data, format = "deflate") {
   const stream = new Blob([data]).stream();
   const decompressedStream = stream.pipeThrough(new DecompressionStream(format));
   return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
@@ -977,9 +980,8 @@ async function handleProjectData(data) {
       for (const ext of toLoad) {
         try {
           if (typeof ext === "string") addExtension(ext);
-          else if (ext?.id) {
-            const Cls = await eval("(" + ext.code + ")");
-            if (Cls) await registerExtension(Cls, ext.trusted ?? false);
+          else if (ext?.code) {
+            await registerExtension(ext.code, ext.trusted ?? false);
           }
         } catch (err) {
           console.error("Failed to load extension", ext, err);
@@ -1221,71 +1223,17 @@ function addExtension(id, emit = false) {
   }
 
   if (typeof extension.url === "string") {
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.sandbox = "allow-scripts";
-    iframe.srcdoc = `
-      <script>
-        "use strict";
-        const registerExtension = (def) => {
-          parent.postMessage({ type: "registerExtension", code: def.toString() }, "*");
-        };
-        window.addEventListener("message", (event) => {
-          if (event.data && event.data.type === "runCode") {
-            try {
-              eval(event.data.code);
-            } catch (err) {
-              parent.postMessage({ type: "error", error: err.message }, "*");
-            }
-          }
-        });
-        parent.postMessage({ type: "iframeReady" }, "*");
-      </script>
-    `;
-    document.body.appendChild(iframe);
-
-    const handleMessage = event => {
-      if (!event.data) return;
-
-      switch (event.data.type) {
-        case "registerExtension":
-          try {
-            const ExtensionClass = eval("(" + event.data.code + ")");
-            registerExtension(ExtensionClass, event.data.trusted ?? false);
-            finalize();
-          } catch (error) {
-            console.error("Error loading built-in extension:", error);
-            alert("Error loading extension: " + error);
-          }
-          iframe.remove();
-          window.removeEventListener("message", handleMessage);
-          break;
-        case "error":
-          console.error("Error in built-in extension:", event.data.error);
-          alert("Error loading extension: " + event.data.error);
-          iframe.remove();
-          window.removeEventListener("message", handleMessage);
-          break;
-        case "iframeReady":
-          fetch(extension.url)
-            .then(r => {
-              if (!r.ok) throw new Error(`Failed to fetch extension: ${r.status}`);
-              return r.text();
-            })
-            .then(code =>
-              iframe.contentWindow.postMessage({ type: "runCode", code }, "*"),
-            )
-            .catch(err => {
-              console.error("Error fetching built-in extension:", err);
-              alert("Error fetching extension: " + err.message);
-              iframe.remove();
-              window.removeEventListener("message", handleMessage);
-            });
-          break;
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
+    fetch(extension.url)
+      .then(r => {
+        if (!r.ok) throw new Error(`Failed to fetch extension: ${r.status}`);
+        return r.text();
+      })
+      .then(code => registerExtension(code, true))
+      .then(() => finalize())
+      .catch(err => {
+        console.error("Error fetching built-in extension:", err);
+        alert("Error fetching extension: " + err.message);
+      });
     return;
   }
 
@@ -1356,73 +1304,23 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
           label: '<i class="fa-solid fa-plus"></i> Add',
           className: "primary",
           disabled: isSharing,
-          onClick: popup => {
+          onClick: async popup => {
             const input = popup.element.querySelector('[data-row="1"][data-col="1"]');
             const trusted =
               popup.element.querySelector('[data-row="2"][data-col="1"]')?.checked ??
               false;
             const userCode = input ? input.value : "";
 
-            const iframe = document.createElement("iframe");
-            iframe.style.display = "none";
-            iframe.sandbox = "allow-scripts";
-            iframe.srcdoc = `
-                <script>
-                  "use strict";
-                  const registerExtension = (def) => {
-                    parent.postMessage({ type: "registerExtension", code: def.toString(), trusted: ${trusted} }, "*");
-                  };
-                  window.addEventListener("message", (event) => {
-                    if (event.data && event.data.type === "runCode") {
-                      try {
-                        eval(event.data.code);
-                      } catch (err) {
-                        parent.postMessage({ type: "error", error: err.message }, "*");
-                      }
-                    }
-                  });
-                  parent.postMessage({ type: "iframeReady" }, "*");
-                </script>
-              `;
-            document.body.appendChild(iframe);
+            try {
+              await registerExtension(userCode, trusted);
+              console.log("extension registered.");
 
-            const handleMessage = event => {
-              if (!event.data) return;
-
-              switch (event.data.type) {
-                case "registerExtension":
-                  try {
-                    const extensionCode = "(" + event.data.code + ")";
-                    const ExtensionClass = eval(extensionCode);
-                    registerExtension(ExtensionClass, event.data.trusted ?? false);
-
-                    console.log("extension registered:", ExtensionClass);
-                  } catch (error) {
-                    console.error("Error in extension:", error);
-                    alert("Error in extension: " + error);
-                  }
-
-                  iframe.remove();
-                  window.removeEventListener("message", handleMessage);
-                  break;
-                case "error":
-                  console.error("Error in extension:", event.data.error);
-                  alert("Error in extension: " + event.data.error);
-                  window.removeEventListener("message", handleMessage);
-                  break;
-                case "iframeReady":
-                  iframe.contentWindow.postMessage(
-                    { type: "runCode", code: userCode },
-                    "*",
-                  );
-                  break;
-              }
-            };
-
-            window.addEventListener("message", handleMessage);
-
-            popup.hide();
-            document.getElementById("extensions-popup")?.classList.add("hidden");
+              popup.hide();
+              document.getElementById("extensions-popup")?.classList.add("hidden");
+            } catch (error) {
+              console.error("Error in extension:", error);
+              alert("Error in extension: " + error);
+            }
           },
         },
         isSharing
@@ -1433,14 +1331,12 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
   }).show();
 });
 
-function getToken() {
-  return localStorage.getItem("tooken");
-}
-
 function createSession() {
   if (currentSocketPromise) return currentSocketPromise;
 
-  currentSocket = io(`${config.apiUrl}/live`);
+  currentSocket = io(`${config.apiUrl}/live`, {
+    withCredentials: true,
+  });
 
   currentSocketPromise = new Promise((resolve, reject) => {
     currentSocket.on("connect", () => {
@@ -1808,14 +1704,6 @@ liveShare.addEventListener("click", async () => {
   }
 
   if (!roomExisted) {
-    const token = getToken();
-    if (!token) {
-      showNotification({
-        message: "You must be logged in to create a shared room",
-      });
-      return;
-    }
-
     currentSocket.emit("createRoom", { token }, res => {
       if (res?.error) {
         console.error(res.error);
@@ -1834,28 +1722,20 @@ liveShare.addEventListener("click", async () => {
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = urlParams.get("room");
 if (roomId) {
-  const token = getToken();
-  if (!token) {
-    showNotification({
-      message: "You must be logged in to join a shared room",
-    });
-    setActiveSprite(addSprite());
-  } else {
-    createSession();
+  createSession();
 
-    currentSocket.emit("joinRoom", { token, roomId }, res => {
-      if (res?.error) {
-        showNotification({ message: `Error: ${res.error}` });
-        setActiveSprite(addSprite());
-        return;
-      }
+  currentSocket.emit("joinRoom", { token, roomId }, res => {
+    if (res?.error) {
+      showNotification({ message: `Error: ${res.error}` });
+      setActiveSprite(addSprite());
+      return;
+    }
 
-      currentRoom = roomId;
-      amHost = false;
+    currentRoom = roomId;
+    amHost = false;
 
-      console.log(`joined room ${roomId} successfully`);
-    });
-  }
+    console.log(`joined room ${roomId} successfully`);
+  });
 } else {
   setActiveSprite(addSprite());
 }
