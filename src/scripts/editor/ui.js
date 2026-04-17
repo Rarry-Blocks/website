@@ -345,10 +345,14 @@ export function renderSoundsList() {
 
     const playButton = document.createElement("img");
     playButton.src = playingAudios[sound.id] ? "icons/stopAudio.svg" : "icons/play.svg";
-    playButton.className = "button";
+    playButton.dataset.soundId = sound.id;
+    playButton.className = "button play-button";
     playButton.draggable = false;
 
     playButton.onclick = () => {
+      const allButtons = soundsList.querySelectorAll(".play-button");
+      allButtons.forEach(btn => btn.src = "icons/play.svg");
+
       if (playingAudios[sound.id]) {
         playingAudios[sound.id].pause();
         playingAudios[sound.id].currentTime = 0;

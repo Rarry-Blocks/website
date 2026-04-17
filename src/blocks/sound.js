@@ -5,11 +5,17 @@ import { activeSprite } from "../scripts/editor";
 Blockly.Blocks["sound_sounds_menu"] = {
   init: function () {
     this.appendDummyInput().appendField(
-      new Blockly.FieldDropdown(() => {
-        const sounds = activeSprite.sounds;
-        return sounds.length < 1
-          ? [["...", ""]]
-          : sounds.map(i => [i.name, i.id]);
+      new Blockly.FieldDropdown(function () {
+        const sounds = activeSprite?.sounds || [];
+        const options =
+          sounds.length < 1 ? [["...", ""]] : sounds.map(i => [i.name, i.id]);
+
+        const val = this.getValue();
+        if (val && !options.some(opt => opt[1] === val)) {
+          options.push([val, val]);
+        }
+
+        return options;
       }),
       "MENU",
     );
@@ -18,10 +24,7 @@ Blockly.Blocks["sound_sounds_menu"] = {
   },
 };
 
-javascriptGenerator.forBlock["sound_sounds_menu"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["sound_sounds_menu"] = function (block, generator) {
   return [generator.quote_(block.getFieldValue("MENU")), Order.ATOMIC];
 };
 
@@ -33,7 +36,7 @@ Blockly.Blocks["play_sound"] = {
         ["until finished", "true"],
         ["without waiting", "false"],
       ]),
-      "wait"
+      "wait",
     );
     this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
@@ -42,11 +45,7 @@ Blockly.Blocks["play_sound"] = {
 };
 
 javascriptGenerator.forBlock["play_sound"] = function (block, generator) {
-  var name = generator.valueToCode(
-    block,
-    "name",
-    Order.ATOMIC
-  );
+  var name = generator.valueToCode(block, "name", Order.ATOMIC);
   var wait = block.getFieldValue("wait");
   return `yield* playSound(${name}, ${wait});\n`;
 };
@@ -61,11 +60,7 @@ Blockly.Blocks["stop_sound"] = {
 };
 
 javascriptGenerator.forBlock["stop_sound"] = function (block, generator) {
-  var name = generator.valueToCode(
-    block,
-    "name",
-    Order.ATOMIC
-  );
+  var name = generator.valueToCode(block, "name", Order.ATOMIC);
   return `stopSound(${name});\n`;
 };
 
@@ -78,7 +73,7 @@ Blockly.Blocks["stop_all_sounds"] = {
           ["all", "false"],
           ["my", "true"],
         ]),
-        "who"
+        "who",
       )
       .appendField("sounds");
     this.setStyle("sound_blocks");
@@ -103,7 +98,7 @@ Blockly.Blocks["set_sound_property"] = {
           ["volume", "volume"],
           ["speed", "speed"],
         ]),
-        "property"
+        "property",
       )
       .appendField("to");
     this.appendDummyInput().appendField("%");
@@ -113,15 +108,8 @@ Blockly.Blocks["set_sound_property"] = {
   },
 };
 
-javascriptGenerator.forBlock["set_sound_property"] = function (
-  block,
-  generator
-) {
-  var value = generator.valueToCode(
-    block,
-    "value",
-    Order.ATOMIC
-  );
+javascriptGenerator.forBlock["set_sound_property"] = function (block, generator) {
+  var value = generator.valueToCode(block, "value", Order.ATOMIC);
   var property = block.getFieldValue("property");
   return `setSoundProperty("${property}", ${value});\n`;
 };
@@ -133,7 +121,7 @@ Blockly.Blocks["get_sound_property"] = {
         ["volume", "volume"],
         ["speed", "speed"],
       ]),
-      "property"
+      "property",
     );
     this.setStyle("sound_blocks");
     this.setOutput(true, "Number");

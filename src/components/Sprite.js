@@ -274,6 +274,7 @@ export class SpriteManager {
   }
 
   fromJSON(array) {
+    array.forEach(Sprite.assertValidSprite);
     this.clear();
     array.forEach(data => this.add(Sprite.fromJSON(data)));
   }

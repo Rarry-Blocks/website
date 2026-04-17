@@ -316,6 +316,7 @@ Blockly.Blocks["system_sprite_property"] = {
           ["costumes", "costumes"],
           ["sounds", "sounds"],
           ["code", "code"],
+          ["object", "object"],
         ]),
         "PROP",
       )
@@ -332,5 +333,8 @@ javascriptGenerator.forBlock["system_sprite_property"] = function (
 ) {
   const ID = generator.valueToCode(block, "ID", Order.NONE);
   const PROP = block.getFieldValue("PROP");
-  return [`spriteManager.get(${ID})?.${PROP}`, Order.NONE];
+
+  let code = `spriteManager.get(${ID})`
+  if (PROP !== "object") code += `?.${PROP}`;
+  return [code, Order.NONE];
 };

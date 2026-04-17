@@ -5,8 +5,17 @@ const xmlUtils = Blockly.utils.xml;
 function assure(generator, code) {
   const fn = generator.provideFunction_("objectAssure", [
     `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj) {`,
-    `  if (typeof obj !== "object" || obj === null) return {};`,
+    `  if (typeof obj !== "object" || obj == null) return {};`,
     `  return obj;`,
+    `}`,
+  ]);
+  return `${fn}(${code})`;
+}
+function clone(generator, code) {
+  const fn = generator.provideFunction_("objectClone", [
+    `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj) {`,
+    `  if (typeof obj !== "object" || obj == null) return {};`,
+    `  return JSON.parse(JSON.stringify(obj));`,
     `}`,
   ]);
   return `${fn}(${code})`;
@@ -31,7 +40,7 @@ javascriptGenerator.forBlock["json_length"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
 
   const safe = assure(generator, obj);
   return [`Object.keys(${safe}).length`, Order.MEMBER];
@@ -57,7 +66,7 @@ javascriptGenerator.forBlock["json_isEmpty"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
 
   const safe = assure(generator, obj);
   return [`Object.keys(${safe}).length === 0`, Order.EQUALITY];
@@ -83,7 +92,7 @@ javascriptGenerator.forBlock["json_get"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
   const key =
     javascriptGenerator.valueToCode(
       block,
@@ -115,7 +124,7 @@ javascriptGenerator.forBlock["json_set"] = function (block) {
       block,
       "OBJECT",
       Order.MEMBER,
-    ) || "{}";
+    ) || "Object.create(null)";
   const key =
     javascriptGenerator.valueToCode(
       block,
@@ -149,7 +158,7 @@ javascriptGenerator.forBlock["json_delete"] = function (block) {
       block,
       "OBJECT",
       Order.MEMBER,
-    ) || "{}";
+    ) || "Object.create(null)";
   const key =
     javascriptGenerator.valueToCode(
       block,
@@ -183,7 +192,7 @@ javascriptGenerator.forBlock["json_set_return"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
   const key =
     javascriptGenerator.valueToCode(
       block,
@@ -197,7 +206,7 @@ javascriptGenerator.forBlock["json_set_return"] = function (
       Order.NONE,
     ) || "null";
 
-  const safe = assure(generator, obj);
+  const safe = clone(generator, assure(generator, obj));
   const code = `(() => { const _ = ${safe}; _[${key}] = ${value}; return _; })()`;
   return [code, Order.NONE];
 };
@@ -222,7 +231,7 @@ javascriptGenerator.forBlock["json_delete_return"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
   const key =
     javascriptGenerator.valueToCode(
       block,
@@ -230,7 +239,7 @@ javascriptGenerator.forBlock["json_delete_return"] = function (
       Order.NONE,
     ) || '""';
 
-  const safe = assure(generator, obj);
+  const safe = clone(generator, assure(generator, obj));
   const code = `(() => { const _ = ${safe}; delete _[${key}]; return _; })()`;
   return [code, Order.NONE];
 };
@@ -495,7 +504,7 @@ javascriptGenerator.forBlock["json_has_key"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
   const key =
     javascriptGenerator.valueToCode(
       block,
@@ -535,7 +544,7 @@ javascriptGenerator.forBlock["json_property_list"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
   const mode = block.getFieldValue("MODE");
 
   const safe = assure(generator, obj);
@@ -653,8 +662,7 @@ javascriptGenerator.forBlock["json_clone"] = function (
       block,
       "OBJECT",
       Order.NONE,
-    ) || "{}";
+    ) || "Object.create(null)";
 
-  const safe = assure(generator, obj);
-  return [`JSON.parse(JSON.stringify(${safe}))`, Order.FUNCTION_CALL];
+  return [clone(generator, assure(generator, obj)), Order.FUNCTION_CALL];
 };

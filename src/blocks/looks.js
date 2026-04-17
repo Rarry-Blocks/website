@@ -26,9 +26,7 @@ Blockly.Blocks["say_message_duration"] = {
 
 Blockly.Blocks["switch_costume"] = {
   init: function () {
-    this.appendValueInput("COSTUME")
-      .setCheck("String")
-      .appendField("switch costume to");
+    this.appendValueInput("COSTUME").setCheck("String").appendField("switch costume to");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setStyle("looks_blocks");
@@ -37,9 +35,7 @@ Blockly.Blocks["switch_costume"] = {
 
 Blockly.Blocks["set_size"] = {
   init: function () {
-    this.appendValueInput("AMOUNT")
-      .setCheck("Number")
-      .appendField("set size to");
+    this.appendValueInput("AMOUNT").setCheck("Number").appendField("set size to");
     this.appendDummyInput().appendField("%");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
@@ -49,9 +45,7 @@ Blockly.Blocks["set_size"] = {
 
 Blockly.Blocks["change_size"] = {
   init: function () {
-    this.appendValueInput("AMOUNT")
-      .setCheck("Number")
-      .appendField("change size by");
+    this.appendValueInput("AMOUNT").setCheck("Number").appendField("change size by");
     this.appendDummyInput().appendField("%");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
@@ -68,7 +62,7 @@ Blockly.Blocks["get_costume_size"] = {
           ["width", "width"],
           ["height", "height"],
         ]),
-        "MENU"
+        "MENU",
       );
     this.setOutput(true, "Number");
     this.setStyle("looks_blocks");
@@ -118,51 +112,31 @@ Blockly.Blocks["looks_isVisible"] = {
   },
 };
 
-javascriptGenerator.forBlock["say_message"] = function (
-  block,
-  generator
-) {
-  const message =
-    generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
+javascriptGenerator.forBlock["say_message"] = function (block, generator) {
+  const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
 
   return `sayMessage(${message});\nyield;\n`;
 };
 
-javascriptGenerator.forBlock["say_message_duration"] = function (
-  block,
-  generator
-) {
-  const message =
-    generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
-  const duration =
-    generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
+javascriptGenerator.forBlock["say_message_duration"] = function (block, generator) {
+  const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
+  const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
 
   return `sayMessage(${message}, ${duration});\nyield;\n`;
 };
 
-javascriptGenerator.forBlock["switch_costume"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["switch_costume"] = function (block, generator) {
   var costume = generator.valueToCode(block, "COSTUME", Order.ATOMIC);
   return `switchCostume(${costume});\nyield;\n`;
 };
 
-javascriptGenerator.forBlock["set_size"] = function (
-  block,
-  generator
-) {
-  const amount =
-    generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
+javascriptGenerator.forBlock["set_size"] = function (block, generator) {
+  const amount = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
   return `setSize(${amount}, false);\nyield;\n`;
 };
 
-javascriptGenerator.forBlock["change_size"] = function (
-  block,
-  generator
-) {
-  const amount =
-    generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
+javascriptGenerator.forBlock["change_size"] = function (block, generator) {
+  const amount = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
   return `setSize(${amount}, true);\nyield;\n`;
 };
 
@@ -183,12 +157,8 @@ javascriptGenerator.forBlock["looks_show_sprite"] = function () {
   return "toggleVisibility(true);\nyield;\n";
 };
 
-javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
-  block,
-  generator
-) {
-  const visible =
-    generator.valueToCode(block, "VISIBLE", Order.ATOMIC) ?? "false";
+javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (block, generator) {
+  const visible = generator.valueToCode(block, "VISIBLE", Order.ATOMIC) ?? "false";
 
   return `toggleVisibility(${visible});\nyield;\n`;
 };
@@ -201,11 +171,17 @@ javascriptGenerator.forBlock["looks_isVisible"] = () => [
 Blockly.Blocks["looks_costumes_menu"] = {
   init: function () {
     this.appendDummyInput().appendField(
-      new Blockly.FieldDropdown(() => {
-        const costumes = activeSprite.costumes;
-        return costumes.length < 1
-          ? [["...", ""]]
-          : costumes.map(i => [i.name, i.id]);
+      new Blockly.FieldDropdown(function () {
+        const costumes = activeSprite?.costumes || [];
+        const options =
+          costumes.length < 1 ? [["...", ""]] : costumes.map(i => [i.name, i.id]);
+
+        const val = this.getValue();
+        if (val && !options.some(opt => opt[1] === val)) {
+          options.push([val, val]);
+        }
+
+        return options;
       }),
       "MENU",
     );
@@ -214,9 +190,6 @@ Blockly.Blocks["looks_costumes_menu"] = {
   },
 };
 
-javascriptGenerator.forBlock["looks_costumes_menu"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["looks_costumes_menu"] = function (block, generator) {
   return [generator.quote_(block.getFieldValue("MENU")), Order.ATOMIC];
 };

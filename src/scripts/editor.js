@@ -833,7 +833,6 @@ async function loadProject(ev) {
 
     const fileName = file.name;
     const projectName = fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
-    console.info(`Loading project: ${projectName}`);
 
     const arrayBuffer = await file.arrayBuffer();
     const uint8View = new Uint8Array(arrayBuffer);
@@ -841,7 +840,7 @@ async function loadProject(ev) {
     const isZip = uint8View[0] === 0x50 && uint8View[1] === 0x4b;
     if (!isZip) throw new Error("Invalid project: Not a valid ZIP file");
 
-    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const zip = await JSZip.loadAsync(arrayBuffer);
 
     const projectFile = zip.file("project.json");
     if (!projectFile) {
@@ -849,10 +848,22 @@ async function loadProject(ev) {
     }
 
     const json = JSON.parse(await projectFile.async("string"));
-
     if (!Array.isArray(json.sprites)) {
       throw new Error("Invalid project: No valid sprites found");
     }
+
+    const totalItems = json.sprites.reduce((acc, sprite) => {
+      const costumes = Array.isArray(sprite.costumes) ? sprite.costumes.length : 0;
+      const sounds = Array.isArray(sprite.sounds) ? sprite.sounds.length : 0;
+      return acc + costumes + sounds;
+    }, 0);
+
+    let completedItems = 0;
+    const updateProgress = () => {
+      completedItems++;
+      const percent = Math.floor((completedItems / totalItems) * 100);
+      showLoading(`Loading assets: ${completedItems}/${totalItems} (${percent}%)`);
+    };
 
     spriteManager.clear();
 
@@ -869,21 +880,22 @@ async function loadProject(ev) {
 
               if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
                 sprite.costumes.push({ name: c.name, texture: srcCandidate });
+                updateProgress();
                 return;
               }
 
               if (typeof srcCandidate === "string") {
                 const fileEntry = zip.file(srcCandidate);
-                if (!fileEntry) {
-                  throw new Error(`Missing costume file: ${srcCandidate}`);
-                }
+                if (!fileEntry) throw new Error(`Missing costume: ${srcCandidate}`);
 
                 const base64 = await fileEntry.async("base64");
-                const dataUrl = `data:image/webp;base64,${base64}`;
-                sprite.costumes.push({ name: c.name, texture: dataUrl });
+                sprite.costumes.push({
+                  name: c.name,
+                  texture: `data:image/webp;base64,${base64}`,
+                });
+                updateProgress();
                 return;
               }
-
               throw new Error(
                 `Invalid costume entry for sprite ${entry.id ?? "<unknown>"}`,
               );
@@ -898,21 +910,22 @@ async function loadProject(ev) {
 
               if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
                 sprite.sounds.push({ name: s.name, data: srcCandidate });
+                updateProgress();
                 return;
               }
 
               if (typeof srcCandidate === "string") {
                 const fileEntry = zip.file(srcCandidate);
-                if (!fileEntry) {
-                  throw new Error(`Missing sound file: ${srcCandidate}`);
-                }
+                if (!fileEntry) throw new Error(`Missing sound: ${srcCandidate}`);
 
                 const base64 = await fileEntry.async("base64");
-                const dataUrl = `data:audio/ogg;base64,${base64}`;
-                sprite.sounds.push({ name: s.name, data: dataUrl });
+                sprite.sounds.push({
+                  name: s.name,
+                  data: `data:audio/ogg;base64,${base64}`,
+                });
+                updateProgress();
                 return;
               }
-
               throw new Error(
                 `Invalid sound entry for sprite ${entry.id ?? "<unknown>"}`,
               );
@@ -965,13 +978,15 @@ async function handleProjectData(data) {
     return;
   }
 
-  document.getElementById("project-name-input").value = data.projectName ?? "Untitled";
-
-  if (!data.sprites && !data.extensions) {
-    data = { sprites: data, extensions: [] };
-  }
+  setActiveSprite(null);
 
   try {
+    if (!data.sprites && !data.extensions) {
+      data = { sprites: data, extensions: [] };
+    }
+
+    document.getElementById("project-name-input").value = data.projectName ?? "Untitled";
+
     if (data.extensions) {
       const toLoad = data.extensions.filter(
         e => !activeExtensions.some(a => (a?.id || a) === (e?.id || e)),
@@ -994,19 +1009,15 @@ async function handleProjectData(data) {
       return;
     }
 
-    spriteManager.clear();
-
-    data.sprites.forEach(Sprite.assertValidSprite);
+    spriteManager.fromJSON(data.sprites);
 
     if (data.variables) projectVariables = data.variables;
     createPenGraphics();
-
-    spriteManager.fromJSON(data.sprites);
-
-    setActiveSprite(spriteManager.getOriginals()[0] ?? null);
   } catch (err) {
     console.error("Failed to load project:", err);
-    alert(err.message || "Something went wrong while loading the project.");
+    alert("Something went wrong while loading the project.");
+  } finally {
+    setActiveSprite(spriteManager.getOriginals()[0] ?? null);
   }
 }
 

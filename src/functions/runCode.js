@@ -10,7 +10,7 @@ import {
   spriteManager,
   vm,
   projectVariables,
-  projectBlockValues
+  projectBlockValues,
 } from "../scripts/editor";
 import { tweenEasing } from "./utils";
 import { extensionBridges, extensions } from "./extensionManager";
@@ -51,7 +51,7 @@ export function runCodeWithFunctions({
     }
     return spriteData.pixiSprite;
   }
-  
+
   function getTargetData() {
     if (vm.currentThread && vm.currentThread.target) {
       return vm.currentThread.target;
@@ -86,7 +86,7 @@ export function runCodeWithFunctions({
             vm.execute(generatorFunc, clone);
           });
         }
-      }
+      },
     };
 
     switch (type) {
@@ -130,11 +130,12 @@ export function runCodeWithFunctions({
     sprite.x += Math.cos(a) * steps;
     sprite.y += Math.sin(a) * steps;
   }
-  
+
   function getMousePosition(menu) {
     const mouse = renderer.events.pointer.global;
     if (menu === "x") return Math.round((mouse.x - renderer.width / 2) / stage.scale.x);
-    else if (menu === "y") return -Math.round((mouse.y - renderer.height / 2) / stage.scale.y);
+    else if (menu === "y")
+      return -Math.round((mouse.y - renderer.height / 2) / stage.scale.y);
   }
 
   function sayMessage(message, seconds) {
@@ -194,7 +195,7 @@ export function runCodeWithFunctions({
       sprite,
       bubble.width,
       bubble.height,
-      BUBBLE_TAIL_HEIGHT
+      BUBBLE_TAIL_HEIGHT,
     );
     container.x = pos.x;
     container.y = pos.y;
@@ -221,7 +222,8 @@ export function runCodeWithFunctions({
 
   function switchCostume(value) {
     const costumes = getTargetData().costumes;
-    const found = costumes.find(i => i.id === value) || costumes.find(i => i.name === value)
+    const found =
+      costumes.find(i => i.id === value) || costumes.find(i => i.name === value);
     if (found) {
       getTarget().texture = found.texture;
     }
@@ -230,8 +232,7 @@ export function runCodeWithFunctions({
   function setSize(amount = 0, additive) {
     const sprite = getTarget();
     let amountN = amount / 100;
-    if (additive)
-      sprite.scale.set(sprite.scale.x + amountN, sprite.scale.y + amountN);
+    if (additive) sprite.scale.set(sprite.scale.x + amountN, sprite.scale.y + amountN);
     else sprite.scale.set(amountN, amountN);
   }
 
@@ -245,11 +246,12 @@ export function runCodeWithFunctions({
   function pointsTowards(x, y) {
     const sprite = getTarget();
     const { width, height } = renderer;
-    const targetX = width / 2 + (-x) * stage.scale.x;
+    const targetX = width / 2 + -x * stage.scale.x;
     const targetY = height / 2 - y * stage.scale.y;
     const spriteX = width / 2 + sprite.x * stage.scale.x;
     const spriteY = height / 2 - sprite.y * stage.scale.y;
-    sprite.angle = Math.atan2(-(targetX - spriteX), -(targetY - spriteY)) * (180 / Math.PI) % 360;
+    sprite.angle =
+      (Math.atan2(-(targetX - spriteX), -(targetY - spriteY)) * (180 / Math.PI)) % 360;
   }
 
   function projectTime() {
@@ -257,12 +259,12 @@ export function runCodeWithFunctions({
   }
 
   function isKeyPressed(key) {
-    if (key === "any") return Object.values(keysPressed).some((p) => p);
+    if (key === "any") return Object.values(keysPressed).some(p => p);
     return !!keysPressed[key];
   }
 
   function isMouseButtonPressed(button) {
-    if (button === "any") return Object.values(mouseButtonsPressed).some((p) => p);
+    if (button === "any") return Object.values(mouseButtonsPressed).some(p => p);
     return !!mouseButtonsPressed[button];
   }
 
@@ -322,11 +324,10 @@ export function runCodeWithFunctions({
   function* playSound(value, wait = false) {
     const targetData = getTargetData();
     const sounds = getTargetData().sounds;
-    const found = sounds.find(i => i.id === value) || sounds.find(i => i.name === value)
+    const found = sounds.find(i => i.id === value) || sounds.find(i => i.name === value);
     if (!found) return;
 
-    if (!playingSounds.has(targetData.id))
-      playingSounds.set(targetData.id, new Map());
+    if (!playingSounds.has(targetData.id)) playingSounds.set(targetData.id, new Map());
 
     const spriteSounds = playingSounds.get(targetData.id);
     const oldAudio = spriteSounds.get(found.id);
@@ -423,7 +424,9 @@ export function runCodeWithFunctions({
   function setPenColor(r, g, b) {
     if (typeof r === "string") {
       const [r_, g_, b_] = r.split(",");
-      r = +r_; g = +g_; b = +b_;
+      r = +r_;
+      g = +g_;
+      b = +b_;
     }
     getTargetData().penColor = (r << 16) | (g << 8) | b;
   }
@@ -432,8 +435,8 @@ export function runCodeWithFunctions({
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(value);
     getTargetData().penColor = result
       ? (parseInt(result[1], 16) << 16) |
-      (parseInt(result[2], 16) << 8) |
-      parseInt(result[3], 16)
+        (parseInt(result[2], 16) << 8) |
+        parseInt(result[3], 16)
       : 0x000000;
   }
 
@@ -460,10 +463,16 @@ export function runCodeWithFunctions({
 
     let done = false;
     let res, err;
-    
+
     promise.then(
-      v => { res = v; done = true; },
-      e => { err = e; done = true; }
+      v => {
+        res = v;
+        done = true;
+      },
+      e => {
+        err = e;
+        done = true;
+      },
     );
 
     while (!done) {
@@ -476,7 +485,7 @@ export function runCodeWithFunctions({
   }
 
   const __MyFunctions = {};
-  const VM_FUNCTIONS = {
+  let VM_FUNCTIONS = {
     registerEvent,
     triggerCustomEvent,
     moveSteps,
@@ -507,7 +516,7 @@ export function runCodeWithFunctions({
     clearPen,
     toggleVisibility,
     soundProperties,
-    setClickResult,  
+    setClickResult,
 
     vm,
     stopped,
@@ -518,21 +527,24 @@ export function runCodeWithFunctions({
     projectBlockValues,
     extensions,
     extensionBridges,
-    __MyFunctions
+    __MyFunctions,
   };
-
-  Object.defineProperty(VM_FUNCTIONS, 'thread', {
+  Object.defineProperty(VM_FUNCTIONS, "thread", {
     get: () => vm.currentThread,
     enumerable: true,
   });
+  VM_FUNCTIONS = Object.freeze(VM_FUNCTIONS);
 
-  console.info('Compiling code:\n', code.trim());
+  console.info("Compiling code:\n", code.trim());
   try {
-    const factory = new Function('VM_FUNCTIONS', `
+    const factory = new Function(
+      "VM_FUNCTIONS",
+      `
       with (VM_FUNCTIONS) {
         ${code}
       }
-    `);
+    `,
+    );
 
     factory(VM_FUNCTIONS);
   } catch (err) {
