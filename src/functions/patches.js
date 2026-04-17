@@ -1,7 +1,7 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
-import * as PIXI from "pixi.js-legacy";
-BlocklyJS.javascriptGenerator.INFINITE_LOOP_TRAP = `if (!thread.fastExecution && vm.isOverBudget()) yield;`;
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
+import { Sprite, DisplayObject, ObservablePoint, utils } from "pixi.js-legacy";
+javascriptGenerator.INFINITE_LOOP_TRAP = `if (!thread.fastExecution && vm.isOverBudget()) yield;`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
@@ -57,7 +57,7 @@ Object.keys(Blockly.Blocks).forEach((type) => {
   };
 });
 
-BlocklyJS.javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
+javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   block,
   generator
 ) {
@@ -90,7 +90,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   let returnCode = "";
   if (block.getInput("RETURN")) {
     returnCode =
-      generator.valueToCode(block, "RETURN", BlocklyJS.Order.NONE) || "";
+      generator.valueToCode(block, "RETURN", Order.NONE) || "";
   }
 
   let returnWrapper = "";
@@ -127,7 +127,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   return null;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["procedures_defreturn"] = function (
+javascriptGenerator.forBlock["procedures_defreturn"] = function (
   block,
   generator
 ) {
@@ -163,7 +163,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defreturn"] = function (
   let returnCode = "";
   if (block.getInput("RETURN")) {
     returnCode =
-      generator.valueToCode(block, "RETURN", BlocklyJS.Order.NONE) || "";
+      generator.valueToCode(block, "RETURN", Order.NONE) || "";
   }
 
   let returnWrapper = "";
@@ -200,7 +200,7 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_defreturn"] = function (
   return null;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["procedures_callreturn"] = function (
+javascriptGenerator.forBlock["procedures_callreturn"] = function (
   block,
   generator
 ) {
@@ -210,16 +210,16 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_callreturn"] = function (
   const vars = block.getVars();
   for (let i = 0; i < vars.length; i++) {
     args[i] =
-      generator.valueToCode(block, "ARG" + i, BlocklyJS.Order.NONE) || "null";
+      generator.valueToCode(block, "ARG" + i, Order.NONE) || "null";
   }
 
   return [
     "await " + procedureName + "(" + args.join(", ") + ")",
-    BlocklyJS.Order.FUNCTION_CALL,
+    Order.FUNCTION_CALL,
   ];
 };
 
-BlocklyJS.javascriptGenerator.forBlock["procedures_callnoreturn"] = function (
+javascriptGenerator.forBlock["procedures_callnoreturn"] = function (
   block,
   generator
 ) {
@@ -227,26 +227,26 @@ BlocklyJS.javascriptGenerator.forBlock["procedures_callnoreturn"] = function (
   return code + ";\n";
 };
 
-export const SpriteChangeEvents = new PIXI.utils.EventEmitter();
+export const SpriteChangeEvents = new utils.EventEmitter();
 
 const originalX = Object.getOwnPropertyDescriptor(
-  PIXI.DisplayObject.prototype,
+  DisplayObject.prototype,
   "x"
 );
 const originalY = Object.getOwnPropertyDescriptor(
-  PIXI.DisplayObject.prototype,
+  DisplayObject.prototype,
   "y"
 );
 const originalAngle = Object.getOwnPropertyDescriptor(
-  PIXI.DisplayObject.prototype,
+  DisplayObject.prototype,
   "angle"
 );
 const originalTexture = Object.getOwnPropertyDescriptor(
-  PIXI.Sprite.prototype,
+  Sprite.prototype,
   "texture"
 );
 
-Object.defineProperty(PIXI.Sprite.prototype, "x", {
+Object.defineProperty(Sprite.prototype, "x", {
   get() {
     return originalX.get.call(this);
   },
@@ -258,7 +258,7 @@ Object.defineProperty(PIXI.Sprite.prototype, "x", {
   },
 });
 
-Object.defineProperty(PIXI.Sprite.prototype, "y", {
+Object.defineProperty(Sprite.prototype, "y", {
   get() {
     return originalY.get.call(this);
   },
@@ -270,7 +270,7 @@ Object.defineProperty(PIXI.Sprite.prototype, "y", {
   },
 });
 
-PIXI.Sprite.prototype.setPosition = function (x = null, y = null, add = false) {
+Sprite.prototype.setPosition = function (x = null, y = null, add = false) {
   const newX = x !== null ? (add ? this.x + x : x) : this.x;
   const newY = y !== null ? (add ? this.y + y : y) : this.y;
   if (this.x === newX && this.y === newY) return;
@@ -279,7 +279,7 @@ PIXI.Sprite.prototype.setPosition = function (x = null, y = null, add = false) {
   SpriteChangeEvents.emit("positionChanged", this);
 };
 
-Object.defineProperty(PIXI.Sprite.prototype, "angle", {
+Object.defineProperty(Sprite.prototype, "angle", {
   get() {
     return originalAngle.get.call(this);
   },
@@ -291,12 +291,12 @@ Object.defineProperty(PIXI.Sprite.prototype, "angle", {
   },
 });
 
-Object.defineProperty(PIXI.Sprite.prototype, "texture", {
+Object.defineProperty(Sprite.prototype, "texture", {
   get() {
     return originalTexture.get.call(this);
   },
   set(value) {
-    if (this.constructor === PIXI.Sprite && this.texture !== value) {
+    if (this.constructor === Sprite && this.texture !== value) {
       originalTexture.set.call(this, value);
       SpriteChangeEvents.emit("textureChanged", this);
     } else {
@@ -305,9 +305,9 @@ Object.defineProperty(PIXI.Sprite.prototype, "texture", {
   },
 });
 
-const originalObsPointSet = PIXI.ObservablePoint.prototype.set;
+const originalObsPointSet = ObservablePoint.prototype.set;
 
-PIXI.ObservablePoint.prototype.set = function (x, y) {
+ObservablePoint.prototype.set = function (x, y) {
   const result = originalObsPointSet.call(this, x, y);
   if (this._parentScaleEvent) {
     SpriteChangeEvents.emit("scaleChanged", this._parentScaleEvent);

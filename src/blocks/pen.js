@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 
 Blockly.Blocks["pen_down"] = {
   init: function () {
@@ -10,7 +10,7 @@ Blockly.Blocks["pen_down"] = {
     this.setTooltip("Put the pen down to draw");
   },
 };
-BlocklyJS.javascriptGenerator.forBlock["pen_down"] = function () {
+javascriptGenerator.forBlock["pen_down"] = function () {
   return "setPenStatus(true);\n";
 };
 
@@ -23,7 +23,7 @@ Blockly.Blocks["pen_up"] = {
     this.setTooltip("Lift the pen up");
   },
 };
-BlocklyJS.javascriptGenerator.forBlock["pen_up"] = function () {
+javascriptGenerator.forBlock["pen_up"] = function () {
   return "setPenStatus(false);\n";
 };
 
@@ -40,13 +40,13 @@ Blockly.Blocks["set_pen_color"] = {
     this.setTooltip("Set the pen color to a RGB value");
   },
 };
-BlocklyJS.javascriptGenerator.forBlock["set_pen_color"] = function (
+javascriptGenerator.forBlock["set_pen_color"] = function (
   block,
   generator
 ) {
-  const r = generator.valueToCode(block, "R", BlocklyJS.Order.ATOMIC) || 0;
-  const g = generator.valueToCode(block, "G", BlocklyJS.Order.ATOMIC) || 0;
-  const b = generator.valueToCode(block, "B", BlocklyJS.Order.ATOMIC) || 0;
+  const r = generator.valueToCode(block, "R", Order.ATOMIC) || 0;
+  const g = generator.valueToCode(block, "G", Order.ATOMIC) || 0;
+  const b = generator.valueToCode(block, "B", Order.ATOMIC) || 0;
   return `setPenColor(${r}, ${g}, ${b});\n`;
 };
 
@@ -70,12 +70,12 @@ Blockly.Blocks["set_pen_color_combined"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["set_pen_color_combined"] = function (
+javascriptGenerator.forBlock["set_pen_color_combined"] = function (
   block,
   generator
 ) {
   const mode = block.getFieldValue("MODE");
-  const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.ATOMIC);
+  const value = generator.valueToCode(block, "VALUE", Order.ATOMIC);
   if (mode === "HEX") return `setPenColorHex(${value});\n`;
   else return `setPenColor(${value});\n`;
 };
@@ -93,12 +93,12 @@ Blockly.Blocks["set_pen_size"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["set_pen_size"] = function (
+javascriptGenerator.forBlock["set_pen_size"] = function (
   block,
   generator
 ) {
   const size =
-    generator.valueToCode(block, "SIZE", BlocklyJS.Order.ATOMIC) || 1;
+    generator.valueToCode(block, "SIZE", Order.ATOMIC) || 1;
   return `setPenSize("${size}");\n`;
 };
 
@@ -112,4 +112,4 @@ Blockly.Blocks["clear_pen"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["clear_pen"] = () => "clearPen();\n";
+javascriptGenerator.forBlock["clear_pen"] = () => "clearPen();\n";

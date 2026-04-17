@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 import { deleteVariable, projectVariables } from "../scripts/editor";
 
 function getVariables() {
@@ -56,29 +56,29 @@ Blockly.Blocks["change_global_var"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["get_global_var"] = function (block) {
+javascriptGenerator.forBlock["get_global_var"] = function (block) {
   const name = block.getFieldValue("VAR");
-  return [`projectVariables["${name}"]`, BlocklyJS.Order.ATOMIC];
+  return [`projectVariables["${name}"]`, Order.ATOMIC];
 };
 
-BlocklyJS.javascriptGenerator.forBlock["set_global_var"] = function (block) {
+javascriptGenerator.forBlock["set_global_var"] = function (block) {
   const name = block.getFieldValue("VAR");
   const value =
-    BlocklyJS.javascriptGenerator.valueToCode(
+    javascriptGenerator.valueToCode(
       block,
       "VALUE",
-      BlocklyJS.Order.ASSIGNMENT
+      Order.ASSIGNMENT
     ) || "0";
   return `projectVariables["${name}"] = ${value};\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["change_global_var"] = function (block) {
+javascriptGenerator.forBlock["change_global_var"] = function (block) {
   const name = block.getFieldValue("VAR");
   const value =
-    BlocklyJS.javascriptGenerator.valueToCode(
+    javascriptGenerator.valueToCode(
       block,
       "VALUE",
-      BlocklyJS.Order.ATOMIC
+      Order.ATOMIC
     ) || "0";
   return `projectVariables["${name}"] += ${value};\n`;
 };

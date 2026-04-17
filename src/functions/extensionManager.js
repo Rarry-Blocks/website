@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 import { activeExtensions, workspace } from "../scripts/editor";
 import { DuplicateOnDrag } from "./patches/block";
 import { customShapeRegistry } from "./render";
@@ -160,14 +160,14 @@ function collectInputs(block, fields) {
     const name = input.name;
 
     if (input.type === INPUT_TYPE.VALUE || input.type === INPUT_TYPE.DUMMY) {
-      const code = BlocklyJS.javascriptGenerator.valueToCode(
+      const code = javascriptGenerator.valueToCode(
         block,
         name,
-        BlocklyJS.Order.ATOMIC,
+        Order.ATOMIC,
       );
       if (code) inputs[name] = code;
     } else if (input.type === INPUT_TYPE.STATEMENT) {
-      const code = BlocklyJS.javascriptGenerator.statementToCode(block, name);
+      const code = javascriptGenerator.statementToCode(block, name);
       if (code) inputs[name] = `async () => { ${code} }`;
     }
   }
@@ -188,7 +188,7 @@ function registerCodeGenerators(id, codeGen, blockDefs) {
 
     const def = blockDefs[fullType] ?? {};
 
-    BlocklyJS.javascriptGenerator.forBlock[fullType] = function (block) {
+    javascriptGenerator.forBlock[fullType] = function (block) {
       const inputs = collectInputs(block, def.fields);
       const argsLiteral = `{${Object.entries(inputs)
         .map(([k, v]) => `${JSON.stringify(k)}:${v}`)
@@ -197,7 +197,7 @@ function registerCodeGenerators(id, codeGen, blockDefs) {
       const call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, thread)`;
       const expr = def.promise ? `await ${call}` : call;
 
-      return block.outputConnection ? [expr, BlocklyJS.Order.NONE] : `${expr};\n`;
+      return block.outputConnection ? [expr, Order.NONE] : `${expr};\n`;
     };
   }
 }

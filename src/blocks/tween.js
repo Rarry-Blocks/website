@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 
 const tweensList = [
   ["linear", "Linear"],
@@ -57,19 +57,19 @@ Blockly.Blocks["tween_block"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["tween_block"] = function (block, generator) {
+javascriptGenerator.forBlock["tween_block"] = function (block, generator) {
   const easingType = block.getFieldValue("EASING_TYPE");
   const easingMode = block.getFieldValue("EASING_MODE");
   const from =
-    generator.valueToCode(block, "FROM", BlocklyJS.Order.ATOMIC) ||
+    generator.valueToCode(block, "FROM", Order.ATOMIC) ||
     "0";
   const to =
-    generator.valueToCode(block, "TO", BlocklyJS.Order.ATOMIC) || "0";
+    generator.valueToCode(block, "TO", Order.ATOMIC) || "0";
   const duration =
-    generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) ||
+    generator.valueToCode(block, "DURATION", Order.ATOMIC) ||
     "1";
   const waitMode = block.getFieldValue("WAIT_MODE");
-  const branch = BlocklyJS.javascriptGenerator.statementToCode(block, "DO");
+  const branch = javascriptGenerator.statementToCode(block, "DO");
 
   const code = `yield* startTween({
   from: ${from},
@@ -93,9 +93,9 @@ Blockly.Blocks["tween_block_value"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["tween_block_value"] = () => [
+javascriptGenerator.forBlock["tween_block_value"] = () => [
   "tweenValue",
-  BlocklyJS.Order.NONE,
+  Order.NONE,
 ];
 
 Blockly.Blocks["tween_sprite_property"] = {
@@ -138,15 +138,15 @@ Blockly.Blocks["tween_sprite_property"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["tween_sprite_property"] = function (
+javascriptGenerator.forBlock["tween_sprite_property"] = function (
   block,
   generator
 ) {
   const prop = block.getFieldValue("PROPERTY");
   const to =
-    generator.valueToCode(block, "TO", BlocklyJS.Order.ATOMIC) || "0";
+    generator.valueToCode(block, "TO", Order.ATOMIC) || "0";
   const duration =
-    generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) ||
+    generator.valueToCode(block, "DURATION", Order.ATOMIC) ||
     "1";
   const easingType = block.getFieldValue("EASING_TYPE");
   const easingMode = block.getFieldValue("EASING_MODE");

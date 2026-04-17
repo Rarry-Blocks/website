@@ -1,8 +1,8 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
-import * as PIXI from "pixi.js-legacy";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
+import { Application, Graphics, Texture, Sprite as PixiSprite } from "pixi.js-legacy";
 import pako from "pako";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
@@ -60,7 +60,7 @@ export function hideLoading() {
 
 showLoading("Initializing editor...");
 
-BlocklyJS.javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
+javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
 
@@ -86,7 +86,7 @@ const fullscreenButton = document.getElementById("fullscreen-button");
 export const BASE_WIDTH = 480;
 export const BASE_HEIGHT = 360;
 
-export const app = new PIXI.Application({
+export const app = new Application({
   width: BASE_WIDTH,
   height: BASE_HEIGHT,
   backgroundColor: 0xffffff,
@@ -119,7 +119,7 @@ stageContainer.appendChild(app.view);
 export let penGraphics;
 function createPenGraphics() {
   if (penGraphics && !penGraphics._destroyed) return;
-  penGraphics = new PIXI.Graphics();
+  penGraphics = new Graphics();
   penGraphics.clear();
   app.stage.addChildAt(penGraphics, 0);
 }
@@ -326,7 +326,7 @@ workspace.registerToolboxCategoryCallback("FUNCTIONS_CATEGORY", dynamicFunctions
 export const spriteManager = new SpriteManager(app);
 
 export function addSprite(id, emit = false) {
-  const texture = PIXI.Texture.from("./icons/ddededodediamante.png", {
+  const texture = Texture.from("./icons/ddededodediamante.png", {
     crossorigin: true,
   });
 
@@ -549,13 +549,13 @@ async function runCode() {
       Blockly.Xml.domToWorkspace(xmlDom, tempWorkspace);
 
       let code = "";
-      BlocklyJS.javascriptGenerator.init(tempWorkspace);
+      javascriptGenerator.init(tempWorkspace);
       for (const block of tempWorkspace.getTopBlocks(true)) {
         const isHat =
           !block.previousConnection && !block.nextConnection && !block.outputConnection;
-        if (isHat) code += BlocklyJS.javascriptGenerator.blockToCode(block);
+        if (isHat) code += javascriptGenerator.blockToCode(block);
       }
-      code = BlocklyJS.javascriptGenerator.finish(code);
+      code = javascriptGenerator.finish(code);
 
       tempWorkspace.dispose();
 
@@ -741,7 +741,7 @@ async function saveProject() {
             if (typeof url === "string" && url.startsWith("data:")) {
               dataURL = url;
             } else {
-              dataURL = await app.renderer.extract.base64(new PIXI.Sprite(c.texture));
+              dataURL = await app.renderer.extract.base64(new PixiSprite(c.texture));
             }
 
             const processed = await compressImage(dataURL);
@@ -1055,7 +1055,7 @@ document.getElementById("costume-upload").addEventListener("change", e => {
 
   const reader = new FileReader();
   reader.onload = () => {
-    const texture = PIXI.Texture.from(reader.result);
+    const texture = Texture.from(reader.result);
 
     let baseName = file.name.split(".")[0];
     let uniqueName = baseName;
@@ -1071,7 +1071,7 @@ document.getElementById("costume-upload").addEventListener("change", e => {
     const newCostume = new Costume({ name: uniqueName, texture });
     activeSprite.costumes.push(newCostume);
 
-    if (activeSprite.pixiSprite.texture === PIXI.Texture.EMPTY) {
+    if (activeSprite.pixiSprite.texture === Texture.EMPTY) {
       activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
     }
 
@@ -1569,7 +1569,7 @@ function createSession() {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
 
-        const texture = PIXI.Texture.from(data.texture);
+        const texture = Texture.from(data.texture);
         target.costumes.push(new Costume({ name: data.name, texture, id: data.id }));
 
         if (activeSprite?.id === target.id) renderCostumesList();
@@ -1615,7 +1615,7 @@ function createSession() {
           if (target.costumes.length > 0) {
             target.pixiSprite.texture = target.costumes[0].texture;
           } else {
-            target.pixiSprite.texture = PIXI.Texture.EMPTY;
+            target.pixiSprite.texture = Texture.EMPTY;
           }
         }
 
@@ -2039,7 +2039,7 @@ function executeClickedBlock(blockId) {
 
   hideBlockRunBubble();
 
-  const generator = BlocklyJS.javascriptGenerator;
+  const generator = javascriptGenerator;
   generator.init(workspace);
 
   let rawCode, functionsCode;

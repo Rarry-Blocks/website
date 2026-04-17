@@ -1,4 +1,4 @@
-import * as Blockly from "blockly";
+import * as Blockly from "blockly/core";
 const svgPaths = Blockly.utils.svgPaths;
 
 export const customShapeRegistry = new Map();

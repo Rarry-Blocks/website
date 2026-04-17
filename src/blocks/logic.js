@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 
 Blockly.Blocks["logic_operation_extra"] = {
 	init: function () {
@@ -23,12 +23,12 @@ Blockly.Blocks["logic_operation_extra"] = {
 	},
 };
 
-BlocklyJS.javascriptGenerator.forBlock["logic_operation_extra"] = function (
+javascriptGenerator.forBlock["logic_operation_extra"] = function (
 	block,
 	generator,
 ) {
-	const A = generator.valueToCode(block, "A", BlocklyJS.Order.LOGICAL_AND) || "false";
-	const B = generator.valueToCode(block, "B", BlocklyJS.Order.LOGICAL_AND) || "false";
+	const A = generator.valueToCode(block, "A", Order.LOGICAL_AND) || "false";
+	const B = generator.valueToCode(block, "B", Order.LOGICAL_AND) || "false";
 	const OP = block.getFieldValue("OP");
 
 	let code;
@@ -56,5 +56,5 @@ BlocklyJS.javascriptGenerator.forBlock["logic_operation_extra"] = function (
 			code = "false";
 	}
 
-	return [code, BlocklyJS.Order.LOGICAL_OR];
+	return [code, Order.LOGICAL_OR];
 };

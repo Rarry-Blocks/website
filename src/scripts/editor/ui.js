@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js-legacy";
+import { Texture } from "pixi.js-legacy";
 import {
   spriteManager,
   setActiveSprite,
@@ -271,7 +271,7 @@ export function renderCostumesList() {
         if (activeSprite.costumes.length > 0) {
           activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
         } else {
-          activeSprite.pixiSprite.texture = PIXI.Texture.EMPTY;
+          activeSprite.pixiSprite.texture = Texture.EMPTY;
         }
       }
       renderCostumesList();

@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js-legacy";
+import { TextStyle, Graphics, Text, Container } from "pixi.js-legacy";
 import {
   calculateBubblePosition,
   keysPressed,
@@ -19,7 +19,7 @@ const BUBBLE_PADDING = 10;
 const BUBBLE_TAIL_HEIGHT = 15;
 const BUBBLE_TAIL_WIDTH = 15;
 const BUBBLE_COLOR = 0xffffff;
-const BUBBLE_TEXTSTYLE = new PIXI.TextStyle({ fill: 0x000000, fontSize: 24 });
+const BUBBLE_TEXTSTYLE = new TextStyle({ fill: 0x000000, fontSize: 24 });
 const LINE_COLOR = 0xbdc1c7;
 
 export function triggerCloneEvents(clone) {
@@ -151,12 +151,12 @@ export function runCodeWithFunctions({
     }
 
     if (!targetData.currentBubble) {
-      const bubble = new PIXI.Graphics();
-      const text = new PIXI.Text("", BUBBLE_TEXTSTYLE);
+      const bubble = new Graphics();
+      const text = new Text("", BUBBLE_TEXTSTYLE);
       text.x = BUBBLE_PADDING;
       text.y = BUBBLE_PADDING;
 
-      const container = new PIXI.Container();
+      const container = new Container();
       container.addChild(bubble);
       container.addChild(text);
       container.bubble = bubble;

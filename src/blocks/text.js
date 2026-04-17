@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 const xmlUtils = Blockly.utils.xml;
 
 function shadow(type, fieldName, value) {
@@ -98,14 +98,14 @@ Blockly.Blocks["text_join_extendable"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["text_join_extendable"] = function (
+javascriptGenerator.forBlock["text_join_extendable"] = function (
   block,
   generator,
 ) {
   const parts = [];
 
   for (let i = 0; i < block.itemCount_; i++) {
-    const value = generator.valueToCode(block, "ADD" + i, BlocklyJS.Order.NONE) || "''";
+    const value = generator.valueToCode(block, "ADD" + i, Order.NONE) || "''";
     parts.push(value);
   }
 
@@ -116,7 +116,7 @@ BlocklyJS.javascriptGenerator.forBlock["text_join_extendable"] = function (
     code = `[${parts.join(", ")}].join("")`;
   }
 
-  return [code, BlocklyJS.Order.NONE];
+  return [code, Order.NONE];
 };
 
 Blockly.Blocks["text_indexOf"] = {
@@ -153,15 +153,15 @@ Blockly.Blocks["text_indexOf"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["text_indexOf"] = function (block, generator) {
+javascriptGenerator.forBlock["text_indexOf"] = function (block, generator) {
   const operator = block.getFieldValue("END") === "FIRST" ? "indexOf" : "lastIndexOf";
-  const substring = generator.valueToCode(block, "FIND", BlocklyJS.Order.NONE) || "''";
-  const text = generator.valueToCode(block, "VALUE", BlocklyJS.Order.MEMBER) || "''";
+  const substring = generator.valueToCode(block, "FIND", Order.NONE) || "''";
+  const text = generator.valueToCode(block, "VALUE", Order.MEMBER) || "''";
   const code = `${text}.${operator}(${substring})`;
   if (block.workspace.options.oneBasedIndex) {
-    return [`${code} + 1`, BlocklyJS.Order.ADDITION];
+    return [`${code} + 1`, Order.ADDITION];
   }
-  return [code, BlocklyJS.Order.MEMBER];
+  return [code, Order.MEMBER];
 };
 
 Blockly.Blocks["text_charAt"] = {
@@ -235,36 +235,36 @@ Blockly.Blocks["text_charAt"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["text_charAt"] = function (block, generator) {
+javascriptGenerator.forBlock["text_charAt"] = function (block, generator) {
   const where = block.getFieldValue("WHERE") || "FROM_START";
-  const textOrder = where === "RANDOM" ? BlocklyJS.Order.NONE : BlocklyJS.Order.MEMBER;
+  const textOrder = where === "RANDOM" ? Order.NONE : Order.MEMBER;
   const text = generator.valueToCode(block, "VALUE", textOrder) || "''";
   const oneBasedIndex = block.workspace.options.oneBasedIndex;
 
   switch (where) {
     case "FROM_START": {
-      const at = generator.valueToCode(block, "AT", BlocklyJS.Order.SUBTRACTION) || "1";
+      const at = generator.valueToCode(block, "AT", Order.SUBTRACTION) || "1";
       if (oneBasedIndex) {
-        if (at === "1") return [`${text}.charAt(0)`, BlocklyJS.Order.MEMBER];
-        return [`${text}.charAt(${at} - 1)`, BlocklyJS.Order.MEMBER];
+        if (at === "1") return [`${text}.charAt(0)`, Order.MEMBER];
+        return [`${text}.charAt(${at} - 1)`, Order.MEMBER];
       }
-      return [`${text}.charAt(${at})`, BlocklyJS.Order.MEMBER];
+      return [`${text}.charAt(${at})`, Order.MEMBER];
     }
     case "FROM_END": {
-      const at = generator.valueToCode(block, "AT", BlocklyJS.Order.SUBTRACTION) || "1";
+      const at = generator.valueToCode(block, "AT", Order.SUBTRACTION) || "1";
       if (oneBasedIndex) {
-        return [`${text}.slice(-${at}).charAt(0)`, BlocklyJS.Order.MEMBER];
+        return [`${text}.slice(-${at}).charAt(0)`, Order.MEMBER];
       }
-      return [`${text}.slice(-(${at} + 1)).charAt(0)`, BlocklyJS.Order.MEMBER];
+      return [`${text}.slice(-(${at} + 1)).charAt(0)`, Order.MEMBER];
     }
     case "FIRST":
-      return [`${text}.charAt(0)`, BlocklyJS.Order.MEMBER];
+      return [`${text}.charAt(0)`, Order.MEMBER];
     case "LAST":
-      return [`${text}.slice(-1)`, BlocklyJS.Order.MEMBER];
+      return [`${text}.slice(-1)`, Order.MEMBER];
     case "RANDOM":
       return [
         `${text}.charAt(Math.floor(Math.random() * ${text}.length))`,
-        BlocklyJS.Order.NONE,
+        Order.NONE,
       ];
     default:
       throw new Error(`Unknown WHERE value: ${where}`);
@@ -382,17 +382,17 @@ Blockly.Blocks["text_getSubstring"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["text_getSubstring"] = function (
+javascriptGenerator.forBlock["text_getSubstring"] = function (
   block,
   generator,
 ) {
-  const text = generator.valueToCode(block, "STRING", BlocklyJS.Order.MEMBER) || "''";
+  const text = generator.valueToCode(block, "STRING", Order.MEMBER) || "''";
   const where1 = block.getFieldValue("WHERE1");
   const where2 = block.getFieldValue("WHERE2");
   const oneBasedIndex = block.workspace.options.oneBasedIndex;
 
   function getStart(where, atId) {
-    const at = generator.valueToCode(block, atId, BlocklyJS.Order.SUBTRACTION) || "1";
+    const at = generator.valueToCode(block, atId, Order.SUBTRACTION) || "1";
     if (where === "FROM_START") {
       if (oneBasedIndex) return at === "1" ? "0" : `${at} - 1`;
       return at;
@@ -405,10 +405,10 @@ BlocklyJS.javascriptGenerator.forBlock["text_getSubstring"] = function (
 
   function getEnd(where, atId) {
     if (where === "FROM_START") {
-      const at = generator.valueToCode(block, atId, BlocklyJS.Order.ADDITION) || "1";
+      const at = generator.valueToCode(block, atId, Order.ADDITION) || "1";
       return oneBasedIndex ? at : `${at} + 1`;
     }
-    const at = generator.valueToCode(block, atId, BlocklyJS.Order.SUBTRACTION) || "1";
+    const at = generator.valueToCode(block, atId, Order.SUBTRACTION) || "1";
     if (oneBasedIndex) {
       return at === "1" ? `${text}.length` : `${text}.length - ${at} + 1`;
     }
@@ -437,5 +437,5 @@ BlocklyJS.javascriptGenerator.forBlock["text_getSubstring"] = function (
       break;
   }
 
-  return [`${text}.slice(${start}, ${end})`, BlocklyJS.Order.MEMBER];
+  return [`${text}.slice(${start}, ${end})`, Order.MEMBER];
 };

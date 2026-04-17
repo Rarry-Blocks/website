@@ -1,10 +1,10 @@
-import * as PIXI from "pixi.js-legacy";
+import { Sprite as PixiSprite, Texture } from "pixi.js-legacy";
 import { vm } from "../scripts/editor";
 import { triggerCloneEvents } from "../functions/runCode";
 
 export class Costume {
   constructor({ id, name, texture }) {
-    if (!(texture instanceof PIXI.Texture)) {
+    if (!(texture instanceof Texture)) {
       throw new Error(
         `Costume "${name}" created with invalid texture`
       );
@@ -37,7 +37,7 @@ export class Costume {
     return new Costume({
       id: json.id ?? `costume-${crypto.randomUUID()}`,
       name: json.name,
-      texture: PIXI.Texture.from(source),
+      texture: Texture.from(source),
     });
   }
 }
@@ -131,8 +131,8 @@ export class Sprite {
     );
     this.currentCostume = currentCostume;
 
-    this.pixiSprite = new PIXI.Sprite(
-      this.costumes[currentCostume]?.texture ?? PIXI.Texture.EMPTY
+    this.pixiSprite = new PixiSprite(
+      this.costumes[currentCostume]?.texture ?? Texture.EMPTY
     );
     this.pixiSprite.anchor.set(0.5);
     this.pixiSprite.position.set(x, y);

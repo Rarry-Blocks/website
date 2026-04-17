@@ -1,5 +1,5 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import * as Blockly from "blockly";
+import * as Blockly from "blockly/core";
 import config from "../config";
 import { cache } from "../cache";
 import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";

@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 
 Blockly.Blocks["when_flag_clicked"] = {
   init: function () {
@@ -14,7 +14,7 @@ Blockly.Blocks["when_flag_clicked"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["when_flag_clicked"] = function (
+javascriptGenerator.forBlock["when_flag_clicked"] = function (
   block,
   generator
 ) {
@@ -51,7 +51,7 @@ Blockly.Blocks["when_key_clicked"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["when_key_clicked"] = function (
+javascriptGenerator.forBlock["when_key_clicked"] = function (
   block,
   generator
 ) {
@@ -70,7 +70,7 @@ Blockly.Blocks["when_stage_clicked"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["when_stage_clicked"] = function (
+javascriptGenerator.forBlock["when_stage_clicked"] = function (
   block,
   generator
 ) {
@@ -86,8 +86,8 @@ Blockly.Blocks["project_timer"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["project_timer"] = function (block) {
-  return ["projectTime()", BlocklyJS.Order.NONE];
+javascriptGenerator.forBlock["project_timer"] = function (block) {
+  return ["projectTime()", Order.NONE];
 };
 
 Blockly.Blocks["when_timer_reaches"] = {
@@ -101,7 +101,7 @@ Blockly.Blocks["when_timer_reaches"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["when_timer_reaches"] = function (
+javascriptGenerator.forBlock["when_timer_reaches"] = function (
   block,
   generator
 ) {
@@ -121,7 +121,7 @@ Blockly.Blocks["every_seconds"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["every_seconds"] = function (
+javascriptGenerator.forBlock["every_seconds"] = function (
   block,
   generator
 ) {
@@ -141,7 +141,7 @@ Blockly.Blocks["when_custom_event_triggered"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["when_custom_event_triggered"] = function (
+javascriptGenerator.forBlock["when_custom_event_triggered"] = function (
   block,
   generator
 ) {
@@ -161,9 +161,9 @@ Blockly.Blocks["trigger_custom_event"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["trigger_custom_event"] = function (
+javascriptGenerator.forBlock["trigger_custom_event"] = function (
   block
 ) {
-  const event = BlocklyJS.javascriptGenerator.quote_(block.getFieldValue("EVENT"));
+  const event = javascriptGenerator.quote_(block.getFieldValue("EVENT"));
   return `triggerCustomEvent(${event});\n`;
 };

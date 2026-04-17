@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 import { spriteManager } from "../scripts/editor";
 const xmlUtils = Blockly.utils.xml;
 
@@ -14,9 +14,9 @@ Blockly.Blocks["controls_switch"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_switch"] = function (block, generator) {
+javascriptGenerator.forBlock["controls_switch"] = function (block, generator) {
   const branch = generator.statementToCode(block, "DO");
-  const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.ATOMIC) || "''";
+  const value = generator.valueToCode(block, "VALUE", Order.ATOMIC) || "''";
   return `switch (${value}) {
   ${branch}}\n`;
 };
@@ -126,7 +126,7 @@ Blockly.Blocks["controls_switch_case"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_switch_case"] = function (
+javascriptGenerator.forBlock["controls_switch_case"] = function (
   block,
   generator,
 ) {
@@ -138,7 +138,7 @@ BlocklyJS.javascriptGenerator.forBlock["controls_switch_case"] = function (
 
   const parts = [];
   for (let i = 0; i < block.itemCount_; i++) {
-    const value = generator.valueToCode(block, "CASE" + i, BlocklyJS.Order.NONE) || "";
+    const value = generator.valueToCode(block, "CASE" + i, Order.NONE) || "";
     parts.push(`case ${value}:`);
   }
 
@@ -170,12 +170,12 @@ Blockly.Blocks["wait_block"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["wait_one_frame"] = function (block) {
+javascriptGenerator.forBlock["wait_one_frame"] = function (block) {
   return `yield* waitOneFrame();\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["wait_block"] = function (block, generator) {
-  const duration = generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 0;
+javascriptGenerator.forBlock["wait_block"] = function (block, generator) {
+  const duration = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU") || 0;
   return `yield* wait(${duration} * ${+menu});\n`;
 };
@@ -191,7 +191,7 @@ Blockly.Blocks["controls_thread_create"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_thread_create"] = function (
+javascriptGenerator.forBlock["controls_thread_create"] = function (
   block,
   generator,
 ) {
@@ -208,9 +208,9 @@ Blockly.Blocks["controls_thread_current"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_thread_current"] = () => [
+javascriptGenerator.forBlock["controls_thread_current"] = () => [
   `/* Thread.getCurrentContext().id */`,
-  BlocklyJS.Order.MEMBER,
+  Order.MEMBER,
 ];
 
 Blockly.Blocks["controls_thread_set_var"] = {
@@ -226,14 +226,14 @@ Blockly.Blocks["controls_thread_set_var"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_thread_set_var"] = function (
+javascriptGenerator.forBlock["controls_thread_set_var"] = function (
   block,
   generator,
 ) {
-  const threadId = generator.valueToCode(block, "THREAD", BlocklyJS.Order.NONE) || "null";
-  const name = generator.valueToCode(block, "NAME", BlocklyJS.Order.NONE) || '""';
+  const threadId = generator.valueToCode(block, "THREAD", Order.NONE) || "null";
+  const name = generator.valueToCode(block, "NAME", Order.NONE) || '""';
   const value =
-    generator.valueToCode(block, "VALUE", BlocklyJS.Order.NONE) || "undefined";
+    generator.valueToCode(block, "VALUE", Order.NONE) || "undefined";
   return `/* Thread.set(${threadId}, ${name}, ${value}); */\n`;
 };
 
@@ -248,14 +248,14 @@ Blockly.Blocks["controls_thread_get_var"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_thread_get_var"] = function (
+javascriptGenerator.forBlock["controls_thread_get_var"] = function (
   block,
   generator,
 ) {
-  const threadId = generator.valueToCode(block, "THREAD", BlocklyJS.Order.NONE) || "null";
-  const name = generator.valueToCode(block, "NAME", BlocklyJS.Order.NONE) || '""';
+  const threadId = generator.valueToCode(block, "THREAD", Order.NONE) || "null";
+  const name = generator.valueToCode(block, "NAME", Order.NONE) || '""';
   const code = `/* Thread.get(${threadId}, ${name}) */`;
-  return [code, BlocklyJS.Order.FUNCTION_CALL];
+  return [code, Order.FUNCTION_CALL];
 };
 
 Blockly.Blocks["controls_thread_has_var"] = {
@@ -269,14 +269,14 @@ Blockly.Blocks["controls_thread_has_var"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_thread_has_var"] = function (
+javascriptGenerator.forBlock["controls_thread_has_var"] = function (
   block,
   generator,
 ) {
-  const threadId = generator.valueToCode(block, "THREAD", BlocklyJS.Order.NONE) || "null";
-  const name = generator.valueToCode(block, "NAME", BlocklyJS.Order.NONE) || '""';
+  const threadId = generator.valueToCode(block, "THREAD", Order.NONE) || "null";
+  const name = generator.valueToCode(block, "NAME", Order.NONE) || '""';
   const code = `/* Thread.has(${threadId}, ${name}) */`;
-  return [code, BlocklyJS.Order.FUNCTION_CALL];
+  return [code, Order.FUNCTION_CALL];
 };
 
 Blockly.Blocks["controls_run_instantly"] = {
@@ -290,8 +290,8 @@ Blockly.Blocks["controls_run_instantly"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_run_instantly"] = function (block) {
-  const branch = BlocklyJS.javascriptGenerator.statementToCode(block, "do");
+javascriptGenerator.forBlock["controls_run_instantly"] = function (block) {
+  const branch = javascriptGenerator.statementToCode(block, "do");
   return `const __prevFast = thread.fastExecution;\nthread.fastExecution = true;\n${branch}thread.fastExecution = __prevFast;\n`;
 };
 
@@ -303,7 +303,7 @@ Blockly.Blocks["controls_stopscript"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_stopscript"] = () => "return;\n";
+javascriptGenerator.forBlock["controls_stopscript"] = () => "return;\n";
 
 Blockly.Blocks["controls_stopblock"] = {
   init: function () {
@@ -356,7 +356,7 @@ Blockly.Blocks["controls_stopblock"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_stopblock"] = block => {
+javascriptGenerator.forBlock["controls_stopblock"] = block => {
   const mode = block.getFieldValue("MODE");
 
   if (mode === "script") return "return;\n";
@@ -377,11 +377,11 @@ Blockly.Blocks["controls_stop_sprite"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_stop_sprite"] = function (
+javascriptGenerator.forBlock["controls_stop_sprite"] = function (
   block,
   generator,
 ) {
-  const spriteId = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC) || "''";
+  const spriteId = generator.valueToCode(block, "ID", Order.ATOMIC) || "''";
   return `vm.stopForTarget(vm.runtime.getTargetById(${spriteId}));\n`;
 };
 
@@ -401,11 +401,11 @@ Blockly.Blocks["controls_sprites_menu"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_sprites_menu"] = function (
+javascriptGenerator.forBlock["controls_sprites_menu"] = function (
   block,
   generator,
 ) {
-  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+  return [generator.quote_(block.getFieldValue("MENU")), Order.ATOMIC];
 };
 
 Blockly.Blocks["controls_createclone"] = {
@@ -417,11 +417,11 @@ Blockly.Blocks["controls_createclone"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_createclone"] = function (
+javascriptGenerator.forBlock["controls_createclone"] = function (
   block,
   generator,
 ) {
-  const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC);
+  const ID = generator.valueToCode(block, "ID", Order.ATOMIC);
   return `spriteManager.clone(spriteManager.get(${ID}));\n`;
 };
 
@@ -433,7 +433,7 @@ Blockly.Blocks["controls_delete_this_clone"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_delete_this_clone"] = function () {
+javascriptGenerator.forBlock["controls_delete_this_clone"] = function () {
   return `if (getTargetData().clone) {
   spriteManager.remove(getTargetData()); 
   return;
@@ -449,11 +449,11 @@ Blockly.Blocks["controls_delete_all_clones"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_delete_all_clones"] = function (
+javascriptGenerator.forBlock["controls_delete_all_clones"] = function (
   block,
   generator,
 ) {
-  const ID = generator.valueToCode(block, "ID", BlocklyJS.Order.ATOMIC);
+  const ID = generator.valueToCode(block, "ID", Order.ATOMIC);
   return `spriteManager.removeClones(spriteManager.get(${ID}));\n`;
 };
 
@@ -465,8 +465,8 @@ Blockly.Blocks["controls_is_clone"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_is_clone"] = function () {
-  return ["getTargetData().clone", BlocklyJS.Order.ATOMIC];
+javascriptGenerator.forBlock["controls_is_clone"] = function () {
+  return ["getTargetData().clone", Order.ATOMIC];
 };
 
 Blockly.Blocks["controls_whenstartasclone"] = {
@@ -477,7 +477,7 @@ Blockly.Blocks["controls_whenstartasclone"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_whenstartasclone"] = function (
+javascriptGenerator.forBlock["controls_whenstartasclone"] = function (
   block,
   generator,
 ) {
@@ -496,11 +496,11 @@ Blockly.Blocks["controls_as_sprite"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_as_sprite"] = function (
+javascriptGenerator.forBlock["controls_as_sprite"] = function (
   block,
   generator,
 ) {
-  const target = generator.valueToCode(block, "ID", BlocklyJS.Order.NONE) || '""';
+  const target = generator.valueToCode(block, "ID", Order.NONE) || '""';
   const code = generator.statementToCode(block, "DO");
 
   return `vm.execute(function* () {\n${code}}, spriteManager.get(${target}));\n`;
@@ -515,7 +515,7 @@ Blockly.Blocks["controls_forever"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_forever"] = function (block, generator) {
+javascriptGenerator.forBlock["controls_forever"] = function (block, generator) {
   const branch = generator.statementToCode(block, "DO");
   const loopTrap = generator.addLoopTrap(branch, block);
   return `while (true) {\n${loopTrap}}\n`;
@@ -531,9 +531,9 @@ Blockly.Blocks["controls_forLoop_var"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_forLoop_var"] = () => [
+javascriptGenerator.forBlock["controls_forLoop_var"] = () => [
   `__controlsForLoopVar`,
-  BlocklyJS.Order.ATOMIC,
+  Order.ATOMIC,
 ];
 
 Blockly.Blocks["controls_forLoop"] = {
@@ -550,9 +550,9 @@ Blockly.Blocks["controls_forLoop"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["controls_forLoop"] = function (block, generator) {
-  const start = generator.valueToCode(block, "START", BlocklyJS.Order.NONE) || "0";
-  const end = generator.valueToCode(block, "END", BlocklyJS.Order.NONE) || "0";
+javascriptGenerator.forBlock["controls_forLoop"] = function (block, generator) {
+  const start = generator.valueToCode(block, "START", Order.NONE) || "0";
+  const end = generator.valueToCode(block, "END", Order.NONE) || "0";
   const branch = generator.statementToCode(block, "DO");
   const loopTrap = generator.addLoopTrap(branch, block);
 

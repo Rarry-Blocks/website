@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 import { activeSprite } from "../scripts/editor";
 
 Blockly.Blocks["say_message"] = {
@@ -118,84 +118,84 @@ Blockly.Blocks["looks_isVisible"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["say_message"] = function (
+javascriptGenerator.forBlock["say_message"] = function (
   block,
   generator
 ) {
   const message =
-    generator.valueToCode(block, "MESSAGE", BlocklyJS.Order.NONE) || "";
+    generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
 
   return `sayMessage(${message});\nyield;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["say_message_duration"] = function (
+javascriptGenerator.forBlock["say_message_duration"] = function (
   block,
   generator
 ) {
   const message =
-    generator.valueToCode(block, "MESSAGE", BlocklyJS.Order.NONE) || "";
+    generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
   const duration =
-    generator.valueToCode(block, "DURATION", BlocklyJS.Order.ATOMIC) || 2;
+    generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
 
   return `sayMessage(${message}, ${duration});\nyield;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["switch_costume"] = function (
+javascriptGenerator.forBlock["switch_costume"] = function (
   block,
   generator
 ) {
-  var costume = generator.valueToCode(block, "COSTUME", BlocklyJS.Order.ATOMIC);
+  var costume = generator.valueToCode(block, "COSTUME", Order.ATOMIC);
   return `switchCostume(${costume});\nyield;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["set_size"] = function (
+javascriptGenerator.forBlock["set_size"] = function (
   block,
   generator
 ) {
   const amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 100;
+    generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
   return `setSize(${amount}, false);\nyield;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["change_size"] = function (
+javascriptGenerator.forBlock["change_size"] = function (
   block,
   generator
 ) {
   const amount =
-    generator.valueToCode(block, "AMOUNT", BlocklyJS.Order.ATOMIC) || 100;
+    generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
   return `setSize(${amount}, true);\nyield;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["get_costume_size"] = function (block) {
+javascriptGenerator.forBlock["get_costume_size"] = function (block) {
   const menu = block.getFieldValue("MENU");
-  return [`getCostumeSize("${menu}")`, BlocklyJS.Order.NONE];
+  return [`getCostumeSize("${menu}")`, Order.NONE];
 };
 
-BlocklyJS.javascriptGenerator.forBlock["get_sprite_scale"] = function () {
-  return [`getSpriteScale()`, BlocklyJS.Order.NONE];
+javascriptGenerator.forBlock["get_sprite_scale"] = function () {
+  return [`getSpriteScale()`, Order.NONE];
 };
 
-BlocklyJS.javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
+javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
   return "toggleVisibility(false);\nyield;\n";
 };
 
-BlocklyJS.javascriptGenerator.forBlock["looks_show_sprite"] = function () {
+javascriptGenerator.forBlock["looks_show_sprite"] = function () {
   return "toggleVisibility(true);\nyield;\n";
 };
 
-BlocklyJS.javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
+javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
   block,
   generator
 ) {
   const visible =
-    generator.valueToCode(block, "VISIBLE", BlocklyJS.Order.ATOMIC) ?? "false";
+    generator.valueToCode(block, "VISIBLE", Order.ATOMIC) ?? "false";
 
   return `toggleVisibility(${visible});\nyield;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["looks_isVisible"] = () => [
+javascriptGenerator.forBlock["looks_isVisible"] = () => [
   "getTarget().visible",
-  BlocklyJS.Order.NONE,
+  Order.NONE,
 ];
 
 Blockly.Blocks["looks_costumes_menu"] = {
@@ -214,9 +214,9 @@ Blockly.Blocks["looks_costumes_menu"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["looks_costumes_menu"] = function (
+javascriptGenerator.forBlock["looks_costumes_menu"] = function (
   block,
   generator,
 ) {
-  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+  return [generator.quote_(block.getFieldValue("MENU")), Order.ATOMIC];
 };

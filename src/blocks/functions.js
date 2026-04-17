@@ -1,6 +1,6 @@
 import { FieldColourHsvSliders } from "@blockly/field-colour-hsv-sliders";
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 
 function typeToBlocklyCheck(type) {
   return (
@@ -659,15 +659,15 @@ Blockly.Blocks["functions_return"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["functions_argument_block"] = block => [
+javascriptGenerator.forBlock["functions_argument_block"] = block => [
   "__" + block.argType_ + "_" + block.argName_,
-  BlocklyJS.Order.NONE,
+  Order.NONE,
 ];
 
-BlocklyJS.javascriptGenerator.forBlock["functions_statement_argument_block"] = block =>
+javascriptGenerator.forBlock["functions_statement_argument_block"] = block =>
   "yield* __statement_" + block.argName_ + "();\n";
 
-BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
+javascriptGenerator.forBlock["functions_definition"] = function (
   block,
   generator,
 ) {
@@ -678,11 +678,11 @@ BlocklyJS.javascriptGenerator.forBlock["functions_definition"] = function (
     })
     .filter(Boolean);
 
-  const body = BlocklyJS.javascriptGenerator.statementToCode(block, "BODY");
+  const body = javascriptGenerator.statementToCode(block, "BODY");
   return `__MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) {\n${body}};\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (block, generator) {
+javascriptGenerator.forBlock["functions_call"] = function (block, generator) {
   const args = [];
 
   for (let i = 0; i < block.argTypes_.length; i++) {
@@ -694,7 +694,7 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (block, gene
 
     if (type === "statement")
       args.push(`function* (sprite) {${generator.statementToCode(block, key)}}`);
-    else args.push(generator.valueToCode(block, key, BlocklyJS.Order.NONE) || "null");
+    else args.push(generator.valueToCode(block, key, Order.NONE) || "null");
   }
 
   const callExpr = `yield* __MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
@@ -702,13 +702,13 @@ BlocklyJS.javascriptGenerator.forBlock["functions_call"] = function (block, gene
   )})`;
 
   if (block.outputConnection) {
-    return [callExpr, BlocklyJS.Order.NONE];
+    return [callExpr, Order.NONE];
   }
 
   return callExpr + `;\n`;
 };
 
-BlocklyJS.javascriptGenerator.forBlock["functions_return"] = function (block, generator) {
-  const value = generator.valueToCode(block, "VALUE", BlocklyJS.Order.NONE);
+javascriptGenerator.forBlock["functions_return"] = function (block, generator) {
+  const value = generator.valueToCode(block, "VALUE", Order.NONE);
   return `return ${value || "null"};\n`;
 };

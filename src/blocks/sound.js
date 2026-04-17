@@ -1,5 +1,5 @@
-import * as Blockly from "blockly";
-import * as BlocklyJS from "blockly/javascript";
+import * as Blockly from "blockly/core";
+import { javascriptGenerator, Order } from "blockly/javascript";
 import { activeSprite } from "../scripts/editor";
 
 Blockly.Blocks["sound_sounds_menu"] = {
@@ -18,11 +18,11 @@ Blockly.Blocks["sound_sounds_menu"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["sound_sounds_menu"] = function (
+javascriptGenerator.forBlock["sound_sounds_menu"] = function (
   block,
   generator,
 ) {
-  return [generator.quote_(block.getFieldValue("MENU")), BlocklyJS.Order.ATOMIC];
+  return [generator.quote_(block.getFieldValue("MENU")), Order.ATOMIC];
 };
 
 Blockly.Blocks["play_sound"] = {
@@ -41,11 +41,11 @@ Blockly.Blocks["play_sound"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["play_sound"] = function (block, generator) {
+javascriptGenerator.forBlock["play_sound"] = function (block, generator) {
   var name = generator.valueToCode(
     block,
     "name",
-    BlocklyJS.Order.ATOMIC
+    Order.ATOMIC
   );
   var wait = block.getFieldValue("wait");
   return `yield* playSound(${name}, ${wait});\n`;
@@ -60,11 +60,11 @@ Blockly.Blocks["stop_sound"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["stop_sound"] = function (block, generator) {
+javascriptGenerator.forBlock["stop_sound"] = function (block, generator) {
   var name = generator.valueToCode(
     block,
     "name",
-    BlocklyJS.Order.ATOMIC
+    Order.ATOMIC
   );
   return `stopSound(${name});\n`;
 };
@@ -87,7 +87,7 @@ Blockly.Blocks["stop_all_sounds"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["stop_all_sounds"] = function (block) {
+javascriptGenerator.forBlock["stop_all_sounds"] = function (block) {
   var who = block.getFieldValue("who");
   var code = `stopAllSounds(${who});\n`;
   return code;
@@ -113,14 +113,14 @@ Blockly.Blocks["set_sound_property"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["set_sound_property"] = function (
+javascriptGenerator.forBlock["set_sound_property"] = function (
   block,
   generator
 ) {
   var value = generator.valueToCode(
     block,
     "value",
-    BlocklyJS.Order.ATOMIC
+    Order.ATOMIC
   );
   var property = block.getFieldValue("property");
   return `setSoundProperty("${property}", ${value});\n`;
@@ -140,7 +140,7 @@ Blockly.Blocks["get_sound_property"] = {
   },
 };
 
-BlocklyJS.javascriptGenerator.forBlock["get_sound_property"] = function (block) {
+javascriptGenerator.forBlock["get_sound_property"] = function (block) {
   var property = block.getFieldValue("property");
-  return [`soundProperties["${property}"]`, BlocklyJS.Order.NONE];
+  return [`soundProperties["${property}"]`, Order.NONE];
 };

@@ -1,4 +1,4 @@
-import * as Blockly from "blockly";
+import * as Blockly from "blockly/core";
 
 class CustomChecker extends Blockly.ConnectionChecker {
   canConnect(a, b, isDragging, opt_distance) {
