@@ -5,7 +5,7 @@ const xmlUtils = Blockly.utils.xml;
 function assure(generator, code) {
   const fn = generator.provideFunction_("objectAssure", [
     `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj) {`,
-    `  if (typeof obj !== "object" || obj == null) return {};`,
+    `  if (typeof obj !== "object" || obj == null) return Object.create(null);`,
     `  return obj;`,
     `}`,
   ]);
@@ -14,8 +14,8 @@ function assure(generator, code) {
 function clone(generator, code) {
   const fn = generator.provideFunction_("objectClone", [
     `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj) {`,
-    `  if (typeof obj !== "object" || obj == null) return {};`,
-    `  return JSON.parse(JSON.stringify(obj));`,
+    `  if (typeof obj !== "object" || obj == null) return Object.create(null);`,
+    `  return structuredClone(obj);`,
     `}`,
   ]);
   return `${fn}(${code})`;
@@ -206,7 +206,7 @@ javascriptGenerator.forBlock["json_set_return"] = function (
       Order.NONE,
     ) || "null";
 
-  const safe = clone(generator, assure(generator, obj));
+  const safe = clone(generator, obj);
   const code = `(() => { const _ = ${safe}; _[${key}] = ${value}; return _; })()`;
   return [code, Order.NONE];
 };
@@ -239,7 +239,7 @@ javascriptGenerator.forBlock["json_delete_return"] = function (
       Order.NONE,
     ) || '""';
 
-  const safe = clone(generator, assure(generator, obj));
+  const safe = clone(generator, obj);
   const code = `(() => { const _ = ${safe}; delete _[${key}]; return _; })()`;
   return [code, Order.NONE];
 };
