@@ -13,10 +13,7 @@ Blockly.Blocks["lists_has"] = {
   },
 };
 
-javascriptGenerator.forBlock["lists_has"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["lists_has"] = function (block, generator) {
   const list = generator.valueToCode(block, "LIST", Order.ATOMIC) || "new Array()";
   const value = generator.valueToCode(block, "VALUE", Order.ATOMIC);
   return [`${list}.includes(${value})`, Order.NONE];
@@ -134,22 +131,13 @@ Blockly.Blocks["lists_filter"] = {
     this.setInputsInline(true);
     this.setOutput(true, "Array");
     this.setStyle("list_blocks");
-    this.setTooltip(
-      "Remove all items in a list which doesn't match the boolean"
-    );
+    this.setTooltip("Remove all items in a list which doesn't match the boolean");
   },
 };
 
-javascriptGenerator.forBlock["lists_filter"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["lists_filter"] = function (block, generator) {
   const list = generator.valueToCode(block, "list", Order.ATOMIC);
-  const method = generator.valueToCode(
-    block,
-    "method",
-    Order.ATOMIC
-  );
+  const method = generator.valueToCode(block, "method", Order.ATOMIC);
   const code = `${list}.filter(async (findOrFilterItem) => ${method})`;
   return [code, Order.NONE];
 };
@@ -158,28 +146,17 @@ Blockly.Blocks["lists_find"] = {
   init: function () {
     this.appendValueInput("list").setCheck("Array").appendField("in list");
     this.appendValueInput("item").appendField("find first");
-    this.appendValueInput("method")
-      .setCheck("Boolean")
-      .appendField("that matches");
+    this.appendValueInput("method").setCheck("Boolean").appendField("that matches");
     this.setOutput(true, null);
     this.setInputsInline(true);
     this.setStyle("list_blocks");
-    this.setTooltip(
-      "Returns the first item in a list that matches the boolean"
-    );
+    this.setTooltip("Returns the first item in a list that matches the boolean");
   },
 };
 
-javascriptGenerator.forBlock["lists_find"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["lists_find"] = function (block, generator) {
   const list = generator.valueToCode(block, "list", Order.ATOMIC);
-  const method = generator.valueToCode(
-    block,
-    "method",
-    Order.ATOMIC
-  );
+  const method = generator.valueToCode(block, "method", Order.ATOMIC);
   const code = `${list}.find(findOrFilterItem => ${method})`;
   return [code, Order.NONE];
 };
@@ -195,10 +172,7 @@ Blockly.Blocks["lists_map"] = {
   },
 };
 
-javascriptGenerator.forBlock["lists_map"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["lists_map"] = function (block, generator) {
   const list = generator.valueToCode(block, "list", Order.ATOMIC);
   const method = generator.valueToCode(block, "method", Order.ATOMIC);
   const code = `${list}.map(findOrFilterItem => ${method})`;
@@ -230,16 +204,9 @@ Blockly.Blocks["lists_merge"] = {
   },
 };
 
-javascriptGenerator.forBlock["lists_merge"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["lists_merge"] = function (block, generator) {
   const list = generator.valueToCode(block, "list", Order.ATOMIC);
-  const list2 = generator.valueToCode(
-    block,
-    "list2",
-    Order.ATOMIC
-  );
+  const list2 = generator.valueToCode(block, "list2", Order.ATOMIC);
   const code = `${list}.concat(${list2})`;
   return [code, Order.NONE];
 };
@@ -248,28 +215,26 @@ Blockly.Blocks["lists_foreach"] = {
   init: function () {
     this.appendValueInput("ITEM").appendField("for each");
     this.appendValueInput("INDEX");
-    this.appendValueInput("LIST")
-      .setCheck("Array")
-      .appendField("in list");
+    this.appendValueInput("LIST").setCheck("Array").appendField("in list");
     this.appendStatementInput("DO").appendField("do");
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setStyle("list_blocks");
     this.setTooltip(
-      "Loops through every item in a list and runs the code inside for each one."
+      "Loops through every item in a list and runs the code inside for each one.",
     );
   },
 };
 
-javascriptGenerator.forBlock["lists_foreach"] = function (
-  block,
-  generator
-) {
-  const list =
-    generator.valueToCode(block, "LIST", Order.NONE) || "[]";
+javascriptGenerator.forBlock["lists_foreach"] = function (block, generator) {
+  const list = generator.valueToCode(block, "LIST", Order.NONE) || "[]";
   const branch = generator.statementToCode(block, "DO");
-  const code = `${list}.forEach(async (findOrFilterItem, indexForEach) => {\n${branch}});\n`;
+
+  const code = `
+for (let indexForEach = 0; indexForEach < ${list}.length; indexForEach++) {
+  const findOrFilterItem = ${list}[indexForEach];
+${branch}}\n`;
   return code;
 };
 
@@ -283,10 +248,7 @@ Blockly.Blocks["lists_foreach_index"] = {
   },
 };
 
-javascriptGenerator.forBlock["lists_foreach_index"] = () => [
-  "indexForEach",
-  Order.NONE,
-];
+javascriptGenerator.forBlock["lists_foreach_index"] = () => ["indexForEach", Order.NONE];
 
 Blockly.Blocks["lists_getIndex_modified"] = {
   init: function () {
@@ -313,19 +275,14 @@ Blockly.Blocks["lists_getIndex_modified"] = {
       this.updateMode_(newMode);
       return newMode;
     });
-    this.appendDummyInput()
-      .appendField(modeField, "MODE")
-      .appendField("", "SPACE");
+    this.appendDummyInput().appendField(modeField, "MODE").appendField("", "SPACE");
 
-    const whereField = new Blockly.FieldDropdown(
-      this.WHERE_OPTIONS,
-      newWhere => {
-        const cur = this.getFieldValue("WHERE");
-        const newNeedsAt = newWhere === "FROM_START" || newWhere === "FROM_END";
-        const curNeedsAt = cur === "FROM_START" || cur === "FROM_END";
-        if (newNeedsAt !== curNeedsAt) this.updateAt_(newNeedsAt);
-      }
-    );
+    const whereField = new Blockly.FieldDropdown(this.WHERE_OPTIONS, newWhere => {
+      const cur = this.getFieldValue("WHERE");
+      const newNeedsAt = newWhere === "FROM_START" || newWhere === "FROM_END";
+      const curNeedsAt = cur === "FROM_START" || cur === "FROM_END";
+      if (newNeedsAt !== curNeedsAt) this.updateAt_(newNeedsAt);
+    });
     this.appendDummyInput().appendField(whereField, "WHERE");
 
     this.appendDummyInput("AT");
@@ -390,9 +347,7 @@ Blockly.Blocks["lists_getIndex_modified"] = {
     if (useValueInput) {
       this.appendValueInput("AT").setCheck("Number");
       if (Blockly.Msg.ORDINAL_NUMBER_SUFFIX) {
-        this.appendDummyInput("ORDINAL").appendField(
-          Blockly.Msg.ORDINAL_NUMBER_SUFFIX
-        );
+        this.appendDummyInput("ORDINAL").appendField(Blockly.Msg.ORDINAL_NUMBER_SUFFIX);
       }
     } else {
       this.appendDummyInput("AT");
@@ -410,19 +365,14 @@ Blockly.Blocks["lists_getIndex_modified"] = {
   },
 };
 
-javascriptGenerator.forBlock["lists_getIndex_modified"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["lists_getIndex_modified"] = function (block, generator) {
   const workspaceOneBased =
     block.workspace.options && block.workspace.options.oneBasedIndex;
   const mode = block.getFieldValue("MODE");
   const where = block.getFieldValue("WHERE");
 
-  const listCode =
-    generator.valueToCode(block, "VALUE", Order.NONE) || "[]";
-  const atCodeRaw =
-    generator.valueToCode(block, "AT", Order.NONE) || "0";
+  const listCode = generator.valueToCode(block, "VALUE", Order.NONE) || "[]";
+  const atCodeRaw = generator.valueToCode(block, "AT", Order.NONE) || "0";
 
   let i;
 
@@ -447,9 +397,7 @@ javascriptGenerator.forBlock["lists_getIndex_modified"] = function (
   }
 
   return [
-    mode === "REMOVE"
-      ? `${listCode}.toSpliced(${i}, 1)`
-      : `${listCode}.at(${i})`,
+    mode === "REMOVE" ? `${listCode}.toSpliced(${i}, 1)` : `${listCode}.at(${i})`,
     Order.FUNCTION_CALL,
   ];
 };
@@ -476,22 +424,15 @@ Blockly.Blocks["lists_setIndex_modified"] = {
       .appendField(Blockly.Msg.LISTS_SET_INDEX_INPUT_IN_LIST);
 
     const modeField = new Blockly.FieldDropdown(MODE_OPTIONS);
-    this.appendDummyInput()
-      .appendField(modeField, "MODE")
-      .appendField("", "SPACE");
+    this.appendDummyInput().appendField(modeField, "MODE").appendField("", "SPACE");
 
-    const whereField = new Blockly.FieldDropdown(
-      this.WHERE_OPTIONS,
-      newWhere => {
-        this.updateAt_(newWhere === "FROM_START" || newWhere === "FROM_END");
-        return newWhere;
-      }
-    );
+    const whereField = new Blockly.FieldDropdown(this.WHERE_OPTIONS, newWhere => {
+      this.updateAt_(newWhere === "FROM_START" || newWhere === "FROM_END");
+      return newWhere;
+    });
     this.appendDummyInput().appendField(whereField, "WHERE");
     this.appendDummyInput("AT");
-    this.appendValueInput("TO").appendField(
-      Blockly.Msg.LISTS_SET_INDEX_INPUT_TO
-    );
+    this.appendValueInput("TO").appendField(Blockly.Msg.LISTS_SET_INDEX_INPUT_TO);
 
     this.setInputsInline(true);
     this.setOutput(true, "Array");
@@ -548,9 +489,7 @@ Blockly.Blocks["lists_setIndex_modified"] = {
     if (useValueInput) {
       this.appendValueInput("AT").setCheck("Number");
       if (Blockly.Msg.ORDINAL_NUMBER_SUFFIX) {
-        this.appendDummyInput("ORDINAL").appendField(
-          Blockly.Msg.ORDINAL_NUMBER_SUFFIX
-        );
+        this.appendDummyInput("ORDINAL").appendField(Blockly.Msg.ORDINAL_NUMBER_SUFFIX);
       }
     } else {
       this.appendDummyInput("AT");
@@ -558,24 +497,18 @@ Blockly.Blocks["lists_setIndex_modified"] = {
     try {
       this.moveInputBefore("AT", "TO");
       if (this.getInput("ORDINAL")) this.moveInputBefore("ORDINAL", "TO");
-    } catch (e) { }
+    } catch (e) {}
   },
 };
 
-javascriptGenerator.forBlock["lists_setIndex_modified"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["lists_setIndex_modified"] = function (block, generator) {
   const oneBased = block.workspace.options?.oneBasedIndex;
   const mode = block.getFieldValue("MODE");
   const where = block.getFieldValue("WHERE");
 
-  const listCode =
-    generator.valueToCode(block, "LIST", Order.NONE) || "[]";
-  const valueCode =
-    generator.valueToCode(block, "TO", Order.NONE) || "undefined";
-  const atCode =
-    generator.valueToCode(block, "AT", Order.NONE) || "0";
+  const listCode = generator.valueToCode(block, "LIST", Order.NONE) || "[]";
+  const valueCode = generator.valueToCode(block, "TO", Order.NONE) || "undefined";
+  const atCode = generator.valueToCode(block, "AT", Order.NONE) || "0";
 
   let indexExpr;
   switch (where) {
@@ -604,10 +537,11 @@ javascriptGenerator.forBlock["lists_setIndex_modified"] = function (
   if (i < 0) i += _.length;
   if (i < 0) i = 0;
   if (i > _.length) i = _.length;
-  return ${mode === "INSERT"
+  return ${
+    mode === "INSERT"
       ? `_.toSpliced(i, 0, ${valueCode})`
       : `i < _.length ? _.toSpliced(i, 1, ${valueCode}) : _`
-    };
+  };
 })(${listCode})`;
 
   return [code, Order.FUNCTION_CALL];

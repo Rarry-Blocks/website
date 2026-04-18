@@ -41,6 +41,23 @@ export default [
     xml: `<category name="Pen" colour="#0fbd8c">
         <block type="pen_down"></block>
         <block type="pen_up"></block>
+        <block type="pen_print">
+          <value name="TEXT">
+            <shadow type="text">
+              <field name="TEXT">Hello</field>
+            </shadow>
+          </value>
+          <value name="X">
+            <shadow type="math_number">
+              <field name="NUM">0</field>
+            </shadow>
+          </value>
+          <value name="Y">
+            <shadow type="math_number">
+              <field name="NUM">0</field>
+            </shadow>
+          </value>
+        </block>
         <block type="set_pen_color_combined">
           <value name="VALUE">
             <shadow type="text">
@@ -49,7 +66,18 @@ export default [
           </value>
         </block>
         <block type="set_pen_size">
-          <value name="SIZE"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+          <value name="SIZE">
+            <shadow type="math_number">
+              <field name="NUM">1</field>
+            </shadow>
+          </value>
+        </block>
+        <block type="set_pen_print_direction">
+          <value name="ANGLE">
+            <shadow type="math_number">
+              <field name="NUM">0</field>
+            </shadow>
+          </value>
         </block>
         <block type="clear_pen"></block>
       </category>`,

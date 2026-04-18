@@ -16,6 +16,18 @@ Blockly.Blocks["say_message_duration"] = {
   init: function () {
     this.appendValueInput("MESSAGE").appendField("say");
     this.appendValueInput("DURATION").setCheck("Number").appendField("for");
+    this.appendDummyInput().appendField("seconds without waiting");
+    this.setPreviousStatement(true, "default");
+    this.setNextStatement(true, "default");
+    this.setInputsInline(true);
+    this.setStyle("looks_blocks");
+  },
+};
+
+Blockly.Blocks["say_message_duration_waiting"] = {
+  init: function () {
+    this.appendValueInput("MESSAGE").appendField("say");
+    this.appendValueInput("DURATION").setCheck("Number").appendField("for");
     this.appendDummyInput().appendField("seconds");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
@@ -123,6 +135,13 @@ javascriptGenerator.forBlock["say_message_duration"] = function (block, generato
   const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
 
   return `sayMessage(${message}, ${duration});\nyield;\n`;
+};
+
+javascriptGenerator.forBlock["say_message_duration_waiting"] = function (block, generator) {
+  const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
+  const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
+
+  return `sayMessage(${message}, ${duration});\nyield* wait(${duration} * 1000);\n`;
 };
 
 javascriptGenerator.forBlock["switch_costume"] = function (block, generator) {

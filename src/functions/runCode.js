@@ -236,11 +236,10 @@ export function runCodeWithFunctions({
     else sprite.scale.set(amountN, amountN);
   }
 
-  function setAngle(amount, additive) {
+  function setAngle(amount = 0, additive = false) {
     const sprite = getTarget();
-    let angle = additive ? sprite.angle + amount : amount;
-    angle = ((angle % 360) + 360) % 360;
-    sprite.angle = angle;
+    const newAngle = additive ? sprite.angle + amount : amount;
+    sprite.angle = newAngle - 360 * Math.floor(newAngle / 360);
   }
 
   function pointsTowards(x, y) {
@@ -421,6 +420,24 @@ export function runCodeWithFunctions({
     getTargetData().penDown = !!active;
   }
 
+  function penPrint(message, x, y) {
+    const targetData = getTargetData();
+
+    const style = new TextStyle({
+      fill: targetData.penColor || 0x000000,
+      fontSize: (targetData.penSize || 1) * 12,
+      fontFamily: "Arial",
+    });
+
+    const textObj = new Text(String(message), style);
+    textObj.x = +x;
+    textObj.y = -y;
+    textObj.rotation = targetData.penPrintDirection || 0;
+    textObj.anchor.set(0.5, 0.5);
+
+    penGraphics.addChild(textObj);
+  }
+
   function setPenColor(r, g, b) {
     if (typeof r === "string") {
       const [r_, g_, b_] = r.split(",");
@@ -444,8 +461,16 @@ export function runCodeWithFunctions({
     getTargetData().penSize = Math.max(1, size);
   }
 
+  function setPenPrintDirection(angle = 0) {
+    const normalizedAngle = angle - 360 * Math.floor(angle / 360);
+    getTargetData().penPrintDirection = (normalizedAngle * Math.PI) / 180;
+  }
+
   function clearPen() {
     penGraphics.clear();
+    for (let i = penGraphics.children.length - 1; i >= 0; i--) {
+      penGraphics.children[i].destroy();
+    }
   }
 
   function toggleVisibility(bool = true) {
@@ -510,9 +535,11 @@ export function runCodeWithFunctions({
     stopAllSounds,
     isMouseTouchingSprite,
     setPenStatus,
+    penPrint,
     setPenColor,
     setPenColorHex,
     setPenSize,
+    setPenPrintDirection,
     clearPen,
     toggleVisibility,
     soundProperties,

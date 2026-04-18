@@ -7,17 +7,23 @@ function value(name, ...extra) {
 function shadow(type, ...extra) {
   return `<shadow type="${type}">${extra?.join?.("")}</shadow>`;
 }
-function sep(sep) {
-  return `<sep gap="${sep}"></sep>`;
+function field(name, value) {
+  return `<field name="${name}">${value}</field>`;
+}
+function label(text) {
+  return `<label text="${text}"></label>`;
+}
+function sep(gap) {
+  return gap ? `<sep gap="${gap}"></sep>` : `<sep></sep>`;
 }
 function shadowNumber(value = 10) {
-  return `<shadow type="math_number"><field name="NUM">${value}</field></shadow>`;
+  return `<shadow type="math_number">${field("NUM", value)}</shadow>`;
 }
 function shadowText(value = "") {
-  return `<shadow type="text"><field name="TEXT">${value}</field></shadow>`;
+  return `<shadow type="text">${field("TEXT", value)}</shadow>`;
 }
 function shadowBoolean(value = true) {
-  return `<shadow type="logic_boolean"><field name="BOOL">${value ? "TRUE" : "FALSE"}</field></shadow>`;
+  return `<shadow type="logic_boolean">${field("BOOL", value ? "TRUE" : "FALSE")}</shadow>`;
 }
 
 const Toolbox = `
@@ -35,56 +41,31 @@ const Toolbox = `
   </category>
 
   <category name="Control" colour="#FFAB19">
-    <block type="wait_block">
-      <value name="AMOUNT">
-        ${shadowNumber(2)}
-      </value>
-    </block>
+    ${block("wait_block", value("AMOUNT", shadowNumber(2)))}
     ${sep("50")}
     ${block("controls_if")}
     ${block("controls_switch", value("VALUE", shadowText()))}
     ${block("controls_switch_case")}
     ${sep("50")}
-    <block type="controls_repeat_ext">
-      <value name="TIMES">
-        ${shadowNumber(3)}
-      </value>
-    </block>
+    ${block("controls_repeat_ext", value("TIMES", shadowNumber(3)))}
     ${block("controls_forever")}
     ${block("controls_whileUntil")}
-    <block type="controls_forLoop">
-      <value name="VAR">
-        ${shadow("controls_forLoop_var")}
-      </value>
-      <value name="START">
-        ${shadowNumber(1)}
-      </value>
-      <value name="END">
-        ${shadowNumber(10)}
-      </value>
-    </block>
+    ${block(
+      "controls_forLoop",
+      value("VAR", shadow("controls_forLoop_var")),
+      value("START", shadowNumber(1)),
+      value("END", shadowNumber(10)),
+    )}
     ${block("controls_flow_statements")}
     ${block("controls_stop_sprite", value("ID", shadow("controls_sprites_menu")))}
     ${block("controls_stopblock")}
     ${sep("50")}
     ${block("controls_whenstartasclone")}
-    <block type="controls_createclone">
-      <value name="ID">
-        ${shadow("controls_sprites_menu")}
-      </value>
-    </block>
-    <block type="controls_delete_all_clones">
-      <value name="ID">
-        ${shadow("controls_sprites_menu")}
-      </value>
-    </block>
+    ${block("controls_createclone", value("ID", shadow("controls_sprites_menu")))}
+    ${block("controls_delete_all_clones", value("ID", shadow("controls_sprites_menu")))}
     ${block("controls_delete_this_clone")}
     ${block("controls_is_clone")}
-    <block type="controls_as_sprite">
-      <value name="ID">
-        ${shadow("controls_sprites_menu")}
-      </value>
-    </block>
+    ${block("controls_as_sprite", value("ID", shadow("controls_sprites_menu")))}
     ${sep("50")}
     ${block("controls_thread_create")}
     ${block("controls_run_instantly")}
@@ -92,190 +73,85 @@ const Toolbox = `
 
   <category name="Functions" colour="#FF6680" custom="FUNCTIONS_CATEGORY"></category>
   
-  <sep></sep>
+  ${sep()}
 
   <category name="Motion" colour="#4C97FF">
-    <block type="move_steps">
-      <value name="STEPS">
-        ${shadowNumber()}
-      </value>
-    </block>
-    <block type="goto_position">
-      <value name="x">
-        ${shadowNumber(0)}
-      </value>
-      <value name="y">
-        ${shadowNumber(0)}
-      </value>
-    </block>
-    <block type="set_position">
-      <value name="AMOUNT">
-        ${shadowNumber(0)}
-      </value>
-    </block>
-    <block type="change_position">
-      <value name="AMOUNT">
-        ${shadowNumber()}
-      </value>
-    </block>
+    ${block("move_steps", value("STEPS", shadowNumber()))}
+    ${block("goto_position", value("x", shadowNumber(0)), value("y", shadowNumber(0)))}
+    ${block("set_position", value("AMOUNT", shadowNumber(0)))}
+    ${block("change_position", value("AMOUNT", shadowNumber(0)))}
     ${block("get_position")}
     ${sep("50")}
-    <block type="point_towards">
-      <value name="x">
-        ${shadowNumber(0)}
-      </value>
-      <value name="y">
-        ${shadowNumber(0)}
-      </value>
-    </block>
-    <block type="angle_set">
-      <value name="AMOUNT">
-        ${shadowNumber(0)}
-      </value>
-    </block>
-    <block type="angle_turn">
-      <value name="AMOUNT">
-        ${shadowNumber(15)}
-      </value>
-    </block>
+    ${block("point_towards", value("x", shadowNumber(0)), value("y", shadowNumber(0)))}
+    ${block("angle_set", value("AMOUNT", shadowNumber(0)))}
+    ${block("angle_turn", value("AMOUNT", shadowNumber(15)))}
     ${block("get_angle")}
   </category>
 
   <category name="Looks" colour="#9966FF">
-    <block type="looks_setVisibility_sprite">
-      <value name="VISIBLE">
-        ${shadowBoolean(true)}
-      </value>
-    </block>
+    ${block("looks_setVisibility_sprite", value("VISIBLE", shadowBoolean(true)))}
     ${block("looks_isVisible")}
     ${sep("50")}
-    <block type="say_message">
-      <value name="MESSAGE">
-        ${shadowText("Hello!")}
-      </value>
-    </block>
-    <block type="say_message_duration">
-      <value name="MESSAGE">
-        ${shadowText("Hello!")}
-      </value>
-      <value name="DURATION">
-        ${shadowNumber(2)}
-      </value>
-    </block>
+    ${block("say_message", value("MESSAGE", shadowText("Hello!")))}
+    ${block(
+      "say_message_duration_waiting",
+      value("MESSAGE", shadowText("Hello!")),
+      value("DURATION", shadowNumber(2)),
+    )}
     ${sep("50")}
-    <block type="switch_costume">
-      <value name="COSTUME">
-        ${shadow("looks_costumes_menu")}
-      </value>
-    </block>
+    ${block("switch_costume", value("COSTUME", shadow("looks_costumes_menu")))}
     ${block("get_costume_size")}
     ${sep("50")}
-    <block type="set_size">
-      <value name="AMOUNT">
-        ${shadowNumber(100)}
-      </value>
-    </block>
-    <block type="change_size">
-      <value name="AMOUNT">
-        ${shadowNumber(10)}
-      </value>
-    </block>
+    ${block("set_size", value("AMOUNT", shadowNumber(100)))}
+    ${block("change_size", value("AMOUNT", shadowNumber(10)))}
     ${block("get_sprite_scale")}
   </category>
 
   <category name="Sounds" colour="#ff66ba">
-    <block type="play_sound">
-      <value name="name">
-        ${shadow("sound_sounds_menu")}
-      </value>
-    </block>
-    <block type="stop_sound">
-      <value name="name">
-        ${shadow("sound_sounds_menu")}
-      </value>
-    </block>
+    ${block("play_sound", value("name", shadow("sound_sounds_menu")))}
+    ${block("stop_sound", value("name", shadow("sound_sounds_menu")))}
     ${block("stop_all_sounds")}
     ${sep("50")}
-    <block type="set_sound_property">
-      <value name="value">
-        ${shadowNumber(100)}
-      </value>
-    </block>
+    ${block("set_sound_property", value("value", shadowNumber(100)))}
     ${block("get_sound_property")}
   </category>
 
-  <sep></sep>
+  ${sep()}
 
   <category name="Operators" colour="#59ba57">
-    <label text="Logic"></label>
+    ${label("Logic")}
     ${block("logic_compare")}
     ${block("logic_operation_extra")}
     ${block("logic_negate")}
     ${block("logic_boolean")}
     ${block("logic_ternary")}
-    <label text="Math"></label>
-    <block type="math_number">
-      <field name="NUM">0</field>
-    </block>
-    <block type="math_arithmetic">
-      <value name="A">
-        ${shadowNumber(5)}
-      </value>
-      <value name="B">
-        ${shadowNumber(2)}
-      </value>
-    </block>
-    <block type="math_single">
-      <value name="NUM">
-        ${shadowNumber(10)}
-      </value>
-    </block>
-    <block type="math_trig">
-      <value name="NUM">
-        ${shadowNumber(45)}
-      </value>
-    </block>
+    ${label("Math")}
+    ${block("math_number", field("NUM", 0))}
+    ${block("math_arithmetic", value("A", shadowNumber(5)), value("B", shadowNumber(2)))}
+    ${block("math_single", value("NUM", shadowNumber(10)))}
+    ${block("math_trig", value("NUM", shadowNumber(45)))}
     ${block("math_constant")}
-    <block type="math_number_property">
-      <value name="NUMBER_TO_CHECK">
-        ${shadowNumber(10)}
-      </value>
-    </block>
-    <block type="math_round">
-      <value name="NUM">
-        ${shadowNumber(1.5)}
-      </value>
-    </block>
+    ${block("math_number_property", value("NUMBER_TO_CHECK", shadowNumber(10)))}
+    ${block("math_round", value("NUM", shadowNumber(1.5)))}
     ${block("math_on_list")}
-    <block type="math_modulo">
-      <value name="DIVIDEND">
-        ${shadowNumber(10)}
-      </value>
-      <value name="DIVISOR">
-        ${shadowNumber(6)}
-      </value>
-    </block>
-    <block type="math_constrain">
-      <value name="VALUE">
-        ${shadowNumber(5)}
-      </value>
-      <value name="LOW">
-        ${shadowNumber(1)}
-      </value>
-      <value name="HIGH">
-        ${shadowNumber(10)}
-      </value>
-    </block>
-    <block type="math_random_int">
-      <value name="FROM">
-        ${shadowNumber(1)}
-      </value>
-      <value name="TO">
-        ${shadowNumber(10)}
-      </value>
-    </block>
+    ${block(
+      "math_modulo",
+      value("DIVIDEND", shadowNumber(10)),
+      value("DIVISOR", shadowNumber(6)),
+    )}
+    ${block(
+      "math_constrain",
+      value("VALUE", shadowNumber(5)),
+      value("LOW", shadowNumber(1)),
+      value("HIGH", shadowNumber(10)),
+    )}
+    ${block(
+      "math_random_int",
+      value("FROM", shadowNumber(1)),
+      value("TO", shadowNumber(10)),
+    )}
     ${block("math_random_float")}
-    <label text="Text"></label>
+    ${label("Text")}
     ${block("text")}
     ${block("text_join_extendable")}
     ${block("text_length", value("VALUE", shadowText()))}
@@ -299,8 +175,8 @@ const Toolbox = `
     ${block("system_current_time")}
     ${block(
       "system_distance_direction",
-      value("X1", shadow("get_position", `<field name="MENU">x</field>`)),
-      value("Y1", shadow("get_position", `<field name="MENU">y</field>`)),
+      value("X1", shadow("get_position", field("MENU", "x"))),
+      value("Y1", shadow("get_position", field("MENU", "y"))),
       value("X2", shadowNumber()),
       value("Y2", shadowNumber()),
     )}
@@ -312,113 +188,55 @@ const Toolbox = `
 
   <category name="Lists" colour="#e35340">
     ${block("lists_extendable")}
-    <block type="lists_repeat">
-      <value name="NUM">
-        ${shadowNumber(5)}
-      </value>
-    </block>
+    ${block("lists_repeat", value("NUM", shadowNumber(5)))}
     ${sep("50")}
     ${block("lists_length")}
     ${block("lists_isEmpty")}
     ${block("lists_has", value("VALUE", shadowText()))}
     ${block("lists_indexOf")}
-    <block type="lists_find">
-      <value name="item">
-        ${shadow("lists_filter_item")}
-      </value>
-      <value name="method">
-        <block type="logic_compare">
-          <field name="OP">EQ</field>
-        </block>
-      </value>
-    </block>
-    </value>
+    ${block(
+      "lists_find",
+      value("item", shadow("lists_filter_item")),
+      value("method", block("logic_compare", field("OP", "EQ"))),
+    )}
     ${block("lists_getIndex_modified")}
     ${block("lists_setIndex_modified")}
     ${block("lists_getSublist")}
-    <block type="lists_split">
-      <value name="DELIM">
-        <shadow type="text">
-          <field name="TEXT">,</field>
-        </shadow>
-      </value>
-    </block>
+    ${block("lists_split", value("DELIM", shadowText(",")))}
     ${block("lists_merge")}
     ${block("lists_sort")}
-    <block type="lists_filter">
-      <value name="item">
-        ${shadow("lists_filter_item")}
-      </value>
-      <value name="method">
-        <block type="logic_compare">
-          <field name="OP">EQ</field>
-        </block>
-      </value>
-    </block>
-    <block type="lists_map">
-      <value name="item">
-        ${shadow("lists_filter_item")}
-      </value>
-      <value name="method">
-        ${block("lists_filter_item")}
-      </value>
-    </block>
+    ${block(
+      "lists_filter",
+      value("item", shadow("lists_filter_item")),
+      value("method", block("logic_compare", field("OP", "EQ"))),
+    )}
+    ${block(
+      "lists_map",
+      value("item", shadow("lists_filter_item")),
+      value("method", block("lists_filter_item")),
+    )}
     ${sep("50")}
-    <block type="lists_foreach">
-      <value name="ITEM">
-        ${shadow("lists_filter_item")}
-      </value>
-      <value name="INDEX">
-        ${shadow("lists_foreach_index")}
-      </value>
-    </block>
+    ${block(
+      "lists_foreach",
+      value("ITEM", shadow("lists_filter_item")),
+      value("INDEX", shadow("lists_foreach_index")),
+    )}
   </category>
 
   <category name="Objects" colour="#ff8349">
     ${block("json_create_statement")}
-    <block type="json_key_value_statement">
-      <value name="KEY">
-        <shadow type="text">
-          <field name="TEXT"></field>
-        </shadow>
-      </value>
-      <value name="VALUE">
-        <shadow type="text">
-          <field name="TEXT"></field>
-        </shadow>
-      </value>
-    </block>
+    ${block(
+      "json_key_value_statement",
+      value("KEY", shadowText("")),
+      value("VALUE", shadowText("")),
+    )}
     ${sep("50")}
     ${block("json_length")}
     ${block("json_isEmpty")}
-    <block type="json_has_key">
-      <value name="KEY">
-        <shadow type="text">
-          <field name="TEXT">key</field>
-        </shadow>
-      </value>
-    </block>
-    <block type="json_get">
-      <value name="KEY">
-        <shadow type="text">
-          <field name="TEXT">key</field>
-        </shadow>
-      </value>
-    </block>
-    <block type="json_set_return">
-      <value name="KEY">
-        <shadow type="text">
-          <field name="TEXT">key</field>
-        </shadow>
-      </value>
-    </block>
-    <block type="json_delete_return">
-      <value name="KEY">
-        <shadow type="text">
-          <field name="TEXT">key</field>
-        </shadow>
-      </value>
-    </block>
+    ${block("json_has_key", value("KEY", shadowText("key")))}
+    ${block("json_get", value("KEY", shadowText("key")))}
+    ${block("json_set_return", value("KEY", shadowText("key")))}
+    ${block("json_delete_return", value("KEY", shadowText("key")))}
     ${block("json_property_list")}
     ${block("json_parse")}
     ${block("json_clone")}
