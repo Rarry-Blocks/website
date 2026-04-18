@@ -110,6 +110,26 @@ header div {
   gap: 0.5rem;
 }
 
+@media (max-width: 768px) {
+  .logo:not(.small) {
+    display: none;
+  }
+
+  .logo.small {
+    display: block;
+  }
+}
+
+@media (min-width: 769px) {
+  .logo.small {
+    display: none;
+  }
+
+  .logo:not(.small) {
+    display: block;
+  }
+}
+
 .hidden,
 html.removeRarryToolbar header img.logo {
   display: none !important;

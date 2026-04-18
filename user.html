@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
 
 <head>
@@ -11,8 +11,7 @@
 
   <meta name="author" content="ddededodediamante" />
   <meta name="description" content="Create and share games using visual block-coding, powered by Blockly." />
-  <meta name="keywords"
-    content="Rarry, block coding, Scratch, visual programming, game maker, online coding" />
+  <meta name="keywords" content="Rarry, block coding, Scratch, visual programming, game maker, online coding" />
   <meta name="theme-color" content="#3b82f6" />
   <meta property="og:title" content="Rarry" />
   <meta property="og:image" content="icons/Rarry.svg" />
@@ -26,8 +25,10 @@
 <body>
   <header>
     <div>
-      <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" onclick="location.href='/'" style="cursor: pointer" />
-      <button onclick="location.href='/editor'">
+      <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" onclick="location.href = '/'" style="cursor: pointer" />
+      <img src="icons/R-Rarry.svg" alt="Rarry logo" class="logo small" onclick="location.href = '/'"
+        style="cursor: pointer" />
+      <button onclick="location.href = '/editor'">
         <i class="fa-solid fa-code"></i>
         Editor
       </button>
@@ -37,7 +38,7 @@
       </button>
     </div>
     <div>
-      <button onclick="location.href='/login'" id="login-button">
+      <button onclick="location.href = '/login'" id="login-button">
         <i class="fa-solid fa-right-to-bracket"></i>
         Login
       </button>

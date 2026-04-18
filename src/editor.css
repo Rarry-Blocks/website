@@ -22,6 +22,12 @@ html:not(.tauri) img.logo {
   pointer-events: all;
 }
 
+#project-name-input {
+  width: min-content;
+  min-width: 6em;
+  text-overflow: ellipsis;
+}
+
 .left-panel {
   width: 66.66%;
   display: flex;

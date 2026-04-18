@@ -43,6 +43,12 @@ import {
   updateSpriteInfoValues,
   spriteToImage,
 } from "./editor/ui.js";
+import {
+  saveProject as apiSaveProject,
+  loadProjectFile,
+  compressData,
+  decompressData,
+} from "./editor/project.js";
 
 const isDesktop = window.__TAURI_INTERNALS__ !== undefined;
 const loadingScreen = document.getElementById("editor-loading");
@@ -130,6 +136,12 @@ createPenGraphics();
 export let projectVariables = {};
 export let projectBlockValues = {};
 export let activeSprite = null;
+export function getActiveSpriteStuff() {
+  return {
+    costumes: activeSprite?.costumes || [],
+    sounds: activeSprite?.sounds || [],
+  };
+}
 
 Blockly.blockRendering.register("custom_zelos", CustomRenderer);
 
@@ -393,6 +405,8 @@ export function setActiveSprite(sprite) {
   }
 
   Blockly.Events.disable();
+
+  if (workspace.getToolbox()) workspace.refreshToolboxSelection();
 
   const xmlText =
     activeSprite?.code || '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
@@ -719,256 +733,26 @@ function getProject() {
 }
 
 async function saveProject() {
-  const zip = new JSZip();
-  const json = {
+  await apiSaveProject({
     projectName: getProjectName(),
-    sprites: [],
-    extensions: activeExtensions,
-    variables: projectVariables ?? {},
-  };
-
-  const toUint8Array = base64 => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-
-  await Promise.all(
-    spriteManager.getOriginals().map(async sprite => {
-      const baseJSON = sprite.toJSON();
-      const spriteId = sprite.id;
-
-      const costumeEntries = (
-        await Promise.all(
-          sprite.costumes.map(async c => {
-            let dataURL;
-            const url = c.texture?.baseTexture?.resource?.url;
-
-            if (typeof url === "string" && url.startsWith("data:")) {
-              dataURL = url;
-            } else {
-              dataURL = await app.renderer.extract.base64(new PixiSprite(c.texture));
-            }
-
-            const processed = await compressImage(dataURL);
-            if (!processed) return null;
-
-            const base64 = processed.split(",")[1];
-            zip.file(`${spriteId}.c.${c.id}.webp`, toUint8Array(base64), {
-              binary: true,
-            });
-
-            return {
-              id: c.id,
-              name: c.name,
-              texture: `${spriteId}.c.${c.id}.webp`,
-            };
-          }),
-        )
-      ).filter(Boolean);
-
-      const soundEntries = (
-        await Promise.all(
-          sprite.sounds.map(async s => {
-            const processed = await compressAudio(s.dataURL);
-            if (!processed) return null;
-
-            const base64 = processed.split(",")[1];
-            zip.file(`${spriteId}.s.${s.id}.ogg`, toUint8Array(base64), {
-              binary: true,
-            });
-
-            return {
-              id: s.id,
-              name: s.name,
-              path: `${spriteId}.s.${s.id}.ogg`,
-            };
-          }),
-        )
-      ).filter(Boolean);
-
-      json.sprites.push({
-        ...baseJSON,
-        costumes: costumeEntries,
-        sounds: soundEntries,
-      });
-    }),
-  );
-
-  zip.file("project.json", JSON.stringify(json));
-
-  if (isDesktop) {
-    const filePath = await tauriSave({
-      title: "Save Rarry Project",
-      defaultPath: json.projectName,
-      filters: [{ name: "Rarry Project", extensions: ["rarryz"] }],
-    });
-
-    if (filePath) {
-      const content = await zip.generateAsync({
-        type: "uint8array",
-        compression: "DEFLATE",
-        compressionOptions: { level: 9 },
-      });
-
-      await writeFile(filePath, content);
-    }
-  } else {
-    const blob = await zip.generateAsync({
-      type: "blob",
-      compression: "DEFLATE",
-      compressionOptions: { level: 9 },
-    });
-
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = json.projectName + ".rarryz";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
+    spriteManager,
+    activeExtensions,
+    projectVariables,
+    app,
+    showLoading,
+    hideLoading,
+  });
 }
 
 async function loadProject(ev) {
-  showLoading("Loading project...");
-
-  try {
-    const [file] = ev.target.files ?? [];
-    if (!file) return;
-
-    const fileName = file.name;
-    const projectName = fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8View = new Uint8Array(arrayBuffer);
-
-    const isZip = uint8View[0] === 0x50 && uint8View[1] === 0x4b;
-    if (!isZip) throw new Error("Invalid project: Not a valid ZIP file");
-
-    const zip = await JSZip.loadAsync(arrayBuffer);
-
-    const projectFile = zip.file("project.json");
-    if (!projectFile) {
-      throw new Error("Invalid project: Missing project.json");
-    }
-
-    const json = JSON.parse(await projectFile.async("string"));
-    if (!Array.isArray(json.sprites)) {
-      throw new Error("Invalid project: No valid sprites found");
-    }
-
-    const totalItems = json.sprites.reduce((acc, sprite) => {
-      const costumes = Array.isArray(sprite.costumes) ? sprite.costumes.length : 0;
-      const sounds = Array.isArray(sprite.sounds) ? sprite.sounds.length : 0;
-      return acc + costumes + sounds;
-    }, 0);
-
-    let completedItems = 0;
-    const updateProgress = () => {
-      completedItems++;
-      const percent = Math.floor((completedItems / totalItems) * 100);
-      showLoading(`Loading assets: ${completedItems}/${totalItems} (${percent}%)`);
-    };
-
-    spriteManager.clear();
-
-    const sprites = await Promise.all(
-      json.sprites.map(async entry => {
-        const sprite = { ...entry };
-        sprite.costumes = [];
-        sprite.sounds = [];
-
-        if (Array.isArray(entry.costumes)) {
-          await Promise.all(
-            entry.costumes.map(async c => {
-              const srcCandidate = c.texture ?? c.path ?? c.data;
-
-              if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
-                sprite.costumes.push({ name: c.name, texture: srcCandidate });
-                updateProgress();
-                return;
-              }
-
-              if (typeof srcCandidate === "string") {
-                const fileEntry = zip.file(srcCandidate);
-                if (!fileEntry) throw new Error(`Missing costume: ${srcCandidate}`);
-
-                const base64 = await fileEntry.async("base64");
-                sprite.costumes.push({
-                  name: c.name,
-                  texture: `data:image/webp;base64,${base64}`,
-                });
-                updateProgress();
-                return;
-              }
-              throw new Error(
-                `Invalid costume entry for sprite ${entry.id ?? "<unknown>"}`,
-              );
-            }),
-          );
-        }
-
-        if (Array.isArray(entry.sounds)) {
-          await Promise.all(
-            entry.sounds.map(async s => {
-              const srcCandidate = s.data ?? s.path;
-
-              if (typeof srcCandidate === "string" && srcCandidate.startsWith("data:")) {
-                sprite.sounds.push({ name: s.name, data: srcCandidate });
-                updateProgress();
-                return;
-              }
-
-              if (typeof srcCandidate === "string") {
-                const fileEntry = zip.file(srcCandidate);
-                if (!fileEntry) throw new Error(`Missing sound: ${srcCandidate}`);
-
-                const base64 = await fileEntry.async("base64");
-                sprite.sounds.push({
-                  name: s.name,
-                  data: `data:audio/ogg;base64,${base64}`,
-                });
-                updateProgress();
-                return;
-              }
-              throw new Error(
-                `Invalid sound entry for sprite ${entry.id ?? "<unknown>"}`,
-              );
-            }),
-          );
-        }
-
-        sprite.code = entry.code ?? "";
-        sprite.x = entry.x ?? entry.data?.x ?? 0;
-        sprite.y = entry.y ?? entry.data?.y ?? 0;
-        sprite.scale = entry.scale ?? entry.data?.scale?.x ?? 1;
-        sprite.rotation =
-          entry.rotation ?? entry.data?.angle ?? entry.data?.rotation ?? 0;
-        sprite.currentCostume = entry.currentCostume ?? entry.data?.currentCostume ?? 0;
-
-        return sprite;
-      }),
-    );
-
-    await handleProjectData({
-      projectName,
-      sprites,
-      extensions: json.extensions,
-      variables: json.variables,
-    });
-  } catch (err) {
-    console.error(err);
-    alert(err.message || "Failed to load project.");
-  } finally {
-    hideLoading();
-  }
-}
-
-async function compressData(data, format = "deflate") {
-  const stream = new Blob([data]).stream();
-  const compressedStream = stream.pipeThrough(new CompressionStream(format));
-  return new Uint8Array(await new Response(compressedStream).arrayBuffer());
-}
-
-async function decompressData(data, format = "deflate") {
-  const stream = new Blob([data]).stream();
-  const decompressedStream = stream.pipeThrough(new DecompressionStream(format));
-  return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
+  const [file] = ev.target.files ?? [];
+  if (!file) return;
+  await loadProjectFile(file, {
+    spriteManager,
+    handleProjectData,
+    showLoading,
+    hideLoading,
+  });
 }
 
 async function handleProjectData(data) {
@@ -1477,19 +1261,13 @@ function createSession() {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
 
-        const index = target.costumes.findIndex(c => c.id === data.id);
-        if (index === -1) return;
+        const wasActive = target.currentCostumeId === data.id;
 
-        const wasCurrentCostumeDeleted = target.currentCostume === index;
+        target.costumes = target.costumes.filter(c => c.id !== data.id);
 
-        target.costumes.splice(index, 1);
-
-        if (wasCurrentCostumeDeleted) {
-          if (target.costumes.length > 0) {
-            target.pixiSprite.texture = target.costumes[0].texture;
-          } else {
-            target.pixiSprite.texture = Texture.EMPTY;
-          }
+        if (wasActive) {
+          target.currentCostumeId = target.costumes[0]?.id || null;
+          target.applyCurrentCostume();
         }
 
         if (activeSprite?.id === target.id) renderCostumesList();

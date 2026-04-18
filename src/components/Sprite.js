@@ -1,16 +1,16 @@
 import { Sprite as PixiSprite, Texture } from "pixi.js-legacy";
 import { vm } from "../scripts/editor";
 import { triggerCloneEvents } from "../functions/runCode";
+import md5 from "js-md5";
 
 export class Costume {
   constructor({ id, name, texture }) {
     if (!(texture instanceof Texture)) {
-      throw new Error(
-        `Costume "${name}" created with invalid texture`
-      );
+      throw new Error(`Costume "${name}" created with invalid texture`);
     }
 
-    this.id = id ?? `costume-${crypto.randomUUID()}`;
+    const sourceData = texture.baseTexture.resource.url || "";
+    this.id = id ?? md5(sourceData);
     this.name = name;
     this.texture = texture;
   }
@@ -44,7 +44,7 @@ export class Costume {
 
 export class Sound {
   constructor({ id, name, dataURL }) {
-    this.id = id ?? `sound-${crypto.randomUUID()}`;
+    this.id = id ?? md5(dataURL || "");
     this.name = name;
     this.dataURL = dataURL;
   }
@@ -114,35 +114,39 @@ export class Sprite {
     y = 0,
     scale = 1,
     rotation = 0,
-    currentCostume = 0,
+    currentCostumeId = null,
   }) {
     this.id = id ?? `sprite-${crypto.randomUUID()}`;
     this.name = name;
     this.clone = clone;
     this.root = root;
     this.clones = [];
-
     this.code = code;
-    this.costumes = costumes.map(c =>
-      c instanceof Costume ? c : new Costume(c)
-    );
-    this.sounds = sounds.map(s =>
-      s instanceof Sound ? s : new Sound(s)
-    );
-    this.currentCostume = currentCostume;
 
-    this.pixiSprite = new PixiSprite(
-      this.costumes[currentCostume]?.texture ?? Texture.EMPTY
-    );
+    this.costumes = costumes.map(c => (c instanceof Costume ? c : new Costume(c)));
+    this.sounds = sounds.map(s => (s instanceof Sound ? s : new Sound(s)));
+
+    this.currentCostumeId = currentCostumeId ?? this.costumes[0]?.id ?? null;
+
+    this.pixiSprite = new PixiSprite(Texture.EMPTY);
     this.pixiSprite.anchor.set(0.5);
     this.pixiSprite.position.set(x, y);
     this.pixiSprite.scale.set(scale);
     this.pixiSprite.rotation = rotation;
+    
+    this.applyCurrentCostume();
+  }
+
+  applyCurrentCostume() {
+    const costume = this.costumes.find(c => c.id === this.currentCostumeId) || this.costumes[0];
+    if (costume) {
+      this.pixiSprite.texture = costume.texture;
+      this.currentCostumeId = costume.id;
+    }
   }
 
   createClone() {
     const root = this.clone ? this.root : this;
-
     const clone = new Sprite({
       id: `clone-${crypto.randomUUID()}`,
       name: this.name.slice(),
@@ -155,9 +159,8 @@ export class Sprite {
       y: this.pixiSprite.y,
       scale: this.pixiSprite.scale.x,
       rotation: this.pixiSprite.rotation,
-      currentCostume: this.currentCostume,
+      currentCostumeId: this.currentCostumeId,
     });
-
     root.clones.push(clone);
     return clone;
   }
@@ -168,7 +171,7 @@ export class Sprite {
 
   toJSON() {
     const costumes = this.costumes.map(c => c?.toJSON());
-const sounds = this.sounds.map(s => s?.toJSON());
+    const sounds = this.sounds.map(s => s?.toJSON());
 
     return {
       id: this.id,
@@ -178,7 +181,7 @@ const sounds = this.sounds.map(s => s?.toJSON());
       y: this.pixiSprite.y,
       scale: this.pixiSprite.scale.x,
       rotation: this.pixiSprite.rotation,
-      currentCostume: this.currentCostume,
+      currentCostumeId: this.currentCostumeId,
       costumes,
       sounds,
     };
@@ -188,17 +191,17 @@ const sounds = this.sounds.map(s => s?.toJSON());
     const costumes = (json.costumes || []).map(Costume.fromJSON);
     const sounds = (json.sounds || []).map(Sound.fromJSON);
 
+    let costumeId = json.currentCostumeId;
+    if (costumeId === undefined || costumeId === null) {
+      const index = json.currentCostume ?? 0;
+      costumeId = costumes[index]?.id;
+    }
+
     return new Sprite({
-      id: json.id ?? `sprite-${crypto.randomUUID()}`,
-      name: json.name,
-      code: json.code,
-      x: json.x ?? 0,
-      y: json.y ?? 0,
-      scale: json.scale ?? 1,
-      rotation: json.rotation ?? 0,
-      currentCostume: json.currentCostume ?? 0,
+      ...json,
+      currentCostumeId: costumeId,
       costumes,
-      sounds
+      sounds,
     });
   }
 

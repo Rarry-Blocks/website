@@ -1,20 +1,15 @@
 import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
-import { activeSprite } from "../scripts/editor";
+import { getActiveSpriteStuff } from "../scripts/editor";
+
 
 Blockly.Blocks["sound_sounds_menu"] = {
   init: function () {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown(function () {
-        const sounds = activeSprite?.sounds || [];
+        const sounds = getActiveSpriteStuff().sounds;
         const options =
           sounds.length < 1 ? [["...", ""]] : sounds.map(i => [i.name, i.id]);
-
-        const val = this.getValue();
-        if (val && !options.some(opt => opt[1] === val)) {
-          options.push([val, val]);
-        }
-
         return options;
       }),
       "MENU",

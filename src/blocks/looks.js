@@ -1,6 +1,6 @@
 import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
-import { activeSprite } from "../scripts/editor";
+import { getActiveSpriteStuff } from "../scripts/editor";
 
 Blockly.Blocks["say_message"] = {
   init: function () {
@@ -137,7 +137,10 @@ javascriptGenerator.forBlock["say_message_duration"] = function (block, generato
   return `sayMessage(${message}, ${duration});\nyield;\n`;
 };
 
-javascriptGenerator.forBlock["say_message_duration_waiting"] = function (block, generator) {
+javascriptGenerator.forBlock["say_message_duration_waiting"] = function (
+  block,
+  generator,
+) {
   const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
   const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
 
@@ -191,15 +194,9 @@ Blockly.Blocks["looks_costumes_menu"] = {
   init: function () {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown(function () {
-        const costumes = activeSprite?.costumes || [];
+        const costumes = getActiveSpriteStuff().costumes;
         const options =
           costumes.length < 1 ? [["...", ""]] : costumes.map(i => [i.name, i.id]);
-
-        const val = this.getValue();
-        if (val && !options.some(opt => opt[1] === val)) {
-          options.push([val, val]);
-        }
-
         return options;
       }),
       "MENU",
