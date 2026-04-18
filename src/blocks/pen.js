@@ -114,7 +114,8 @@ Blockly.Blocks["set_pen_print_direction"] = {
   init: function () {
     this.appendValueInput("ANGLE")
       .setCheck("Number")
-      .appendField("set pen print direction to");
+      .appendField("set pen print angle to");
+    this.appendDummyInput().appendField("degrees");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
