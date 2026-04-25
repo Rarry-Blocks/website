@@ -2,7 +2,7 @@ import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { activeExtensions, workspace } from "../scripts/editor";
 import { DuplicateOnDrag } from "./patches/block";
-import { customShapeRegistry } from "./render";
+import { customShapeRegistry, customNotchRegistry } from "./render";
 import { ExtensionBridge } from "../components/extensions/bridge";
 
 export const extensions = {};
@@ -229,6 +229,16 @@ export async function registerExtension(codeString, trusted = false) {
         customShapeRegistry.set(typeName, factory);
         const provider = workspace?.getRenderer()?.getConstants();
         provider?._customShapeCache?.delete(typeName);
+      }
+
+      const notches = ext.registerNotches?.() ?? {};
+      for (const [blockType, factory] of Object.entries(notches)) {
+        if (customNotchRegistry.has(blockType)) {
+          console.warn(`Notch type "${blockType}" already registered; overwriting`);
+        }
+        customNotchRegistry.set(blockType, factory);
+        const provider = workspace?.getRenderer()?.getConstants();
+        provider?._customNotchCache?.delete(blockType);
       }
 
       const categoryDescriptor = ext.registerCategory?.();

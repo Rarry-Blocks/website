@@ -20,6 +20,24 @@ class Extension {
       },
     };
   }
+  registerNotches() {
+    return {
+      ddeTestExtension_statementA: {
+        pathLeft: (width, height, svgPaths) => {
+          return svgPaths.line([
+            svgPaths.point(width / 2, height),
+            svgPaths.point(width / 2, -height),
+          ]);
+        },
+        pathRight: (width, height, svgPaths) => {
+          return svgPaths.line([
+            svgPaths.point(-width / 2, height),
+            svgPaths.point(-width / 2, -height),
+          ]);
+        },
+      },
+    };
+  }
   registerBlocks() {
     return [
       {
@@ -38,13 +56,13 @@ class Extension {
         type: "statement",
         id: "statementA",
         text: "type statement A",
-        statementType: "statementA",
+        statementType: "ddeTestExtension_statementA",
         color: "#85c25c",
       },
       {
         type: "statement",
         id: "onlyStatementA",
-        fields: { code: { kind: "statement", accepts: "statementA" } },
+        fields: { code: { kind: "statement", accepts: "ddeTestExtension_statementA" } },
         text: "only statement A [code]",
         color: "#69974a",
       },
@@ -155,13 +173,11 @@ class Extension {
       menu: inputs => window.alert(inputs.hi),
       yabadaba: () => "yabadaba",
       errorStatement: () => {
-        throw new Error('error (statement)');
+        throw new Error("error (statement)");
       },
       errorOutput: () => {
-        throw new Error('error (output)');
-      }
+        throw new Error("error (output)");
+      },
     };
   }
 }
-
-registerExtension(Extension);

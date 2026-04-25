@@ -2,6 +2,7 @@ import * as Blockly from "blockly/core";
 const svgPaths = Blockly.utils.svgPaths;
 
 export const customShapeRegistry = new Map();
+export const customNotchRegistry = new Map();
 class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
   init() {
     super.init();
@@ -9,6 +10,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     this.PILLOW = this.makePillow();
     this.SPIKEY = this.makeSpikey();
     this._customShapeCache = new Map();
+    this._customNotchCache = new Map();
   }
 
   makeBowl() {
@@ -199,14 +201,46 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
 
   /**
    * @param {Blockly.RenderedConnection} connection
+   * @override
    */
   shapeFor(connection) {
+    if (!connection.sourceBlock_) {
+      return super.shapeFor(connection);
+    }
+
+    const blockType = connection.sourceBlock_.type;
+
+    if (
+      connection.type === Blockly.ConnectionType.NEXT_STATEMENT ||
+      connection.type === Blockly.ConnectionType.PREVIOUS_STATEMENT
+    ) {
+      const checks = connection.getCheck() ?? [];
+      for (const checkType of checks) {
+        if (customNotchRegistry.has(checkType)) {
+          if (!this._customNotchCache.has(checkType)) {
+            const pathFn = customNotchRegistry.get(checkType);
+            const notch = super.makeNotch();
+            const customNotch = {
+              ...notch,
+              pathLeft: pathFn.pathLeft(this.NOTCH_WIDTH, this.NOTCH_HEIGHT, svgPaths),
+              pathRight: pathFn.pathRight(this.NOTCH_WIDTH, this.NOTCH_HEIGHT, svgPaths),
+            };
+            this._customNotchCache.set(checkType, customNotch);
+          }
+          return this._customNotchCache.get(checkType);
+        }
+      }
+    }
+
     let checks = connection.getCheck() ?? [];
     if (!checks && connection.targetConnection)
       checks = connection.targetConnection.getCheck() ?? [];
-    let outputShape = connection.sourceBlock_.getOutputShape();
+    const outputShape = connection.sourceBlock_.getOutputShape();
 
-    if (connection.type === 1 || connection.type === 2) {
+    if (
+      connection.type === Blockly.ConnectionType.INPUT_VALUE ||
+      connection.type === Blockly.ConnectionType.OUTPUT_VALUE
+    ) {
       if (
         (checks.includes("Array") || outputShape === 4) &&
         !["text_length", "text_isEmpty"].includes(connection.sourceBlock_.type)
