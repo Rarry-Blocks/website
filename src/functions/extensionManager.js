@@ -56,7 +56,7 @@ function buildShadowElement(type, defaultValue) {
     Number: { type: "math_number", field: "NUM", value: defaultValue },
     String: { type: "text", field: "TEXT", value: defaultValue },
     Boolean: {
-      type: "logic_boolean",
+      type: "checkbox",
       field: "BOOL",
       value: defaultValue ? "TRUE" : "FALSE",
     },

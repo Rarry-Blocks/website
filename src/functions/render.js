@@ -1,6 +1,16 @@
 import * as Blockly from "blockly/core";
 const svgPaths = Blockly.utils.svgPaths;
 
+/**
+ * @param {Blockly.BlockSvg} block
+ * @returns {Blockly.BlockSvg|null}
+ */
+function nearestRealAncestor(block) {
+  let current = block.getParent();
+  while (current?.isShadow()) current = current.getParent();
+  return current ?? null;
+}
+
 export const customShapeRegistry = new Map();
 export const customNotchRegistry = new Map();
 class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
@@ -302,11 +312,27 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
 
 class CustomPathObject extends Blockly.zelos.PathObject {
   applyColour(block) {
-    super.applyColour(block);
-    if (block.isShadow() && block.canDuplicateOnDrag?.()) {
-      this.svgPath.setAttribute("fill", block.style.colourPrimary);
-      this.svgPath.setAttribute("stroke", block.style.colourTertiary);
+    if (block.isShadow()) {
+      if (block.canDuplicateOnDrag()) {
+        super.applyColour(block);
+        this.svgPath.setAttribute("fill", block.style.colourPrimary);
+        this.svgPath.setAttribute("stroke", block.style.colourTertiary);
+        return;
+      } else {
+        const ancestor = nearestRealAncestor(block);
+        if (ancestor) {
+          if (!block.style.isShadowProxy) {
+            block.style = Object.create(block.style);
+            block.style.isShadowProxy = true;
+          }
+          block.style.colourPrimary = ancestor.style.colourPrimary;
+          block.style.colourSecondary = ancestor.style.colourSecondary;
+          block.style.colourTertiary = ancestor.style.colourTertiary;
+          this.style = block.style;
+        }
+      }
     }
+    super.applyColour(block);
   }
 }
 

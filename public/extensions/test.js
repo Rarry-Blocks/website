@@ -1,11 +1,16 @@
 class Extension {
-  id = "ddeTestExtension";
+  constructor(api) {
+    this.api = api;
+    this.id = "ddeTestExtension";
+  }
+
   registerCategory() {
     return {
       name: "Test Extension",
       color: "#858585",
     };
   }
+
   registerShapes() {
     return {
       yabadaba: (height, extra, up, right, svg) => {
@@ -20,6 +25,7 @@ class Extension {
       },
     };
   }
+
   registerNotches() {
     return {
       ddeTestExtension_statementA: {
@@ -38,6 +44,7 @@ class Extension {
       },
     };
   }
+
   registerBlocks() {
     return [
       {
@@ -147,6 +154,7 @@ class Extension {
       },
     ];
   }
+  
   registerCode() {
     return {
       statement: inputs => {

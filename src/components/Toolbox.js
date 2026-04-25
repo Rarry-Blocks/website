@@ -22,8 +22,8 @@ function shadowNumber(value = 10) {
 function shadowText(value = "") {
   return `<shadow type="text">${field("TEXT", value)}</shadow>`;
 }
-function shadowBoolean(value = true) {
-  return `<shadow type="logic_boolean">${field("BOOL", value ? "TRUE" : "FALSE")}</shadow>`;
+function shadowBoolean() {
+  return `<shadow type="checkbox">${field("BOOL", "FALSE")}</shadow>`;
 }
 
 const Toolbox = `
@@ -43,13 +43,13 @@ const Toolbox = `
   <category name="Control" colour="#FFAB19">
     ${block("wait_block", value("AMOUNT", shadowNumber(2)))}
     ${sep("50")}
-    ${block("controls_if")}
+    ${block("controls_if", value("IF0", shadowBoolean()))}
     ${block("controls_switch", value("VALUE", shadowText()))}
     ${block("controls_switch_case")}
     ${sep("50")}
     ${block("controls_repeat_ext", value("TIMES", shadowNumber(3)))}
     ${block("controls_forever")}
-    ${block("controls_whileUntil")}
+    ${block("controls_whileUntil", value("BOOL", shadowBoolean()))}
     ${block(
       "controls_forLoop",
       value("VAR", shadow("controls_forLoop_var")),
@@ -89,7 +89,7 @@ const Toolbox = `
   </category>
 
   <category name="Looks" colour="#9966FF">
-    ${block("looks_setVisibility_sprite", value("VISIBLE", shadowBoolean(true)))}
+    ${block("looks_setVisibility_sprite", value("VISIBLE", shadowBoolean()))}
     ${block("looks_isVisible")}
     ${sep("50")}
     ${block("say_message", value("MESSAGE", shadowText("Hello!")))}
@@ -121,10 +121,9 @@ const Toolbox = `
   <category name="Operators" colour="#59ba57">
     ${label("Logic")}
     ${block("logic_compare")}
-    ${block("logic_operation_extra")}
-    ${block("logic_negate")}
-    ${block("logic_boolean")}
-    ${block("logic_ternary")}
+    ${block("logic_operation_extra", value("A", shadowBoolean()), value("B", shadowBoolean()))}
+    ${block("logic_negate", value("BOOL", shadowBoolean()))}
+    ${block("logic_ternary", value("IF", shadowBoolean()))}
     ${label("Math")}
     ${block("math_number", field("NUM", 0))}
     ${block("math_arithmetic", value("A", shadowNumber(5)), value("B", shadowNumber(2)))}
@@ -183,7 +182,7 @@ const Toolbox = `
     ${sep("50")}
     ${block("system_sprite_property", value("ID", shadow("system_sprites_menu")))}
     ${block("controls_clones_list", value("ID", shadow("system_sprites_menu")))}
-    ${block("system_sprites_list", value("ID", shadow("system_sprites_menu")))}
+    ${block("system_sprites_list")}
   </category>
 
   <category name="Lists" colour="#e35340">

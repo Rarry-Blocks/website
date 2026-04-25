@@ -5,7 +5,6 @@ import * as En from "blockly/msg/en";
 Blockly.setLocale(En);
 
 import.meta.glob("../blocks/**/*.js", { eager: true });
-import "blockly/blocks";
 import { javascriptGenerator } from "blockly/javascript";
 
 import { Application, Graphics, Texture, Sprite as PixiSprite } from "pixi.js-legacy";
@@ -18,6 +17,7 @@ import { writeFile } from "@tauri-apps/plugin-fs";
 import "../functions/patches/block.js";
 import "../functions/patches/connectionchecker.js";
 import "../functions/patches/dragger.js";
+import "../functions/patches/checkbox.js";
 
 import Toolbox from "../components/Toolbox.js";
 import { setupSettingsButton } from "../functions/theme.js";
@@ -1671,7 +1671,7 @@ function executeClickedBlock(blockId) {
   if (!activeSprite) return;
 
   const block = workspace.getBlockById(blockId);
-  if (!block) return;
+  if (!block || block.isShadow()) return;
 
   hideBlockRunBubble();
 

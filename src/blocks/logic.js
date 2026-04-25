@@ -1,5 +1,6 @@
 import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
+import "blockly/blocks";
 
 Blockly.Blocks["logic_operation_extra"] = {
   init: function () {
