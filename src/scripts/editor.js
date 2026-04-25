@@ -3,8 +3,11 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import * as Blockly from "blockly/core";
 import * as En from "blockly/msg/en";
 Blockly.setLocale(En);
+
+import.meta.glob("../blocks/**/*.js", { eager: true });
 import "blockly/blocks";
-import { javascriptGenerator, Order } from "blockly/javascript";
+import { javascriptGenerator } from "blockly/javascript";
+
 import { Application, Graphics, Texture, Sprite as PixiSprite } from "pixi.js-legacy";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
@@ -69,8 +72,6 @@ export function hideLoading() {
 showLoading("Initializing editor...");
 
 javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
-
-import.meta.glob("../blocks/**/*.js", { eager: true });
 
 window.Blockly = Blockly;
 

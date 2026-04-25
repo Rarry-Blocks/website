@@ -98,10 +98,7 @@ Blockly.Blocks["text_join_extendable"] = {
   },
 };
 
-javascriptGenerator.forBlock["text_join_extendable"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["text_join_extendable"] = function (block, generator) {
   const parts = [];
 
   for (let i = 0; i < block.itemCount_; i++) {
@@ -126,7 +123,8 @@ Blockly.Blocks["text_indexOf"] = {
     this.setOutput(true, "Number");
     this.setTooltip(
       () =>
-        `Returns the index of the first/last occurrence of first text in second text. Returns ${this.workspace.options.oneBasedIndex ? "0" : "-1"
+        `Returns the index of the first/last occurrence of first text in second text. Returns ${
+          this.workspace.options.oneBasedIndex ? "0" : "-1"
         } if text is not found.`,
     );
 
@@ -262,10 +260,7 @@ javascriptGenerator.forBlock["text_charAt"] = function (block, generator) {
     case "LAST":
       return [`${text}.slice(-1)`, Order.MEMBER];
     case "RANDOM":
-      return [
-        `${text}.charAt(Math.floor(Math.random() * ${text}.length))`,
-        Order.NONE,
-      ];
+      return [`${text}.charAt(Math.floor(Math.random() * ${text}.length))`, Order.NONE];
     default:
       throw new Error(`Unknown WHERE value: ${where}`);
   }
@@ -382,10 +377,7 @@ Blockly.Blocks["text_getSubstring"] = {
   },
 };
 
-javascriptGenerator.forBlock["text_getSubstring"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["text_getSubstring"] = function (block, generator) {
   const text = generator.valueToCode(block, "STRING", Order.MEMBER) || "''";
   const where1 = block.getFieldValue("WHERE1");
   const where2 = block.getFieldValue("WHERE2");
