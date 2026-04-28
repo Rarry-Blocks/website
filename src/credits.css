@@ -1,0 +1,39 @@
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 3rem;
+  height: 100%;
+  background-image: url("/icons/home/blur.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  text-align: center;
+  color: #f3f4f6;
+  font-size: larger;
+  text-shadow: 0 2px 3px black;
+}
+
+.about * {
+  color: #f3f4f6;
+}
+
+.about div {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.about div div {
+  background-color: #2b323b;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.about div img {
+  width: 50px;
+  height: 50px;
+  border-radius: 5px;
+}
