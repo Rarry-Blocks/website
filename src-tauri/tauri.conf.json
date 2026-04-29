@@ -15,7 +15,7 @@
         "title": "Rarry",
         "width": 800,
         "height": 600,
-        "url": "/editor.html",
+        "url": "editor.html",
         "resizable": true,
         "fullscreen": false
       }

@@ -8,10 +8,6 @@ Blockly.Blocks["checkbox"] = {
       new Checkbox("false"),
       "BOOL"
     );
-    this.appendDummyInput().appendField(
-      new Checkbox("false"),
-      "BOOL2"
-    );
     this.setOutput(true, "Boolean");
     this.setStyle("text_blocks");
   },
