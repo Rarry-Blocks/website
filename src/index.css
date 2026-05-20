@@ -316,7 +316,6 @@ html.removeIcons button i:not(.stay) {
 .popup-body {
   flex-direction: column;
   overflow-y: auto; 
-  padding: 0.5rem;
   flex: 1;                 
   min-height: 0;           
 }
@@ -337,50 +336,38 @@ html.removeIcons button i:not(.stay) {
   display: flex;
   flex-direction: row;
   height: 100%;
-  gap: 0.5rem;
 }
 
 .popup-tab-buttons {
   display: flex;
   flex-direction: column;
+  background-color: var(--color1);
+  border-right: 2px solid var(--color3);
 }
 
 .popup-tab-button {
-  background-color: var(--color1);
+  background: none;
   color: var(--dark);
   border: none;
   border-radius: 0;
   padding: 0.4rem 0.7rem;
-  font-size: 0.9rem;
+  font-size: 1rem;
   transition: background-color 0.15s ease;
 }
 
-.popup-tab-button:first-child {
-  border-top-left-radius: 0.4rem;
-  border-top-right-radius: 0.4rem;
-}
-
-.popup-tab-button:last-child {
-  border-bottom-left-radius: 0.4rem;
-  border-bottom-right-radius: 0.4rem;
-}
-
-.popup-tab-button:hover {
-  background: var(--color3);
+.popup-tab-button:hover, .popup-tab-button.active {
+  background: var(--color2);
 }
 
 .popup-tab-button:active {
   scale: 1 !important;
 }
 
-.popup-tab-button.active {
-  background: var(--color3);
-}
-
 .popup-tab-content {
   display: none;
   flex-direction: column;
   gap: 0.5rem;
+  padding: 0.5rem;
   flex: 1;
 }
 

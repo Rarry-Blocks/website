@@ -52,6 +52,11 @@ export class VM {
 
   execute(generatorFunc, target) {
     const thread = new Thread(target, generatorFunc);
+    if (this.currentThread) {
+      for (const [key, value] of this.currentThread.variables.entries()) {
+        thread.variables.set(key, value);
+      }
+    }
     this.threads.push(thread);
     return thread;
   }

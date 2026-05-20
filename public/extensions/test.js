@@ -13,14 +13,14 @@ class Extension {
 
   registerShapes() {
     return {
-      yabadaba: (height, extra, up, right, svg) => {
-        const radius = height / 4;
-        const half = height / 2 + extra / 2;
+      yabadaba: (height, extra, up, right) => {
+        const depth = height / 4;
+        const half  = (height + extra) / 2;
         return (
-          svg.lineOnAxis("h", radius * right) +
-          svg.line([svg.point(radius * right, half * up)]) +
-          svg.line([svg.point(-radius * right, half * up)]) +
-          svg.lineOnAxis("h", -radius * right)
+          `h ${depth * right}` +
+          `l ${depth * right} ${half * up}` +
+          `l ${-depth * right} ${half * up}` +
+          `h ${-depth * right}`
         );
       },
     };

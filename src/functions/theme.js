@@ -4,6 +4,7 @@ import config from "../config";
 import { cache } from "../cache";
 import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";
 import { attachAvatarChanger } from "./avatar";
+import { projectAPI } from "../scripts/editor";
 
 const root = document.documentElement;
 const theme = localStorage.getItem("theme") === "dark" ?? false;
@@ -265,7 +266,7 @@ export function setupSettingsButton(workspace) {
   toggleSnapToGrid(snapToGrid, workspace);
   toggleScrollbars(scrollbars, workspace);
   toggleSounds(sounds, workspace);
-  setCategoryBubble(categoryBubble, workspace)
+  setCategoryBubble(categoryBubble, workspace);
 
   const settingsButton = document.getElementById("settings-button");
   if (settingsButton)
@@ -279,10 +280,61 @@ export function setupSettingsButton(workspace) {
         },
         tabs: () => [
           {
+            label: "Project",
+            rows: [
+              ["<div><h3>Stage Size</h3><small style='opacity:0.7'>The size of the canvas in pixels.</small></div>"],
+              [
+                "Width",
+                {
+                  type: "number",
+                  value: projectAPI.settings.stageWidth,
+                  min: 1,
+                  max: 4096,
+                  step: 1,
+                  onChange: value => projectAPI.updateSetting("stageWidth", value),
+                },
+              ],
+              [
+                "Height",
+                {
+                  type: "number",
+                  value: projectAPI.settings.stageHeight,
+                  min: 1,
+                  max: 4096,
+                  step: 1,
+                  onChange: value => projectAPI.updateSetting("stageHeight", value),
+                },
+              ],
+              ["<div><h3>Code Execution</h3><small style='opacity:0.7'>Changes how code is run and defines its limits.</small></div>"],
+              [
+                "<div>Framerate (FPS)<br><small style='opacity:0.7'>How fast the engine executes and refreshes.</small></div>",
+                {
+                  type: "number",
+                  value: projectAPI.settings.fps,
+                  min: 1,
+                  max: 240,
+                  step: 1,
+                  onChange: value => projectAPI.updateSetting("fps", value),
+                },
+              ],
+              [
+                "<div>Clone Limit<br><small style='opacity:0.7'>Max clones allowed at once to prevent crashing.</small></div>",
+                {
+                  type: "number",
+                  value: projectAPI.settings.cloneLimit,
+                  min: 0,
+                  max: 100000,
+                  step: 1,
+                  onChange: value => projectAPI.updateSetting("cloneLimit", value),
+                },
+              ],
+            ],
+          },
+          {
             label: "Appearance",
             rows: [
               [
-                "Show icon on buttons:",
+                "Show icon on buttons",
                 {
                   type: "checkbox",
                   checked: !document.documentElement.classList.contains("removeIcons"),
@@ -292,7 +344,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Show Rarry logo on toolbar:",
+                "Show Rarry logo on toolbar",
                 {
                   type: "checkbox",
                   checked:
@@ -303,7 +355,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Toolbar position:",
+                "Toolbar position",
                 {
                   type: "menu",
                   value: localStorage.getItem("toolboxPosition") || "default",
@@ -317,7 +369,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Category bubble:",
+                "Category bubble",
                 {
                   type: "menu",
                   value: localStorage.getItem("categoryBubble") || "default",
@@ -335,7 +387,7 @@ export function setupSettingsButton(workspace) {
             label: "Colors",
             rows: [
               [
-                "Presets:",
+                "Presets",
                 {
                   type: "button",
                   label: '<i class="fa-solid fa-sun"></i> Light',
@@ -384,7 +436,7 @@ export function setupSettingsButton(workspace) {
             label: "Editor",
             rows: [
               [
-                "Stage on left:",
+                "Stage on left",
                 {
                   type: "checkbox",
                   checked: document.documentElement.classList.contains("stageLeft"),
@@ -394,7 +446,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Event hat bumps:",
+                "Event hat bumps",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("startHats") === "true",
@@ -404,7 +456,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Scrollbars:",
+                "Scrollbars",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("scrollbars") !== "false",
@@ -412,7 +464,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Snap blocks to grid (applies after refresh):",
+                "Snap blocks to grid (applies after refresh)",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("snapToGrid") === "true",
@@ -420,7 +472,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Block sounds (applies after refresh):",
+                "Block sounds (applies after refresh)",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("sounds") !== "false",

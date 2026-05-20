@@ -1,5 +1,5 @@
 import { Sprite as PixiSprite, Texture } from "pixi.js-legacy";
-import { vm } from "../scripts/editor";
+import { spriteManager, vm } from "../scripts/editor";
 import { triggerCloneEvents } from "../functions/runCode";
 import md5 from "js-md5";
 
@@ -147,6 +147,10 @@ export class Sprite {
 
   createClone() {
     const root = this.clone ? this.root : this;
+    
+    const limit = spriteManager?.cloneLimit || 200; 
+    if (root.clones.length >= limit) return null; 
+
     const clone = new Sprite({
       id: `clone-${crypto.randomUUID()}`,
       name: this.name.slice(),

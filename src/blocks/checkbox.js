@@ -13,7 +13,6 @@ Blockly.Blocks["checkbox"] = {
   },
 };
 
-
 javascriptGenerator.forBlock["checkbox"] = function (block) {
   return [block.getFieldValue("BOOL") === "TRUE" ? "true" : "false", Order.ATOMIC];
 };

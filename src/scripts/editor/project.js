@@ -5,40 +5,48 @@ import { writeFile } from "@tauri-apps/plugin-fs";
 import { compressAudio, compressImage, showNotification } from "../../functions/utils.js";
 import { registerExtension } from "../../functions/extensionManager.js";
 import { Costume, Sound } from "../../components/Sprite.js";
+import { app, hideLoading, showLoading } from "../editor.js";
 
 const isDesktop = window.__TAURI_INTERNALS__ !== undefined;
 
+const FORMAT_VERSION = 2;
+const metadata = {
+  version: 2,
+  platform: { name: "Rarry", url: "https://rarry.link" },
+};
+
+const toUint8Array = base64 => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
 export async function saveProject({
   projectName,
+  sprites,
   spriteManager,
-  activeExtensions,
-  projectVariables,
-  app,
-  showLoading,
-  hideLoading,
+  extensions,
+  variables,
+  settings,
 }) {
   showLoading("Preparing to save...");
 
   const zip = new JSZip();
   const json = {
+    metadata: { ...metadata },
     projectName,
     sprites: [],
-    extensions: activeExtensions,
-    variables: projectVariables ?? {},
+    extensions,
+    variables,
+    settings,
   };
 
-  const toUint8Array = base64 => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-  const originals = spriteManager.getOriginals();
-
-  let totalAssets = originals.reduce(
+  let totalAssets = sprites.reduce(
     (acc, s) => acc + s.costumes.length + s.sounds.length,
     0,
   );
   let processedAssets = 0;
 
-  for (const sprite of originals) {
+  const writtenAssets = new Set();
+
+  for (const sprite of spriteManager?.getOriginals?.() ?? sprites) {
     const baseJSON = sprite.toJSON();
-    const spriteId = sprite.id;
 
     const costumeEntries = [];
     for (const c of sprite.costumes) {
@@ -54,14 +62,16 @@ export async function saveProject({
 
       const processed = await compressImage(dataURL);
       if (processed) {
-        const base64 = processed.split(",")[1];
-        zip.file(`${spriteId}.c.${c.id}.webp`, toUint8Array(base64), { binary: true });
-        costumeEntries.push({
-          id: c.id,
-          name: c.name,
-          texture: `${spriteId}.c.${c.id}.webp`,
-        });
+        const filename = `costumes/${c.id}.webp`;
+
+        if (!writtenAssets.has(filename)) {
+          zip.file(filename, toUint8Array(processed.split(",")[1]), { binary: true });
+          writtenAssets.add(filename);
+        }
+
+        costumeEntries.push({ id: c.id, name: c.name, texture: filename });
       }
+
       await new Promise(r => setTimeout(r, 0));
     }
 
@@ -71,10 +81,16 @@ export async function saveProject({
 
       const processed = await compressAudio(s.dataURL);
       if (processed) {
-        const base64 = processed.split(",")[1];
-        zip.file(`${spriteId}.s.${s.id}.ogg`, toUint8Array(base64), { binary: true });
-        soundEntries.push({ id: s.id, name: s.name, path: `${spriteId}.s.${s.id}.ogg` });
+        const filename = `sounds/${s.id}.ogg`;
+
+        if (!writtenAssets.has(filename)) {
+          zip.file(filename, toUint8Array(processed.split(",")[1]), { binary: true });
+          writtenAssets.add(filename);
+        }
+
+        soundEntries.push({ id: s.id, name: s.name, path: filename });
       }
+
       await new Promise(r => setTimeout(r, 0));
     }
 
@@ -100,19 +116,30 @@ export async function saveProject({
     const filePath = await tauriSave({
       title: "Save Rarry Project",
       defaultPath: json.projectName,
-      filters: [{ name: "Rarry Project", extensions: ["rarryz"] }],
+      filters: [{ name: "Rarry Project", extensions: ["rarry", "rarryz"] }],
     });
     if (filePath) await writeFile(filePath, content);
   } else {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(content);
-    a.download = json.projectName + ".rarryz";
+    a.download = json.projectName + ".rarry";
     a.click();
     URL.revokeObjectURL(a.href);
   }
 
   hideLoading();
   showNotification({ message: "Project saved successfully!" });
+}
+
+async function resolveAsset(zip, src, mimeType) {
+  if (typeof src !== "string") return null;
+  if (src.startsWith("data:")) return src;
+
+  const fileEntry = zip.file(src);
+  if (!fileEntry) return null;
+
+  const base64 = await fileEntry.async("base64");
+  return `data:${mimeType};base64,${base64}`;
 }
 
 export async function loadProjectFile(
@@ -131,41 +158,25 @@ export async function loadProjectFile(
 
     const json = JSON.parse(await projectFile.async("string"));
 
+    const formatVersion = json.metadata?.version ?? 1;
+
     const sprites = await Promise.all(
       json.sprites.map(async entry => {
         const sprite = { ...entry, costumes: [], sounds: [] };
 
         for (const c of entry.costumes || []) {
           const src = c.texture ?? c.path ?? c.data;
-          if (typeof src === "string" && !src.startsWith("data:")) {
-            const fileEntry = zip.file(src);
-            if (fileEntry) {
-              const base64 = await fileEntry.async("base64");
-              sprite.costumes.push({
-                id: c.id,
-                name: c.name,
-                texture: `data:image/webp;base64,${base64}`,
-              });
-            }
-          } else {
-            sprite.costumes.push({ id: c.id, name: c.name, texture: src });
+          const dataURL = await resolveAsset(zip, src, "image/webp");
+          if (dataURL != null) {
+            sprite.costumes.push({ id: c.id, name: c.name, texture: dataURL });
           }
         }
 
         for (const s of entry.sounds || []) {
           const src = s.data ?? s.path;
-          if (typeof src === "string" && !src.startsWith("data:")) {
-            const fileEntry = zip.file(src);
-            if (fileEntry) {
-              const base64 = await fileEntry.async("base64");
-              sprite.sounds.push({
-                id: s.id,
-                name: s.name,
-                data: `data:audio/ogg;base64,${base64}`,
-              });
-            }
-          } else {
-            sprite.sounds.push({ id: s.id, name: s.name, data: src });
+          const dataURL = await resolveAsset(zip, src, "audio/ogg");
+          if (dataURL != null) {
+            sprite.sounds.push({ id: s.id, name: s.name, data: dataURL });
           }
         }
 
@@ -173,6 +184,7 @@ export async function loadProjectFile(
           entry.currentCostumeId !== undefined
             ? entry.currentCostumeId
             : entry.currentCostume;
+
         return sprite;
       }),
     );
@@ -182,6 +194,7 @@ export async function loadProjectFile(
       sprites,
       extensions: json.extensions,
       variables: json.variables,
+      settings: json.settings
     });
   } catch (err) {
     console.error(err);

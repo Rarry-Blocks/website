@@ -3,9 +3,10 @@ export function showNotification({ message = "", duration = 5000, closable = tru
   notification.className = "notification";
   notification.innerHTML = `
     ${message}
-    ${closable
-      ? '<button class="notification-close"><i class="fa-solid fa-xmark"></i></button>'
-      : ""
+    ${
+      closable
+        ? '<button class="notification-close"><i class="fa-solid fa-xmark"></i></button>'
+        : ""
     }
   `;
 
@@ -54,7 +55,7 @@ export class Popup {
     if (Popup.current && Popup.current !== this) {
       Popup.current.hide();
     }
-    Popup.current = this;
+    Popup.current = "";
 
     if (!this.element) {
       this.element = document.createElement("div");
@@ -73,7 +74,9 @@ export class Popup {
         </div>
       `;
 
-      this.element.querySelector(".popup-close").addEventListener("click", () => this.hide());
+      this.element
+        .querySelector(".popup-close")
+        .addEventListener("click", () => this.hide());
       document.body.appendChild(this.element);
     }
 
@@ -118,18 +121,21 @@ export class Popup {
       if (this.currentTabIndex >= tabs.length) this.currentTabIndex = 0;
 
       const tabButtons = tabs
-        .map((tab, i) =>
-          `<button class="popup-tab-button ${i === this.currentTabIndex ? "active" : ""}" data-tab-btn="${i}">${tab.label}</button>`
+        .map(
+          (tab, i) =>
+            `<button class="popup-tab-button ${i === this.currentTabIndex ? "active" : ""}" data-tab-btn="${i}">${tab.label}</button>`,
         )
         .join("");
 
       const tabContents = tabs
-        .map((tab, i) => `
+        .map(
+          (tab, i) => `
           <div class="popup-tab-content ${i === this.currentTabIndex ? "active" : ""}" data-tab-content="${i}">
             ${this._generateRowsHTML(tab.rows || [], i)}
             ${tab.innerHTML || ""}
           </div>
-        `)
+        `,
+        )
         .join("");
 
       bodyHTML = `
@@ -154,7 +160,9 @@ export class Popup {
           buttons.forEach(b => b.classList.remove("active"));
           contents.forEach(c => c.classList.remove("active"));
           btn.classList.add("active");
-          bodyEl.querySelector(`[data-tab-content="${this.currentTabIndex}"]`).classList.add("active");
+          bodyEl
+            .querySelector(`[data-tab-content="${this.currentTabIndex}"]`)
+            .classList.add("active");
         });
       });
 
@@ -174,8 +182,9 @@ export class Popup {
             }
 
             const dataAttr = tabIndex !== null ? `data-tab="${tabIndex}"` : "";
-            let inputMin = item.min ? `min="${item.min}"` : "";
-            let inputMax = item.max ? `max="${item.max}"` : "";
+            let inputMin = item.min !== undefined ? `min="${item.min}"` : "";
+            let inputMax = item.max !== undefined ? `max="${item.max}"` : "";
+            let inputStep = item.step !== undefined ? `step="${item.step}"` : "";
 
             switch (item.type) {
               case "custom":
@@ -196,6 +205,8 @@ export class Popup {
                 </select>`;
               case "color":
                 return `<input type="color" value="${item.value || "#ffffff"}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} />`;
+              case "number":
+                return `<input type="number" placeholder="${item.placeholder || ""}" value="${item.value !== undefined ? item.value : ""}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} ${inputMin} ${inputMax} ${inputStep} />`;
               default:
                 return "";
             }
@@ -229,6 +240,29 @@ export class Popup {
         }
         if (item.type === "menu" && item.onChange) {
           el.addEventListener("change", e => item.onChange(e.target.value, this));
+        }
+        if (item.type === "number") {
+          function clamp(val) {
+            if (val === "") return item.value !== undefined ? item.value : 0;
+            let n = Number(val);
+            if (isNaN(n)) return item.value !== undefined ? item.value : 0;
+            if (item.min !== undefined && n < item.min) n = item.min;
+            if (item.max !== undefined && n > item.max) n = item.max;
+            return n;
+          }
+
+          if (item.onChange) {
+            el.addEventListener("change", e => {
+              const clamped = clamp(e.target.value);
+              e.target.value = clamped;
+              item.onChange(clamped, this);
+            });
+          }
+          if (item.onInput) {
+            el.addEventListener("input", e => {
+              item.onInput(Number(e.target.value), this);
+            });
+          }
         }
         if (item.type === "color" && item.onChange) {
           el.addEventListener("input", e => item.onChange(e.target.value, this));
@@ -268,9 +302,9 @@ async function encodeOggFast(dataURL) {
   const targetRate = 22050;
 
   const offlineCtx = new OfflineAudioContext(
-    1, 
+    1,
     Math.ceil(buffer.duration * targetRate),
-    targetRate
+    targetRate,
   );
 
   const src = offlineCtx.createBufferSource();
@@ -278,11 +312,7 @@ async function encodeOggFast(dataURL) {
   if (buffer.numberOfChannels === 1) {
     src.buffer = buffer;
   } else {
-    const mono = offlineCtx.createBuffer(
-      1,
-      buffer.length,
-      buffer.sampleRate
-    );
+    const mono = offlineCtx.createBuffer(1, buffer.length, buffer.sampleRate);
 
     const ch0 = buffer.getChannelData(0);
     const ch1 = buffer.getChannelData(1);
@@ -446,7 +476,7 @@ export const tweenEasing = {
 
 /**
  * Blends a hex color toward white (positive percent) or black (negative percent).
- * @param {string} color An RGB hex color 
+ * @param {string} color An RGB hex color
  * @param {number} percent The percent to blend
  * @returns The shaded RGB hex color
  */
@@ -457,17 +487,22 @@ export function shadeColor(color, percent) {
     R = f >> 16,
     G = (f >> 8) & 0x00ff,
     B = f & 0x0000ff;
-  return "#" + (
-    0x1000000 +
-    (Math.round((t - R) * p) + R) * 0x10000 +
-    (Math.round((t - G) * p) + G) * 0x100 +
-    (Math.round((t - B) * p) + B)
-  ).toString(16).slice(1);
+  return (
+    "#" +
+    (
+      0x1000000 +
+      (Math.round((t - R) * p) + R) * 0x10000 +
+      (Math.round((t - G) * p) + G) * 0x100 +
+      (Math.round((t - B) * p) + B)
+    )
+      .toString(16)
+      .slice(1)
+  );
 }
 
 /**
  * Calculates brightness of a color.
- * @param {string} color An RGB hex color 
+ * @param {string} color An RGB hex color
  * @returns A number from 0 to 255, > 128 is generally considered light
  */
 export function getLuminance(color) {
@@ -480,7 +515,7 @@ export function getLuminance(color) {
 
 /**
  * Capitalize the first letter in the string.
- * @param {string} string The string 
+ * @param {string} string The string
  * @returns The string with the first letter capitalized
  */
 export function capitalizeFirstLetter(string) {

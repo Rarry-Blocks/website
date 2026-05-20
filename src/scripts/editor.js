@@ -92,8 +92,40 @@ export const tabButtons = document.querySelectorAll(".tab-button");
 export const tabContents = document.querySelectorAll(".tab-content");
 const fullscreenButton = document.getElementById("fullscreen-button");
 
-export const BASE_WIDTH = 480;
-export const BASE_HEIGHT = 360;
+export const BASE_WIDTH = 700;
+export const BASE_HEIGHT = 400;
+
+export const projectSettings = {
+  fps: 60,
+  stageWidth: BASE_WIDTH,
+  stageHeight: BASE_HEIGHT,
+  cloneLimit: 200,
+};
+
+export const projectAPI = {
+  get settings() {
+    return projectSettings;
+  },
+  set settings(value) {
+    for (const [key, val] of Object.entries(value)) {
+      this.updateSetting(key, val);
+    }
+  },
+  updateSetting(key, value) {
+    projectSettings[key] = value;
+
+    if (key === "stageWidth" || key === "stageHeight") {
+      app.stageWidth = projectSettings.stageWidth;
+      app.stageHeight = projectSettings.stageHeight;
+      updateStageRatio();
+      resizeCanvas();
+    }
+
+    if (key === "cloneLimit") {
+      spriteManager.cloneLimit = value;
+    }
+  },
+};
 
 export const app = new Application({
   width: BASE_WIDTH,
@@ -108,20 +140,40 @@ app.stageHeight = BASE_HEIGHT;
 
 let blockRunBubble = null;
 
+export function updateStageRatio() {
+  const targetW = projectSettings.stageWidth;
+  const targetH = projectSettings.stageHeight;
+  wrapper.style.aspectRatio = `${targetW} / ${targetH}`;
+}
+
 export function resizeCanvas() {
   if (!wrapper) return;
 
+  const targetW = projectSettings.stageWidth;
+  const targetH = projectSettings.stageHeight;
   const w = wrapper.clientWidth;
   const h = wrapper.clientHeight;
 
+  if (w === 0 || h === 0) return;
+
   app.renderer.resize(w, h);
 
-  const scale = Math.min(w / BASE_WIDTH, h / BASE_HEIGHT);
+  const scale = Math.min(w / targetW, h / targetH);
   app.stage.scale.set(scale);
   app.stage.x = w / 2;
   app.stage.y = h / 2;
 }
-resizeCanvas();
+
+updateStageRatio();
+setTimeout(resizeCanvas);
+window.addEventListener("resize", () => {
+  let i = 0;
+  (function hi() {
+    i++;
+    resizeCanvas()
+    if (i < 67) requestAnimationFrame(() => hi());
+  })();
+});
 
 stageContainer.appendChild(app.view);
 
@@ -134,8 +186,8 @@ function createPenGraphics() {
 }
 createPenGraphics();
 
-export let projectVariables = {};
-export let projectBlockValues = {};
+export let projectVariables = Object.create(null);
+export let projectBlockValues = Object.create(null);
 export let activeSprite = null;
 export function getActiveSpriteStuff() {
   return {
@@ -178,12 +230,8 @@ export const workspace = Blockly.inject(blocklyDiv, {
   },
 });
 
-const observer = new ResizeObserver(() => {
-  Blockly.svgResize(workspace);
-});
-observer.observe(blocklyDiv);
-
-setupSettingsButton(workspace);
+const workspaceObserver = new ResizeObserver(() => Blockly.svgResize(workspace));
+workspaceObserver.observe(blocklyDiv);
 
 workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (_) {
   const xmlList = [];
@@ -442,6 +490,8 @@ export function calculateBubblePosition(
 
 export const vm = new VM();
 
+setupSettingsButton(workspace, projectAPI);
+
 export const keysPressed = {};
 export const mouseButtonsPressed = {};
 export const playingSounds = new Map();
@@ -602,8 +652,6 @@ async function runCode() {
 }
 
 let accumulator = 0;
-const FPS_LIMIT = 60;
-const STEP_TIME = 1000 / FPS_LIMIT; // ~16.67ms
 
 app.ticker.add(() => {
   const mainActive = currentRunController && !currentRunController.signal.aborted;
@@ -611,6 +659,9 @@ app.ticker.add(() => {
     currentClickRunController && !currentClickRunController.signal.aborted;
 
   if (!mainActive && !clickActive) return;
+
+  const targetFPS = projectSettings.fps || 60;
+  const STEP_TIME = 1000 / targetFPS;
 
   accumulator += app.ticker.deltaMS;
 
@@ -730,19 +781,12 @@ function getProject() {
     sprites: spriteManager.toJSON(),
     extensions: activeExtensions,
     variables: projectVariables ?? {},
+    settings: projectSettings,
   };
 }
 
 async function saveProject() {
-  await apiSaveProject({
-    projectName: getProjectName(),
-    spriteManager,
-    activeExtensions,
-    projectVariables,
-    app,
-    showLoading,
-    hideLoading,
-  });
+  await apiSaveProject({ ...getProject(), spriteManager: spriteManager });
 }
 
 async function loadProject(ev) {
@@ -797,6 +841,8 @@ async function handleProjectData(data) {
     spriteManager.fromJSON(data.sprites);
 
     if (data.variables) projectVariables = data.variables;
+    if (data.settings) projectAPI.settings = data.settings;
+
     createPenGraphics();
   } catch (err) {
     console.error("Failed to load project:", err);
@@ -913,10 +959,6 @@ document.getElementById("sound-upload").addEventListener("change", async e => {
 
   reader.readAsDataURL(file);
   e.target.value = "";
-});
-
-window.addEventListener("resize", () => {
-  resizeCanvas();
 });
 
 function isXmlEmpty(input = "") {
@@ -1494,7 +1536,7 @@ liveShare.addEventListener("click", async () => {
   }
 
   if (!roomExisted) {
-    currentSocket.emit("createRoom", { token }, res => {
+    currentSocket.emit("createRoom", {}, res => {
       if (res?.error) {
         console.error(res.error);
         showNotification({ message: `Error: ${res.error}` });
@@ -1514,7 +1556,7 @@ const roomId = urlParams.get("room");
 if (roomId) {
   createSession();
 
-  currentSocket.emit("joinRoom", { token, roomId }, res => {
+  currentSocket.emit("joinRoom", { roomId }, res => {
     if (res?.error) {
       showNotification({ message: `Error: ${res.error}` });
       setActiveSprite(addSprite());
