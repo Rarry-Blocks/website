@@ -146,16 +146,37 @@ export function updateStageRatio() {
   wrapper.style.aspectRatio = `${targetW} / ${targetH}`;
 }
 
+function calculateWrapperDimensions() {
+  const targetW = projectSettings.stageWidth;
+  const targetH = projectSettings.stageHeight;
+  const maxHeight = window.innerHeight * 0.3;
+  
+  const maxAvailableWidth = wrapper.parentElement?.clientWidth || wrapper.clientWidth;
+  if (maxAvailableWidth === 0) return null;
+  
+  let h = (maxAvailableWidth / targetW) * targetH;
+  let w = maxAvailableWidth;
+  
+  if (h > maxHeight) {
+    h = maxHeight;
+    w = (h / targetH) * targetW;
+  }
+  
+  return { width: w, height: h };
+}
+
 export function resizeCanvas() {
   if (!wrapper) return;
 
   const targetW = projectSettings.stageWidth;
   const targetH = projectSettings.stageHeight;
-  const w = wrapper.clientWidth;
-  const h = wrapper.clientHeight;
+  const dims = calculateWrapperDimensions();
 
-  if (w === 0 || h === 0) return;
+  if (!dims || dims.width === 0 || dims.height === 0) return;
 
+  const { width: w, height: h } = dims;
+  wrapper.style.width = `${w}px`;
+  wrapper.style.height = `${h}px`;
   app.renderer.resize(w, h);
 
   const scale = Math.min(w / targetW, h / targetH);
@@ -165,14 +186,9 @@ export function resizeCanvas() {
 }
 
 updateStageRatio();
-setTimeout(resizeCanvas);
+requestAnimationFrame(resizeCanvas); 
 window.addEventListener("resize", () => {
-  let i = 0;
-  (function hi() {
-    i++;
-    resizeCanvas()
-    if (i < 67) requestAnimationFrame(() => hi());
-  })();
+  resizeCanvas();
 });
 
 stageContainer.appendChild(app.view);

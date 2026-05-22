@@ -87,8 +87,9 @@ button.tab-button.inactive {
 
 #stage-wrapper {
   position: relative;
-  max-width: 100%;
-  max-height: 30vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #stage-div {
