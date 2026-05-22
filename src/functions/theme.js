@@ -4,7 +4,6 @@ import config from "../config";
 import { cache } from "../cache";
 import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";
 import { attachAvatarChanger } from "./avatar";
-import { projectAPI } from "../scripts/editor";
 
 const root = document.documentElement;
 const theme = localStorage.getItem("theme") === "dark" || false;
@@ -270,7 +269,8 @@ export function setupSettingsButton(workspace) {
 
   const settingsButton = document.getElementById("settings-button");
   if (settingsButton)
-    settingsButton.addEventListener("click", () => {
+    settingsButton.addEventListener("click", async () => {
+      const { projectAPI } = await import("../scripts/editor");
       var currentColors;
 
       const popup = new Popup({
@@ -282,7 +282,9 @@ export function setupSettingsButton(workspace) {
           {
             label: "Project",
             rows: [
-              ["<div><h3>Stage Size</h3><small style='opacity:0.7'>The size of the canvas in pixels.</small></div>"],
+              [
+                "<div><h3>Stage Size</h3><small style='opacity:0.7'>The size of the canvas in pixels.</small></div>",
+              ],
               [
                 "Width",
                 {
@@ -305,7 +307,9 @@ export function setupSettingsButton(workspace) {
                   onChange: value => projectAPI.updateSetting("stageHeight", value),
                 },
               ],
-              ["<div><h3>Code Execution</h3><small style='opacity:0.7'>Changes how code is run and defines its limits.</small></div>"],
+              [
+                "<div><h3>Code Execution</h3><small style='opacity:0.7'>Changes how code is run and defines its limits.</small></div>",
+              ],
               [
                 "<div>Framerate (FPS)<br><small style='opacity:0.7'>How fast the engine executes and refreshes.</small></div>",
                 {
