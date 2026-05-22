@@ -7,14 +7,14 @@ import { attachAvatarChanger } from "./avatar";
 import { projectAPI } from "../scripts/editor";
 
 const root = document.documentElement;
-const theme = localStorage.getItem("theme") === "dark" ?? false;
-const icons = localStorage.getItem("removeIcons") === "true" ?? false;
-const rarryToolbar = localStorage.getItem("removeRarryToolbar") === "true" ?? false;
+const theme = localStorage.getItem("theme") === "dark" || false;
+const icons = localStorage.getItem("removeIcons") === "true" || false;
+const rarryToolbar = localStorage.getItem("removeRarryToolbar") === "true" || false;
 const toolboxPosition = localStorage.getItem("toolboxPosition") || "default";
 const categoryBubble = localStorage.getItem("categoryBubble") || "default";
-const stageLeft = localStorage.getItem("stageLeft") === "true" ?? false;
-const hats = localStorage.getItem("startHats") === "true" ?? false;
-const snapToGrid = localStorage.getItem("snapToGrid") === "true" ?? false;
+const stageLeft = localStorage.getItem("stageLeft") === "true" || false;
+const hats = localStorage.getItem("startHats") === "true" || false;
+const snapToGrid = localStorage.getItem("snapToGrid") === "true" || false;
 const scrollbars = localStorage.getItem("scrollbars") !== "false";
 const sounds = localStorage.getItem("sounds") !== "false";
 

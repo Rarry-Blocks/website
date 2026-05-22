@@ -506,8 +506,6 @@ export function calculateBubblePosition(
 
 export const vm = new VM();
 
-setupSettingsButton(workspace, projectAPI);
-
 export const keysPressed = {};
 export const mouseButtonsPressed = {};
 export const playingSounds = new Map();
@@ -1876,3 +1874,5 @@ if (window.location.hostname === "localhost") {
 
   stageControls.appendChild(devButton);
 }
+
+setupSettingsButton(workspace, projectAPI);
