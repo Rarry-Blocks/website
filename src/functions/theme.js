@@ -270,8 +270,11 @@ export function setupSettingsButton(workspace) {
   const settingsButton = document.getElementById("settings-button");
   if (settingsButton)
     settingsButton.addEventListener("click", async () => {
-      const { projectAPI } = await import("../scripts/editor");
-      var currentColors;
+      let currentColors, _projectAPI;
+      if (workspace) {
+        const { projectAPI } = await import("../scripts/editor");
+        _projectAPI = projectAPI;
+      }
 
       const popup = new Popup({
         title: "Settings",
@@ -279,7 +282,7 @@ export function setupSettingsButton(workspace) {
           currentColors = JSON.parse(localStorage.getItem("colors") || "{}");
         },
         tabs: () => [
-          {
+          workspace ? {
             label: "Project",
             rows: [
               [
@@ -289,22 +292,22 @@ export function setupSettingsButton(workspace) {
                 "Width",
                 {
                   type: "number",
-                  value: projectAPI.settings.stageWidth,
+                  value: _projectAPI.settings.stageWidth,
                   min: 1,
                   max: 4096,
                   step: 1,
-                  onChange: value => projectAPI.updateSetting("stageWidth", value),
+                  onChange: value => _projectAPI.updateSetting("stageWidth", value),
                 },
               ],
               [
                 "Height",
                 {
                   type: "number",
-                  value: projectAPI.settings.stageHeight,
+                  value: _projectAPI.settings.stageHeight,
                   min: 1,
                   max: 4096,
                   step: 1,
-                  onChange: value => projectAPI.updateSetting("stageHeight", value),
+                  onChange: value => _projectAPI.updateSetting("stageHeight", value),
                 },
               ],
               [
@@ -314,26 +317,26 @@ export function setupSettingsButton(workspace) {
                 "<div>Framerate (FPS)<br><small style='opacity:0.7'>How fast the engine executes and refreshes.</small></div>",
                 {
                   type: "number",
-                  value: projectAPI.settings.fps,
+                  value: _projectAPI.settings.fps,
                   min: 1,
                   max: 240,
                   step: 1,
-                  onChange: value => projectAPI.updateSetting("fps", value),
+                  onChange: value => _projectAPI.updateSetting("fps", value),
                 },
               ],
               [
                 "<div>Clone Limit<br><small style='opacity:0.7'>Max clones allowed at once to prevent crashing.</small></div>",
                 {
                   type: "number",
-                  value: projectAPI.settings.cloneLimit,
+                  value: _projectAPI.settings.cloneLimit,
                   min: 0,
                   max: 100000,
                   step: 1,
-                  onChange: value => projectAPI.updateSetting("cloneLimit", value),
+                  onChange: value => _projectAPI.updateSetting("cloneLimit", value),
                 },
               ],
             ],
-          },
+          } : null,
           {
             label: "Appearance",
             rows: [

@@ -39,9 +39,11 @@
       </button>
     </div>
     <div>
-      <button onclick="location.href='/login'" id="login-button">
-        <i class="fa-solid fa-right-to-bracket"></i>
-        Login
+      <button id="login-button">
+        <a href="/login">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          Login
+        </a>
       </button>
     </div>
   </header>
@@ -95,10 +97,6 @@
     <a href="/credits">Credits</a>
   </footer>
 
-  <script>
-    // redirect to editor if running in tauri
-    if (window.__TAURI_INTERNALS__ !== undefined) window.location.replace("/editor");
-  </script>
   <script type="module" src="src/scripts/index.js"></script>
 </body>
 

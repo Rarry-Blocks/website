@@ -25,9 +25,10 @@
 <body>
   <header>
     <div>
-      <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" onclick="location.href = '/'" style="cursor: pointer" />
-      <img src="icons/R-Rarry.svg" alt="Rarry logo" class="logo small" onclick="location.href = '/'"
-        style="cursor: pointer" />
+      <a href="/">
+        <img src="icons/Rarry.svg" alt="Rarry logo" class="logo" />
+        <img src="icons/R-Rarry.svg" alt="Rarry logo" class="logo small" />
+      </a>
       <button onclick="location.href = '/editor'">
         <i class="fa-solid fa-code"></i>
         Editor
@@ -38,9 +39,11 @@
       </button>
     </div>
     <div>
-      <button onclick="location.href = '/login'" id="login-button">
-        <i class="fa-solid fa-right-to-bracket"></i>
-        Login
+      <button id="login-button">
+        <a href="/login">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          Login
+        </a>
       </button>
     </div>
   </header>

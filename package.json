@@ -1,8 +1,9 @@
 {
   "name": "rarry",
   "private": true,
-  "version": "1.6.4",
+  "version": "1.6.5",
   "type": "module",
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

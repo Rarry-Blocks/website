@@ -107,7 +107,7 @@ export class Popup {
     }
 
     const title = this._resolve(this.options.title);
-    const tabs = this._resolve(this.options.tabs);
+    let tabs = this._resolve(this.options.tabs);
     const rows = this._resolve(this.options.rows);
     const innerHTML = this._resolve(this.options.innerHTML);
 
@@ -118,6 +118,7 @@ export class Popup {
     let bodyHTML = "";
 
     if (Array.isArray(tabs) && tabs.length > 0) {
+      tabs = tabs.filter(t => t);
       if (this.currentTabIndex >= tabs.length) this.currentTabIndex = 0;
 
       const tabButtons = tabs

@@ -14,12 +14,7 @@ html.stageLeft .main {
 }
 
 img.logo {
-  pointer-events: none !important;
-}
-
-html:not(.tauri) img.logo {
   cursor: pointer;
-  pointer-events: all;
 }
 
 #project-name-input {

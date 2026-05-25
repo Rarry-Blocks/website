@@ -43,8 +43,6 @@ async function onLoginClick(e) {
       } catch (err) {}
       throw new Error(errText);
     }
-
-    window.location.href = window.__TAURI_INTERNALS__ !== undefined ? "/editor" : "/";
   } catch (err) {
     console.error(err);
     
