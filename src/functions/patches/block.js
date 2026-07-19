@@ -86,3 +86,18 @@ Blockly.Block.prototype.jsonInit = function (json) {
   }
   ogJsonInit.call(this, json);
 };
+
+Blockly.Block.prototype.isOnlyField = function (field) {
+  for (var i = 0; i < this.inputList.length; i++) {
+    var input = this.inputList[i];
+    if (!(input instanceof Blockly.inputs.DummyInput)) {
+      return false;
+    }
+    for (var j = 0; j < input.fieldRow.length; j++) {
+      if (input.fieldRow[j] !== field) {
+        return false;
+      }
+    }
+  }
+  return true;
+};

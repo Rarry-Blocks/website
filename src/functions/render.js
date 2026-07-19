@@ -37,14 +37,14 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
           "a",
           "0 0," + sweep,
           radius,
-          svgPaths.point((right ? 1 : -1) * radius, (up ? -1 : 1) * radius),
+          svgPaths.point((right ? 1 : -1) * radius, (up ? -1 : 1) * radius)
         ) +
         svgPaths.lineOnAxis("v", (up ? -1 : 1) * remainingHeight) +
         svgPaths.arc(
           "a",
           "0 0," + sweep,
           radius,
-          svgPaths.point((right ? -1 : 1) * radius, (up ? -1 : 1) * radius),
+          svgPaths.point((right ? -1 : 1) * radius, (up ? -1 : 1) * radius)
         )
       );
     }
@@ -62,7 +62,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
         svgPaths.lineOnAxis("h", radius * dirR) +
         svgPaths.curve("q", [
           svgPaths.point((radius / 2) * -dirR, dirU * (totalHeight / 2)),
-          svgPaths.point(0, totalHeight * dirU),
+          svgPaths.point(0, totalHeight * dirU)
         ]) +
         svgPaths.lineOnAxis("h", radius * -dirR)
       );
@@ -95,7 +95,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       },
       pathRightUp(height) {
         return makeRoundPath(height, false, true);
-      },
+      }
     };
   }
 
@@ -149,7 +149,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       },
       pathRightUp(height) {
         return makeMainPath(height, false, true);
-      },
+      }
     };
   }
 
@@ -205,7 +205,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
       },
       pathRightUp(height) {
         return roundedCopy.pathRightUp(height);
-      },
+      }
     };
   }
 
@@ -217,8 +217,6 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
     if (!connection.sourceBlock_) {
       return super.shapeFor(connection);
     }
-
-    const blockType = connection.sourceBlock_.type;
 
     if (
       connection.type === Blockly.ConnectionType.NEXT_STATEMENT ||
@@ -233,7 +231,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
             const customNotch = {
               ...notch,
               pathLeft: pathFn.pathLeft(this.NOTCH_WIDTH, this.NOTCH_HEIGHT, svgPaths),
-              pathRight: pathFn.pathRight(this.NOTCH_WIDTH, this.NOTCH_HEIGHT, svgPaths),
+              pathRight: pathFn.pathRight(this.NOTCH_WIDTH, this.NOTCH_HEIGHT, svgPaths)
             };
             this._customNotchCache.set(checkType, customNotch);
           }
@@ -295,7 +293,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
               pathDown: h => resolve(h, false, false),
               pathUp: h => resolve(h, true, false),
               pathRightDown: h => resolve(h, false, true),
-              pathRightUp: h => resolve(h, true, true),
+              pathRightUp: h => resolve(h, true, true)
             };
           }
 
@@ -334,6 +332,14 @@ class CustomPathObject extends Blockly.zelos.PathObject {
       }
     }
     super.applyColour(block);
+  }
+}
+
+const origFieldDropdown = Blockly.FieldDropdown.prototype.init;
+Blockly.FieldDropdown.prototype.init = function() {
+  origFieldDropdown.call(this);
+  if (this.borderRect_ && this.sourceBlock_ && this.sourceBlock_.isOnlyField(this)) {
+    this.borderRect_.style.stroke = "transparent";
   }
 }
 
