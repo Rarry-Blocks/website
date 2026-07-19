@@ -7,7 +7,7 @@ function assure(generator, code) {
     `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj) {`,
     `  if (typeof obj !== "object" || obj == null) return Object.create(null);`,
     `  return obj;`,
-    `}`,
+    `}`
   ]);
   return `${fn}(${code})`;
 }
@@ -16,7 +16,7 @@ function clone(generator, code) {
     `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj) {`,
     `  if (typeof obj !== "object" || obj == null) return Object.create(null);`,
     `  return structuredClone(obj);`,
-    `}`,
+    `}`
   ]);
   return `${fn}(${code})`;
 }
@@ -28,19 +28,12 @@ Blockly.Blocks["json_length"] = {
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("Returns the length of an object.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_length"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_length"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
 
   const safe = assure(generator, obj);
   return [`Object.keys(${safe}).length`, Order.MEMBER];
@@ -54,19 +47,12 @@ Blockly.Blocks["json_isEmpty"] = {
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("Returns true if the object is empty.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_isEmpty"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_isEmpty"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
 
   const safe = assure(generator, obj);
   return [`Object.keys(${safe}).length === 0`, Order.EQUALITY];
@@ -80,25 +66,13 @@ Blockly.Blocks["json_get"] = {
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("Returns the value of a key from an object.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_get"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_get"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
-  const key =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.NONE,
-    ) || '""';
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
+  const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
 
   const safe = assure(generator, obj);
   return [`${safe}[${key}]`, Order.MEMBER];
@@ -115,28 +89,16 @@ Blockly.Blocks["json_set"] = {
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("Sets a value to a key in an object.");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["json_set"] = function (block) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.MEMBER,
-    ) || "Object.create(null)";
-  const key =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.NONE,
-    ) || '""';
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.MEMBER) ||
+    "Object.create(null)";
+  const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
   const value =
-    javascriptGenerator.valueToCode(
-      block,
-      "VALUE",
-      Order.ASSIGNMENT,
-    ) || "null";
+    javascriptGenerator.valueToCode(block, "VALUE", Order.ASSIGNMENT) || "null";
   return `${obj}[${key}] = ${value};\n`;
 };
 
@@ -149,22 +111,14 @@ Blockly.Blocks["json_delete"] = {
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("Deletes a key from an object.");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["json_delete"] = function (block) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.MEMBER,
-    ) || "Object.create(null)";
-  const key =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.NONE,
-    ) || '""';
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.MEMBER) ||
+    "Object.create(null)";
+  const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
   return `delete ${obj}[${key}];\n`;
 };
 /* --- end deprecated --- */
@@ -177,34 +131,15 @@ Blockly.Blocks["json_set_return"] = {
     this.setInputsInline(true);
     this.setOutput(true, "Object");
     this.setStyle("json_category");
-    this.setTooltip(
-      "Sets a value to a key in an object and returns the object.",
-    );
-  },
+    this.setTooltip("Sets a value to a key in an object and returns the object.");
+  }
 };
 
-javascriptGenerator.forBlock["json_set_return"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_set_return"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
-  const key =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.NONE,
-    ) || '""';
-  const value =
-    javascriptGenerator.valueToCode(
-      block,
-      "VALUE",
-      Order.NONE,
-    ) || "null";
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
+  const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
+  const value = javascriptGenerator.valueToCode(block, "VALUE", Order.NONE) || "null";
 
   const safe = clone(generator, obj);
   const code = `(() => { const _ = ${safe}; _[${key}] = ${value}; return _; })()`;
@@ -219,25 +154,13 @@ Blockly.Blocks["json_delete_return"] = {
     this.setOutput(true, "Object");
     this.setStyle("json_category");
     this.setTooltip("Deletes a key from an object and returns the object.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_delete_return"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_delete_return"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
-  const key =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.NONE,
-    ) || '""';
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
+  const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
 
   const safe = clone(generator, obj);
   const code = `(() => { const _ = ${safe}; delete _[${key}]; return _; })()`;
@@ -252,7 +175,7 @@ Blockly.Blocks["json_create_item"] = {
     this.setStyle("json_category");
     this.setTooltip("Add a key with a value to the object.");
     this.contextMenu = false;
-  },
+  }
 };
 
 /* --- start deprecated --- */
@@ -265,22 +188,12 @@ Blockly.Blocks["json_key_value"] = {
     this.setTooltip("A single key with a value.");
     this.setOutput(true, "ObjectItem");
     this.setInputsInline(true);
-  },
+  }
 };
 
 javascriptGenerator.forBlock["json_key_value"] = function (block) {
-  const keyCode =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.NONE,
-    ) || '""';
-  const valCode =
-    javascriptGenerator.valueToCode(
-      block,
-      "VALUE",
-      Order.ATOMIC,
-    ) || "null";
+  const keyCode = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
+  const valCode = javascriptGenerator.valueToCode(block, "VALUE", Order.ATOMIC) || "null";
   const code = `${keyCode}: ${valCode}`;
   return [code, Order.ATOMIC];
 };
@@ -308,22 +221,12 @@ Blockly.Blocks["json_create"] = {
   },
   saveExtraState: function () {
     return {
-      itemCount: this.itemCount_,
+      itemCount: this.itemCount_
     };
   },
   loadExtraState: function (state) {
     this.itemCount_ = state["itemCount"];
     this.updateShape_();
-  },
-  saveConnections: function (containerBlock) {
-    let itemBlock = containerBlock.getInputTargetBlock("STACK");
-    let i = 0;
-    while (itemBlock) {
-      const input = this.getInput("ITEM" + i);
-      itemBlock.valueConnection_ = input && input.connection.targetConnection;
-      itemBlock = itemBlock.nextConnection?.targetBlock();
-      i++;
-    }
   },
   compose: function (containerBlock) {
     let itemBlock = containerBlock.getInputTargetBlock("STACK");
@@ -387,7 +290,7 @@ Blockly.Blocks["json_create"] = {
     for (let i = 0; i < this.itemCount_; i++) {
       if (!this.getInput("ADD" + i)) {
         const input = this.appendValueInput("ADD" + i).setAlign(
-          Blockly.inputs.Align.RIGHT,
+          Blockly.inputs.Align.RIGHT
         );
         input.setCheck("ObjectItem");
         if (i === 0) input.appendField("create object with");
@@ -397,7 +300,7 @@ Blockly.Blocks["json_create"] = {
     for (let i = this.itemCount_; this.getInput("ADD" + i); i++) {
       this.removeInput("ADD" + i);
     }
-  },
+  }
 };
 
 Blockly.Blocks["json_create_container"] = {
@@ -405,21 +308,15 @@ Blockly.Blocks["json_create_container"] = {
     this.appendDummyInput().appendField("object");
     this.appendStatementInput("STACK");
     this.setStyle("json_category");
-    this.setTooltip(
-      "Add, remove, or reorder sections to configure this object block.",
-    );
+    this.setTooltip("Add, remove, or reorder sections to configure this object block.");
     this.contextMenu = false;
-  },
+  }
 };
 
 javascriptGenerator.forBlock["json_create"] = function (block) {
   const entries = [];
   for (let i = 0; i < block.itemCount_; i++) {
-    const pairCode = javascriptGenerator.valueToCode(
-      block,
-      "ADD" + i,
-      Order.NONE,
-    );
+    const pairCode = javascriptGenerator.valueToCode(block, "ADD" + i, Order.NONE);
     if (pairCode) {
       entries.push(pairCode || "");
     }
@@ -436,16 +333,11 @@ Blockly.Blocks["json_create_statement"] = {
     this.setOutput(true, "Object");
     this.setStyle("json_category");
     this.setTooltip("Create an object using stacked key/value pairs.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_create_statement"] = function (
-  block,
-) {
-  const statements = javascriptGenerator.statementToCode(
-    block,
-    "STACK",
-  );
+javascriptGenerator.forBlock["json_create_statement"] = function (block) {
+  const statements = javascriptGenerator.statementToCode(block, "STACK");
   return [`{\n${statements}}`, Order.ATOMIC];
 };
 
@@ -458,59 +350,32 @@ Blockly.Blocks["json_key_value_statement"] = {
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("A single key/value pair for an object.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_key_value_statement"] = function (
-  block,
-  generator,
-) {
-  const key =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.ATOMIC,
-    ) || "";
-  const value =
-    javascriptGenerator.valueToCode(
-      block,
-      "VALUE",
-      Order.ATOMIC,
-    ) || "null";
+javascriptGenerator.forBlock["json_key_value_statement"] = function (block) {
+  const key = javascriptGenerator.valueToCode(block, "KEY", Order.ATOMIC) || "";
+  const value = javascriptGenerator.valueToCode(block, "VALUE", Order.ATOMIC) || "null";
 
-  if (key) return `[${key}]: ${value},\n`;
+  if (key) return `[${key}]:${value},\n`;
   else return "";
 };
 
 Blockly.Blocks["json_has_key"] = {
   init: function () {
-    this.appendValueInput("OBJECT")
-      .setCheck("Object")
-      .appendField("does object");
+    this.appendValueInput("OBJECT").setCheck("Object").appendField("does object");
     this.appendValueInput("KEY").setCheck("String").appendField("have");
     this.setOutput(true, "Boolean");
     this.setInputsInline(true);
     this.setStyle("json_category");
     this.setTooltip("Returns true if the key exists in the object.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_has_key"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_has_key"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
-  const key =
-    javascriptGenerator.valueToCode(
-      block,
-      "KEY",
-      Order.NONE,
-    ) || '""';
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
+  const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
 
   const safe = assure(generator, obj);
   return [`(${key} in ${safe})`, Order.RELATIONAL];
@@ -524,27 +389,20 @@ Blockly.Blocks["json_property_list"] = {
         new Blockly.FieldDropdown([
           ["keys", "KEYS"],
           ["values", "VALUES"],
-          ["entries", "ENTRIES"],
+          ["entries", "ENTRIES"]
         ]),
-        "MODE",
+        "MODE"
       )
       .appendField("of");
     this.setOutput(true, "Array");
     this.setStyle("json_category");
     this.setTooltip("Returns the keys, values, or entries of the object.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_property_list"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_property_list"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
   const mode = block.getFieldValue("MODE");
 
   const safe = assure(generator, obj);
@@ -563,9 +421,9 @@ Blockly.Blocks["json_parse"] = {
     const dropdown = new Blockly.FieldDropdown([
       ["object from text", "PARSE"],
       ["text from object", "STRINGIFY"],
-      ["pretty text from object", "PRETTY"],
+      ["pretty text from object", "PRETTY"]
     ]);
-    dropdown.setValidator((newMode) => {
+    dropdown.setValidator(newMode => {
       this.updateType_(newMode);
     });
 
@@ -623,16 +481,11 @@ Blockly.Blocks["json_parse"] = {
   },
   loadExtraState: function (state) {
     this.updateType_(state["mode"]);
-  },
+  }
 };
 
 javascriptGenerator.forBlock["json_parse"] = function (block) {
-  const input =
-    javascriptGenerator.valueToCode(
-      block,
-      "INPUT",
-      Order.ATOMIC,
-    ) || "null";
+  const input = javascriptGenerator.valueToCode(block, "INPUT", Order.ATOMIC) || "null";
   const mode = block.getFieldValue("MODE");
 
   let code = "";
@@ -644,25 +497,16 @@ javascriptGenerator.forBlock["json_parse"] = function (block) {
 
 Blockly.Blocks["json_clone"] = {
   init: function () {
-    this.appendValueInput("OBJECT")
-      .setCheck("Object")
-      .appendField("clone object");
+    this.appendValueInput("OBJECT").setCheck("Object").appendField("clone object");
     this.setOutput(true, "Object");
     this.setStyle("json_category");
     this.setTooltip("Creates a duplicate of an object.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["json_clone"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["json_clone"] = function (block, generator) {
   const obj =
-    javascriptGenerator.valueToCode(
-      block,
-      "OBJECT",
-      Order.NONE,
-    ) || "Object.create(null)";
+    javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
 
   return [clone(generator, assure(generator, obj)), Order.FUNCTION_CALL];
 };

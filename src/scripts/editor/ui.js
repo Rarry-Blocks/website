@@ -5,6 +5,7 @@ import {
   activeSprite,
   currentSocket,
   app,
+  currentRoom,
 } from "../editor";
 
 const playingAudios = {};

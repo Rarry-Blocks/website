@@ -11,18 +11,18 @@ const profileDiv = document.getElementById("userProfile");
 if (profileDiv && identifier) {
   fetch(`${config.apiUrl}/users/${identifier}`, {
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
-    credentials: "include",
+    credentials: "include"
   })
-    .then((response) => response.json())
-    .then((response) => {
+    .then(response => response.json())
+    .then(response => {
       profileDiv.innerHTML = `
         <img id="profileAvatar" src="${config.apiUrl}/users/${response.id}/avatar" />
         ${response.username}
       `;
     })
-    .catch((err) => {
+    .catch(err => {
       console.error(err);
       alert("Login error: " + err.message);
     });

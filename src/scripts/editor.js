@@ -7,7 +7,7 @@ Blockly.setLocale(En);
 import.meta.glob("../blocks/**/*.js", { eager: true });
 import { javascriptGenerator } from "blockly/javascript";
 
-import { Application, Graphics, Texture, Sprite as PixiSprite } from "pixi.js-legacy";
+import { Application, Graphics, Texture } from "pixi.js-legacy";
 import JSZip from "jszip";
 import { io } from "socket.io-client";
 
@@ -23,7 +23,6 @@ import Toolbox from "../components/Toolbox.js";
 import { setupSettingsButton } from "../functions/theme.js";
 import {
   compressAudio,
-  compressImage,
   showNotification,
   Popup,
 } from "../functions/utils.js";
@@ -52,8 +51,9 @@ import {
   compressData,
   decompressData,
 } from "./editor/project.js";
+import { store } from "../store/state.js";
+import { setupSubscriptions } from "../store/subscriptions.js";
 
-const isDesktop = window.__TAURI_INTERNALS__ !== undefined;
 const loadingScreen = document.getElementById("editor-loading");
 
 export function showLoading(message = "Loading...") {
@@ -76,8 +76,8 @@ javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
 window.Blockly = Blockly;
 
 export let currentSocket = null;
+export let currentRoom = null;
 let currentSocketPromise = null;
-let currentRoom = null;
 let amHost = false;
 let invitesEnabled = true;
 let connectedUsers = [];
@@ -150,18 +150,18 @@ function calculateWrapperDimensions() {
   const targetW = projectSettings.stageWidth;
   const targetH = projectSettings.stageHeight;
   const maxHeight = window.innerHeight * 0.3;
-  
+
   const maxAvailableWidth = wrapper.parentElement?.clientWidth || wrapper.clientWidth;
   if (maxAvailableWidth === 0) return null;
-  
+
   let h = (maxAvailableWidth / targetW) * targetH;
   let w = maxAvailableWidth;
-  
+
   if (h > maxHeight) {
     h = maxHeight;
     w = (h / targetH) * targetW;
   }
-  
+
   return { width: w, height: h };
 }
 
@@ -186,7 +186,7 @@ export function resizeCanvas() {
 }
 
 updateStageRatio();
-requestAnimationFrame(resizeCanvas); 
+requestAnimationFrame(resizeCanvas);
 window.addEventListener("resize", () => {
   resizeCanvas();
 });
@@ -214,7 +214,7 @@ export function getActiveSpriteStuff() {
 
 Blockly.blockRendering.register("custom_zelos", CustomRenderer);
 
-const snapToGrid = localStorage.getItem("snapToGrid") === "true" ?? false;
+const snapToGrid = localStorage.getItem("snapToGrid") === "true";
 const scrollbars = localStorage.getItem("scrollbars") !== "false";
 const sounds = localStorage.getItem("sounds") !== "false";
 
@@ -249,7 +249,16 @@ export const workspace = Blockly.inject(blocklyDiv, {
 const workspaceObserver = new ResizeObserver(() => Blockly.svgResize(workspace));
 workspaceObserver.observe(blocklyDiv);
 
-workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function (_) {
+setupSubscriptions({
+  renderSpritesList,
+  renderCostumesList,
+  renderSoundsList,
+  resetSpriteInfo,
+  workspace,
+  deleteSpriteButton,
+});
+
+workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function () {
   const xmlList = [];
 
   const button = Blockly.utils.xml.createElement("button");
@@ -414,7 +423,11 @@ export function addSprite(id, emit = false) {
     costumes: [new Costume({ name: "default", texture })],
   });
 
-  if (!activeSprite) setActiveSprite(sprite);
+  if (!activeSprite) {
+    setActiveSprite(sprite);
+  } else {
+    store.set("spriteVersion", store.get("spriteVersion") + 1);
+  }
 
   if (emit && currentSocket && currentRoom) {
     currentSocket.emit("projectUpdate", {
@@ -455,19 +468,10 @@ export function deleteSprite(id, emit = false) {
 export function setActiveSprite(sprite) {
   if (activeSprite === sprite) return;
   activeSprite = sprite;
-  renderSpritesList(true);
+  store.set("activeSprite", sprite);
   hideBlockRunBubble();
 
-  const workspaceContainer = workspace.getParentSvg().parentNode;
-
-  if (!sprite) {
-    deleteSpriteButton.disabled = true;
-    workspaceContainer.style.display = "none";
-    return;
-  } else {
-    deleteSpriteButton.disabled = false;
-    workspaceContainer.style.display = "";
-  }
+  if (!sprite) return;
 
   Blockly.Events.disable();
 
@@ -479,8 +483,6 @@ export function setActiveSprite(sprite) {
   Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
 
   Blockly.Events.enable();
-
-  resetSpriteInfo();
 }
 
 export function calculateBubblePosition(
@@ -777,11 +779,9 @@ tabButtons.forEach(button => {
 
     if (tab === "code") {
       setTimeout(() => Blockly.svgResize(workspace), 0);
-    } else if (tab === "costumes") {
-      renderCostumesList();
-    } else if (tab === "sounds") {
-      renderSoundsList();
     }
+
+    store.set("activeTab", tab);
   });
 });
 
@@ -807,7 +807,6 @@ async function loadProject(ev) {
   const [file] = ev.target.files ?? [];
   if (!file) return;
   await loadProjectFile(file, {
-    spriteManager,
     handleProjectData,
     showLoading,
     hideLoading,
@@ -1019,8 +1018,8 @@ SpriteChangeEvents.on("positionChanged", sprite => {
   spriteData.lastPos = [x, y];
 });
 
-SpriteChangeEvents.on("textureChanged", event => {
-  renderSpritesList(false);
+SpriteChangeEvents.on("textureChanged", () => {
+  store.set("spriteVersion", store.get("spriteVersion") + 1);
 });
 
 /* setup extensions stuff */
@@ -1258,7 +1257,6 @@ function createSession() {
       }
       case "addSprite": {
         addSprite(data, false);
-        renderSpritesList(true);
         break;
       }
       case "renameSprite": {
@@ -1272,7 +1270,6 @@ function createSession() {
       }
       case "removeSprite": {
         deleteSprite(data, false);
-        renderSpritesList(true);
         break;
       }
       case "addExtension": {
@@ -1853,7 +1850,7 @@ if (window.location.hostname === "localhost") {
 
   const devButton = document.createElement("button");
   devButton.innerHTML = '<img src="icons/devToolsIcon.png">';
-  devButton.addEventListener("click", e => {
+  devButton.addEventListener("click", function () {
     new Popup({
       title: "Dev Tools",
       rows: [

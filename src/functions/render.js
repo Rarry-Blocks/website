@@ -260,13 +260,14 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
         return this.PILLOW;
       } else if (checks.includes("Set") || outputShape === 6) {
         return this.SPIKEY;
-      } /*else if (
+      } else if (
+        localStorage.getItem("squaredStrings") === "true" &&
         checks.includes("String") &&
         connection?.sourceBlock_?.isShadow() &&
         connection?.targetConnection?.shadowState?.type === "text"
       ) {
         return this.SQUARED;
-      }*/
+      }
 
       for (const typeName of checks) {
         if (!customShapeRegistry.has(typeName)) continue;
@@ -298,7 +299,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
             };
           }
 
-          const shape = typeof path === "function" ? buildShape() : entry;
+          const shape = typeof path === "function" ? buildShape() : path;
           this._customShapeCache.set(typeName, shape);
         }
 
@@ -325,8 +326,8 @@ class CustomPathObject extends Blockly.zelos.PathObject {
             block.style = Object.create(block.style);
             block.style.isShadowProxy = true;
           }
-          block.style.colourPrimary = ancestor.style.colourPrimary;
-          block.style.colourSecondary = ancestor.style.colourSecondary;
+          block.style.colourPrimary = ancestor.style.colourTertiary;
+          block.style.colourSecondary = ancestor.style.colourTertiary;
           block.style.colourTertiary = ancestor.style.colourTertiary;
           this.style = block.style;
         }

@@ -40,16 +40,16 @@ async function onLoginClick(e) {
         const errJson = await response.json();
 
         errText = errJson.message || JSON.stringify(errJson);
-      } catch (err) {}
+      } catch { /* empty */ }
       throw new Error(errText);
     }
   } catch (err) {
     console.error(err);
-    
+
     let data;
     try {
       data = JSON.parse(err.message).error;
-    } catch(_) {
+    } catch {
       data = err.message;
     }
 

@@ -16,6 +16,7 @@ const hats = localStorage.getItem("startHats") === "true" || false;
 const snapToGrid = localStorage.getItem("snapToGrid") === "true" || false;
 const scrollbars = localStorage.getItem("scrollbars") !== "false";
 const sounds = localStorage.getItem("sounds") !== "false";
+const squaredStrings = localStorage.getItem("squaredStrings") === "true";
 
 const blockStyles = {
   logic_blocks: {
@@ -255,6 +256,10 @@ export function toggleSounds(enabled) {
   localStorage.setItem("sounds", String(enabled));
 }
 
+export function toggleSquaredStrings(enabled) {
+  localStorage.setItem("squaredStrings", String(enabled));
+}
+
 export function setupSettingsButton(workspace) {
   toggleTheme(theme, workspace);
   toggleIcons(icons);
@@ -265,6 +270,7 @@ export function setupSettingsButton(workspace) {
   toggleSnapToGrid(snapToGrid, workspace);
   toggleScrollbars(scrollbars, workspace);
   toggleSounds(sounds, workspace);
+  toggleSquaredStrings(squaredStrings);
   setCategoryBubble(categoryBubble, workspace);
 
   const settingsButton = document.getElementById("settings-button");
@@ -484,6 +490,14 @@ export function setupSettingsButton(workspace) {
                   type: "checkbox",
                   checked: localStorage.getItem("sounds") !== "false",
                   onChange: checked => toggleSounds(checked, workspace),
+                },
+              ],
+              [
+                "Squared text inputs",
+                {
+                  type: "checkbox",
+                  checked: localStorage.getItem("squaredStrings") === "true",
+                  onChange: checked => toggleSquaredStrings(checked),
                 },
               ],
             ],

@@ -1,15 +1,12 @@
 import JSZip from "jszip";
-import { Texture, Sprite as PixiSprite } from "pixi.js-legacy";
+import { Sprite as PixiSprite } from "pixi.js-legacy";
 import { save as tauriSave } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import { compressAudio, compressImage, showNotification } from "../../functions/utils.js";
-import { registerExtension } from "../../functions/extensionManager.js";
-import { Costume, Sound } from "../../components/Sprite.js";
 import { app, hideLoading, showLoading } from "../editor.js";
 
 const isDesktop = window.__TAURI_INTERNALS__ !== undefined;
 
-const FORMAT_VERSION = 2;
 const metadata = {
   version: 2,
   platform: { name: "Rarry", url: "https://rarry.link" },
@@ -144,7 +141,7 @@ async function resolveAsset(zip, src, mimeType) {
 
 export async function loadProjectFile(
   file,
-  { spriteManager, handleProjectData, showLoading, hideLoading },
+  { handleProjectData, showLoading, hideLoading },
 ) {
   showLoading("Loading project...");
   try {
@@ -157,8 +154,6 @@ export async function loadProjectFile(
     if (!projectFile) throw new Error("Invalid project: Missing project.json");
 
     const json = JSON.parse(await projectFile.async("string"));
-
-    const formatVersion = json.metadata?.version ?? 1;
 
     const sprites = await Promise.all(
       json.sprites.map(async entry => {

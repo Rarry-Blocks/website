@@ -1,4 +1,4 @@
-async function requestPermission(extId, action, showPopup) {
+async function requestPermission(extId, action) {
   return new Promise((resolve, reject) => {
     if (confirm(`Extension "${extId}" is requesting permission to use the "${action}" API. Do you allow this?`)) {
       resolve(true);
@@ -52,8 +52,7 @@ export class ExtensionBridge {
         let apiResult;
         switch (action) {
           case "fetch":
-            const res = await fetch(payload.url, payload.options);
-            apiResult = await res.text();
+            apiResult = await (await fetch(payload.url, payload.options)).text();
             break;
           case "storage.get":
             apiResult = localStorage.getItem(`${this.extId}:${payload.key}`);

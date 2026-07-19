@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { defineConfig } from "vite";
 import { resolve } from "path";
 
@@ -31,9 +32,9 @@ export default defineConfig({
       "@pixi/filter-blur": resolve(__dirname, "stub.js"),
       "@pixi/filter-color-matrix": resolve(__dirname, "stub.js"),
       "@pixi/filter-displacement": resolve(__dirname, "stub.js"),
-      "@pixi/text-bitmap": resolve(__dirname, "stub.js"), 
-      "@pixi/mesh-extras": resolve(__dirname, "stub.js"), 
-      "@pixi/particle-container": resolve(__dirname, "stub.js"), 
+      "@pixi/text-bitmap": resolve(__dirname, "stub.js"),
+      "@pixi/mesh-extras": resolve(__dirname, "stub.js"),
+      "@pixi/particle-container": resolve(__dirname, "stub.js"),
     },
   },
 });
