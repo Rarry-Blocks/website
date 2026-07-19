@@ -396,7 +396,7 @@ Blockly.Blocks["functions_args_container"] = {
         new Blockly.FieldDropdown([
           [
             {
-              src: "icons/statement.svg",
+              src: "/icons/statement.svg",
               width: 98 * 0.6,
               height: 57 * 0.6,
               alt: "A block with top and bottom connections",
@@ -405,7 +405,7 @@ Blockly.Blocks["functions_args_container"] = {
           ],
           [
             {
-              src: "icons/terminal.svg",
+              src: "/icons/terminal.svg",
               width: 98 * 0.6,
               height: 48 * 0.6,
               alt: "A block with only a top connection",

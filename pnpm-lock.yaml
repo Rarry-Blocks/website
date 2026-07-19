@@ -10,10 +10,10 @@ importers:
     dependencies:
       '@blockly/field-colour-hsv-sliders':
         specifier: ^6.0.11
-        version: 6.0.12(blockly@12.5.1)
+        version: 6.0.12(blockly@12.2.0)
       '@blockly/plugin-strict-connection-checker':
         specifier: ^6.0.1
-        version: 6.0.9(blockly@12.5.1)
+        version: 6.0.9(blockly@12.2.0)
       '@fortawesome/fontawesome-free':
         specifier: ^7.0.1
         version: 7.2.0
@@ -25,7 +25,7 @@ importers:
         version: 2.5.1
       blockly:
         specifier: ^12.2.0
-        version: 12.5.1
+        version: 12.2.0
       js-md5:
         specifier: ^0.8.3
         version: 0.8.3
@@ -772,8 +772,8 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  blockly@12.5.1:
-    resolution: {integrity: sha512-etXLpUtEkcRibHGwIJ4BsvnIzMJJs0C0yPIjE/W0NCtj8ACha/a7Q9n7Ib6+j7N4EzQ0p28YPZMnypi5pNIj1g==}
+  blockly@12.2.0:
+    resolution: {integrity: sha512-s4QL9ogEMzc4Pxfe8Oi3Kmu6SQ0ts2thzmRYjdnMSEIVZFpBZ4OUuNKvpFICqujO0yfAo99zON8KzxAFw8hA1w==}
     engines: {node: '>=18'}
 
   call-bind-apply-helpers@1.0.2:
@@ -1180,23 +1180,23 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 10.4.3
 
-  '@blockly/field-colour-hsv-sliders@6.0.12(blockly@12.5.1)':
+  '@blockly/field-colour-hsv-sliders@6.0.12(blockly@12.2.0)':
     dependencies:
-      '@blockly/field-colour': 6.0.12(blockly@12.5.1)
-      blockly: 12.5.1
+      '@blockly/field-colour': 6.0.12(blockly@12.2.0)
+      blockly: 12.2.0
 
-  '@blockly/field-colour@6.0.12(blockly@12.5.1)':
+  '@blockly/field-colour@6.0.12(blockly@12.2.0)':
     dependencies:
-      '@blockly/field-grid-dropdown': 6.0.10(blockly@12.5.1)
-      blockly: 12.5.1
+      '@blockly/field-grid-dropdown': 6.0.10(blockly@12.2.0)
+      blockly: 12.2.0
 
-  '@blockly/field-grid-dropdown@6.0.10(blockly@12.5.1)':
+  '@blockly/field-grid-dropdown@6.0.10(blockly@12.2.0)':
     dependencies:
-      blockly: 12.5.1
+      blockly: 12.2.0
 
-  '@blockly/plugin-strict-connection-checker@6.0.9(blockly@12.5.1)':
+  '@blockly/plugin-strict-connection-checker@6.0.9(blockly@12.2.0)':
     dependencies:
-      blockly: 12.5.1
+      blockly: 12.2.0
 
   '@csstools/color-helpers@5.1.0': {}
 
@@ -1690,7 +1690,7 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  blockly@12.5.1:
+  blockly@12.2.0:
     dependencies:
       jsdom: 26.1.0
     transitivePeerDependencies:
