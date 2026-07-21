@@ -1,5 +1,7 @@
 let idCounter = 0;
 const pending = new Map();
+let pendingDescriptor = null;
+let cachedHandlers = null;
 
 function requestHost(action, payload) {
   return new Promise((resolve, reject) => {
@@ -18,28 +20,81 @@ const api = {
   log: (...args) => requestHost("log", { args }),
 };
 
-let userExtension = null;
+const BlockType = Object.freeze({
+  STATEMENT: "statement",
+  CAP: "cap",
+  OUTPUT: "output",
+});
+
+const BlockShape = Object.freeze({
+  NUMBER: 1,
+  STRING: 2,
+  ARGUMENT: 3,
+  ARRAY: 4,
+  OBJECT: 5,
+  SET: 6,
+});
+
+const InputType = Object.freeze({
+  VALUE: "value",
+  STATEMENT: "statement",
+  MENU: "menu",
+});
+
+self.Rarry = Object.freeze({
+  registerExtension(descriptor) {
+    if (!descriptor || typeof descriptor !== "object") {
+      throw new Error("Rarry.registerExtension expects an extension descriptor object");
+    }
+    if (!descriptor.id) {
+      throw new Error("Extension descriptor must have an id");
+    }
+    pendingDescriptor = descriptor;
+  },
+  BlockType,
+  BlockShape,
+  InputType,
+});
 
 self.onmessage = async e => {
   const { type, id, action, payload, result, error } = e.data;
 
   if (type === "init") {
     try {
-      const ExtClass = new Function("api", `"use strict"; return (${payload.code})`)();
-      userExtension = new ExtClass(api);
+      pendingDescriptor = null;
+      cachedHandlers = null;
+      new Function("api", `"use strict"; ${payload.code}`)();
 
-      const codeGen = userExtension.registerCode ? userExtension.registerCode() : {};
+      if (pendingDescriptor) {
+        cachedHandlers = pendingDescriptor.code ?? {};
+        const extInfo = {
+          id: pendingDescriptor.id,
+          category: pendingDescriptor.category ?? null,
+          blocks: pendingDescriptor.blocks ?? [],
+          codeGen: Object.keys(cachedHandlers),
+        };
+        postMessage({ type: "ready", id: payload.extId, extInfo });
+        pendingDescriptor = null;
+      } else {
+        const ExtClass = new Function("api", `"use strict"; return (${payload.code})`)();
+        const userExtension = new ExtClass(api);
 
-      postMessage({
-        type: "ready",
-        id: payload.extId,
-        extInfo: {
-          id: userExtension.id || userExtension.constructor.name,
-          category: userExtension.registerCategory ? userExtension.registerCategory() : null,
-          blocks: userExtension.registerBlocks ? userExtension.registerBlocks() :[],
-          codeGen: Object.keys(codeGen)
+        if (!userExtension || typeof userExtension.registerCode !== "function") {
+          throw new Error("Extension must call Rarry.registerExtension() or define a class with registerCode()");
         }
-      });
+
+        cachedHandlers = userExtension.registerCode();
+        postMessage({
+          type: "ready",
+          id: payload.extId,
+          extInfo: {
+            id: userExtension.id || userExtension.constructor.name,
+            category: userExtension.registerCategory ? userExtension.registerCategory() : null,
+            blocks: userExtension.registerBlocks ? userExtension.registerBlocks() : [],
+            codeGen: Object.keys(cachedHandlers),
+          },
+        });
+      }
     } catch (err) {
       postMessage({ type: "error", error: err.message });
     }
@@ -51,16 +106,15 @@ self.onmessage = async e => {
     }
   } else if (type === "runBlock") {
     try {
-      if (!userExtension || !userExtension.registerCode) {
+      if (!cachedHandlers) {
         throw new Error("Extension not initialized properly");
       }
-      
-      const handlers = userExtension.registerCode();
-      const handler = handlers[action];
+
+      const handler = cachedHandlers[action];
       if (!handler) {
         throw new Error(`Unknown block action: ${action}`);
       }
-      
+
       const blockResult = await handler(payload.args);
       postMessage({ type: "blockResult", id, result: blockResult });
     } catch (err) {

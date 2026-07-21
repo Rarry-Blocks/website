@@ -4,15 +4,26 @@ import { activeExtensions, workspace } from "../scripts/editor";
 import { DuplicateOnDrag } from "./patches/block";
 import { customShapeRegistry, customNotchRegistry } from "./render";
 import { ExtensionBridge } from "../components/extensions/bridge";
+import {
+  setPendingDescriptor,
+  consumePendingDescriptor,
+  createRarryGlobal
+} from "./rarry";
 
 export const extensions = {};
 export const extensionBridges = new Map();
 
-const INPUT_TYPE = {
-  VALUE: 1,
-  DUMMY: 2,
-  STATEMENT: 3,
-};
+function rarryRegisterExtension(descriptor) {
+  if (!descriptor || typeof descriptor !== "object") {
+    throw new Error("Rarry.registerExtension expects an extension descriptor object");
+  }
+  if (!descriptor.id) {
+    throw new Error("Extension descriptor must have an id");
+  }
+  setPendingDescriptor(descriptor);
+}
+
+window.Rarry = createRarryGlobal(rarryRegisterExtension);
 
 /**
  * Parse a text template and append the
@@ -36,7 +47,7 @@ function textToBlock(block, text, fields = {}) {
       block.appendValueInput(inputName).setCheck(spec.type ?? null);
     } else if (spec?.kind === "menu") {
       const items = spec.items.map(item =>
-        typeof item === "string" ? [item, item] : [item.text, item.value],
+        typeof item === "string" ? [item, item] : [item.text, item.value]
       );
       block.appendDummyInput().appendField(new Blockly.FieldDropdown(items), inputName);
     } else {
@@ -58,8 +69,8 @@ function buildShadowElement(type, defaultValue) {
     Boolean: {
       type: "checkbox",
       field: "BOOL",
-      value: defaultValue ? "TRUE" : "FALSE",
-    },
+      value: defaultValue ? "TRUE" : "FALSE"
+    }
   };
 
   const config = SHADOW_CONFIG[type] ?? SHADOW_CONFIG[null];
@@ -135,7 +146,7 @@ function registerBlocks(id, blocks, categoryColor, categoryEl) {
             break;
           default:
             console.warn(
-              `Unknown block type "${blockDef.type}" for ${blockType}; defaulting to statement`,
+              `Unknown block type "${blockDef.type}" for ${blockType}; defaulting to statement`
             );
             this.setPreviousStatement(true, blockDef.statementType ?? "default");
             this.setNextStatement(true, blockDef.statementType ?? "default");
@@ -146,7 +157,7 @@ function registerBlocks(id, blocks, categoryColor, categoryEl) {
 
         this.setColour(String(blockDef.color ?? categoryColor ?? "#888"));
         this.setInputsInline(blockDef.inlineInputs ?? true);
-      },
+      }
     };
 
     categoryEl?.appendChild(buildBlockElement(blockType, blockDef.fields));
@@ -161,10 +172,13 @@ function collectInputs(block, fields) {
   for (const input of block.inputList) {
     const name = input.name;
 
-    if (input.type === INPUT_TYPE.VALUE || input.type === INPUT_TYPE.DUMMY) {
+    if (
+      input.type === Blockly.inputs.ValueInput ||
+      input.type === Blockly.inputs.DummyInput
+    ) {
       const code = javascriptGenerator.valueToCode(block, name, Order.ATOMIC);
       if (code) inputs[name] = code;
-    } else if (input.type === INPUT_TYPE.STATEMENT) {
+    } else if (input.type === Blockly.inputs.StatementInput) {
       const code = javascriptGenerator.statementToCode(block, name);
       if (code) inputs[name] = `async () => { ${code} }`;
     }
@@ -209,57 +223,87 @@ function registerCodeGenerators(id, codeGen, blockDefs, isTrusted) {
   }
 }
 
+function registerExtensionFromDescriptor(descriptor, codeString, isTrusted) {
+  const id = descriptor.id;
+
+  if (activeExtensions.some(i => (i?.id ?? i) === id)) {
+    console.warn(`Extension "${id}" is already registered; skipping`);
+    return;
+  }
+
+  const shapes = descriptor.shapes ?? {};
+  for (const [typeName, factory] of Object.entries(shapes)) {
+    if (customShapeRegistry.has(typeName)) {
+      console.warn(`Shape type "${typeName}" already registered; overwriting`);
+    }
+    customShapeRegistry.set(typeName, factory);
+    const provider = workspace?.getRenderer()?.getConstants();
+    provider?._customShapeCache?.delete(typeName);
+  }
+
+  const notches = descriptor.notches ?? {};
+  for (const [blockType, factory] of Object.entries(notches)) {
+    if (customNotchRegistry.has(blockType)) {
+      console.warn(`Notch type "${blockType}" already registered; overwriting`);
+    }
+    customNotchRegistry.set(blockType, factory);
+    const provider = workspace?.getRenderer()?.getConstants();
+    provider?._customNotchCache?.delete(blockType);
+  }
+
+  const categoryEl = buildCategoryElement(descriptor.category);
+  const categoryColor = descriptor.category?.color ?? "#888";
+  const blocks = descriptor.blocks ?? [];
+  const blockDefs = registerBlocks(id, blocks, categoryColor, categoryEl);
+
+  if (categoryEl) {
+    const toolbox = document.getElementById("toolbox");
+    if (toolbox) {
+      toolbox.appendChild(categoryEl);
+      workspace.updateToolbox(toolbox);
+    }
+  }
+
+  const codeGen = descriptor.code ?? {};
+  registerCodeGenerators(id, codeGen, blockDefs, isTrusted);
+
+  activeExtensions.push({ id, code: codeString, trusted: isTrusted });
+}
+
 export async function registerExtension(codeString, trusted = false) {
   if (trusted) {
     try {
-      const ExtensionClass = eval(`(${codeString})`);
-      const ext = new ExtensionClass();
-      const id = ext.id ?? ext.constructor.name;
+      setPendingDescriptor(null);
+      eval(codeString);
+      const descriptor = consumePendingDescriptor();
 
-      if (activeExtensions.some(i => (i?.id ?? i) === id)) {
-        console.warn(`Extension "${id}" is already registered; skipping`);
+      if (descriptor) {
+        registerExtensionFromDescriptor(descriptor, codeString, true);
         return Promise.resolve();
       }
 
-      const shapes = ext.registerShapes?.() ?? {};
-      for (const [typeName, factory] of Object.entries(shapes)) {
-        if (customShapeRegistry.has(typeName)) {
-          console.warn(`Shape type "${typeName}" already registered; overwriting`);
-        }
-        customShapeRegistry.set(typeName, factory);
-        const provider = workspace?.getRenderer()?.getConstants();
-        provider?._customShapeCache?.delete(typeName);
+      const ExtensionClass = eval(`(${codeString})`);
+      if (typeof ExtensionClass === "function") {
+        console.warn(
+          "Class-based extensions are deprecated. Use Rarry.registerExtension() instead."
+        );
+        const ext = new ExtensionClass();
+        const id = ext.id ?? ext.constructor.name;
+        const descriptor = {
+          id,
+          category: ext.registerCategory?.(),
+          shapes: ext.registerShapes?.(),
+          notches: ext.registerNotches?.(),
+          blocks: ext.registerBlocks?.(),
+          code: ext.registerCode?.()
+        };
+        registerExtensionFromDescriptor(descriptor, codeString, true);
+        return Promise.resolve();
       }
 
-      const notches = ext.registerNotches?.() ?? {};
-      for (const [blockType, factory] of Object.entries(notches)) {
-        if (customNotchRegistry.has(blockType)) {
-          console.warn(`Notch type "${blockType}" already registered; overwriting`);
-        }
-        customNotchRegistry.set(blockType, factory);
-        const provider = workspace?.getRenderer()?.getConstants();
-        provider?._customNotchCache?.delete(blockType);
-      }
-
-      const categoryDescriptor = ext.registerCategory?.();
-      const categoryEl = buildCategoryElement(categoryDescriptor);
-      const categoryColor = categoryDescriptor?.color ?? "#888";
-      const blocks = ext.registerBlocks?.() ?? [];
-      const blockDefs = registerBlocks(id, blocks, categoryColor, categoryEl);
-
-      if (categoryEl) {
-        const toolbox = document.getElementById("toolbox");
-        if (toolbox) {
-          toolbox.appendChild(categoryEl);
-          workspace.updateToolbox(toolbox);
-        }
-      }
-
-      const codeGen = ext.registerCode?.() ?? {};
-      registerCodeGenerators(id, codeGen, blockDefs, true);
-
-      activeExtensions.push({ id, code: codeString, trusted: true });
-      return Promise.resolve();
+      throw new Error(
+        "Extension must call Rarry.registerExtension() with a descriptor object"
+      );
     } catch (err) {
       console.error("Failed to register trusted extension:", err);
       return Promise.reject(err);

@@ -1138,7 +1138,7 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
         "Insert extension code:",
         {
           type: "textarea",
-          placeholder: "class Extension { ... }",
+          placeholder: "Rarry.registerExtension({ ... })",
           className: "extension-code-input",
         },
       ],
