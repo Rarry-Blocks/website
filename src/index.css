@@ -40,6 +40,10 @@ a {
   text-decoration: none;
 }
 
+button a {
+  color: inherit;
+}
+
 h1,
 h2,
 h3,
@@ -282,9 +286,9 @@ html.removeIcons button i:not(.stay) {
 
 .popup-content {
   position: relative;
-  display: flex;           
-  flex-direction: column;  
-  overflow: hidden; 
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--color2);
   color: var(--dark);
   min-width: 70%;
@@ -315,9 +319,9 @@ html.removeIcons button i:not(.stay) {
 
 .popup-body {
   flex-direction: column;
-  overflow-y: auto; 
-  flex: 1;                 
-  min-height: 0;           
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .popup-row {
