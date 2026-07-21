@@ -19,7 +19,7 @@ export class Costume {
     return {
       id: this.id,
       name: this.name,
-      texture: this.texture?.baseTexture?.resource?.url ?? null,
+      texture: this.texture?.baseTexture?.resource?.url ?? null
     };
   }
 
@@ -37,7 +37,7 @@ export class Costume {
     return new Costume({
       id: json.id ?? `costume-${crypto.randomUUID()}`,
       name: json.name,
-      texture: Texture.from(source),
+      texture: Texture.from(source)
     });
   }
 }
@@ -53,7 +53,7 @@ export class Sound {
     return {
       id: this.id,
       name: this.name,
-      dataURL: this.dataURL,
+      dataURL: this.dataURL
     };
   }
 
@@ -71,7 +71,7 @@ export class Sound {
     return new Sound({
       id: json.id ?? `sound-${crypto.randomUUID()}`,
       name: json.name,
-      dataURL: source,
+      dataURL: source
     });
   }
 }
@@ -114,7 +114,7 @@ export class Sprite {
     y = 0,
     scale = 1,
     rotation = 0,
-    currentCostumeId = null,
+    currentCostumeId = null
   }) {
     this.id = id ?? `sprite-${crypto.randomUUID()}`;
     this.name = name;
@@ -133,12 +133,13 @@ export class Sprite {
     this.pixiSprite.position.set(x, y);
     this.pixiSprite.scale.set(scale);
     this.pixiSprite.rotation = rotation;
-    
+
     this.applyCurrentCostume();
   }
 
   applyCurrentCostume() {
-    const costume = this.costumes.find(c => c.id === this.currentCostumeId) || this.costumes[0];
+    const costume =
+      this.costumes.find(c => c.id === this.currentCostumeId) || this.costumes[0];
     if (costume) {
       this.pixiSprite.texture = costume.texture;
       this.currentCostumeId = costume.id;
@@ -147,9 +148,9 @@ export class Sprite {
 
   createClone() {
     const root = this.clone ? this.root : this;
-    
-    const limit = spriteManager?.cloneLimit || 200; 
-    if (root.clones.length >= limit) return null; 
+
+    const limit = spriteManager?.cloneLimit || 200;
+    if (root.clones.length >= limit) return null;
 
     const clone = new Sprite({
       id: `clone-${crypto.randomUUID()}`,
@@ -163,7 +164,7 @@ export class Sprite {
       y: this.pixiSprite.y,
       scale: this.pixiSprite.scale.x,
       rotation: this.pixiSprite.rotation,
-      currentCostumeId: this.currentCostumeId,
+      currentCostumeId: this.currentCostumeId
     });
     root.clones.push(clone);
     return clone;
@@ -187,7 +188,7 @@ export class Sprite {
       rotation: this.pixiSprite.rotation,
       currentCostumeId: this.currentCostumeId,
       costumes,
-      sounds,
+      sounds
     };
   }
 
@@ -205,7 +206,7 @@ export class Sprite {
       ...json,
       currentCostumeId: costumeId,
       costumes,
-      sounds,
+      sounds
     });
   }
 
@@ -291,5 +292,22 @@ export class SpriteManager {
       this.remove(sprite);
     }
     this.sprites.clear();
+  }
+
+  reorder(spriteIds) {
+    const newMap = new Map();
+    for (const id of spriteIds) {
+      if (this.sprites.has(id)) {
+        newMap.set(id, this.sprites.get(id));
+      }
+    }
+    for (const [id, sprite] of this.sprites) {
+      if (!newMap.has(id)) newMap.set(id, sprite);
+    }
+    this.sprites = newMap;
+    for (const id of spriteIds) {
+      const sprite = this.sprites.get(id);
+      if (sprite) this.app.stage.addChild(sprite.pixiSprite);
+    }
   }
 }

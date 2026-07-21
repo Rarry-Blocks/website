@@ -21,11 +21,7 @@ import "../functions/patches/checkbox.js";
 
 import Toolbox from "../components/Toolbox.js";
 import { setupSettingsButton } from "../functions/theme.js";
-import {
-  compressAudio,
-  showNotification,
-  Popup,
-} from "../functions/utils.js";
+import { compressAudio, showNotification, Popup } from "../functions/utils.js";
 
 import { Costume, Sound, Sprite, SpriteManager } from "../components/Sprite.js";
 import { SpriteChangeEvents } from "../functions/patches.js";
@@ -43,13 +39,13 @@ import {
   renderSpriteInfo,
   resetSpriteInfo,
   updateSpriteInfoValues,
-  spriteToImage,
+  spriteToImage
 } from "./editor/ui.js";
 import {
   saveProject as apiSaveProject,
   loadProjectFile,
   compressData,
-  decompressData,
+  decompressData
 } from "./editor/project.js";
 import { store } from "../store/state.js";
 import { setupSubscriptions } from "../store/subscriptions.js";
@@ -99,7 +95,7 @@ export const projectSettings = {
   fps: 60,
   stageWidth: BASE_WIDTH,
   stageHeight: BASE_HEIGHT,
-  cloneLimit: 200,
+  cloneLimit: 200
 };
 
 export const projectAPI = {
@@ -124,7 +120,7 @@ export const projectAPI = {
     if (key === "cloneLimit") {
       spriteManager.cloneLimit = value;
     }
-  },
+  }
 };
 
 export const app = new Application({
@@ -133,7 +129,7 @@ export const app = new Application({
   backgroundColor: 0xffffff,
   powerPreference: "high-performance",
   autoDensity: true,
-  antialias: true,
+  antialias: true
 });
 app.stageWidth = BASE_WIDTH;
 app.stageHeight = BASE_HEIGHT;
@@ -208,7 +204,7 @@ export let activeSprite = null;
 export function getActiveSpriteStuff() {
   return {
     costumes: activeSprite?.costumes || [],
-    sounds: activeSprite?.sounds || [],
+    sounds: activeSprite?.sounds || []
   };
 }
 
@@ -233,17 +229,17 @@ export const workspace = Blockly.inject(blocklyDiv, {
     startScale: 0.9,
     maxScale: 3,
     minScale: 0.3,
-    scaleSpeed: 1.2,
+    scaleSpeed: 1.2
   },
   grid: {
     spacing: 20,
     length: 3,
     colour: "#7e7e7e40",
-    snap: snapToGrid,
+    snap: snapToGrid
   },
   plugins: {
-    connectionChecker: "CustomChecker",
-  },
+    connectionChecker: "CustomChecker"
+  }
 });
 
 const workspaceObserver = new ResizeObserver(() => Blockly.svgResize(workspace));
@@ -255,7 +251,7 @@ setupSubscriptions({
   renderSoundsList,
   resetSpriteInfo,
   workspace,
-  deleteSpriteButton,
+  deleteSpriteButton
 });
 
 workspace.registerToolboxCategoryCallback("GLOBAL_VARIABLES", function () {
@@ -335,7 +331,7 @@ function addGlobalVariable(name, emit = false) {
     currentSocket.emit("projectUpdate", {
       roomId: currentRoom,
       type: "addVariable",
-      data: finalName,
+      data: finalName
     });
   }
 }
@@ -350,13 +346,13 @@ export function deleteVariable(name, emit = false) {
     currentSocket.emit("projectUpdate", {
       roomId: currentRoom,
       type: "removeVariable",
-      data: name,
+      data: name
     });
   }
 }
 
 workspace.registerButtonCallback("ADD_GLOBAL_VARIABLE", () =>
-  addGlobalVariable(null, true),
+  addGlobalVariable(null, true)
 );
 
 function dynamicFunctionsCategory(workspace) {
@@ -415,12 +411,12 @@ export const spriteManager = new SpriteManager(app);
 
 export function addSprite(id, emit = false) {
   const texture = Texture.from("./icons/ddededodediamante.png", {
-    crossorigin: true,
+    crossorigin: true
   });
 
   const sprite = spriteManager.create({
     id,
-    costumes: [new Costume({ name: "default", texture })],
+    costumes: [new Costume({ name: "default", texture })]
   });
 
   if (!activeSprite) {
@@ -433,7 +429,7 @@ export function addSprite(id, emit = false) {
     currentSocket.emit("projectUpdate", {
       roomId: currentRoom,
       type: "addSprite",
-      data: sprite.id,
+      data: sprite.id
     });
   }
 
@@ -455,7 +451,7 @@ export function deleteSprite(id, emit = false) {
     currentSocket.emit("projectUpdate", {
       roomId: currentRoom,
       type: "removeSprite",
-      data: id,
+      data: id
     });
   }
 
@@ -489,18 +485,18 @@ export function calculateBubblePosition(
   sprite,
   bubbleWidth,
   bubbleHeight,
-  tailHeight = 15,
+  tailHeight = 15
 ) {
   let bubbleX = sprite.x - bubbleWidth / 2;
   let bubbleY = sprite.y - sprite.height / 2 - bubbleHeight - tailHeight;
 
   bubbleX = Math.max(
     Math.min(bubbleX, app.stageWidth / 2),
-    -app.stageWidth / 2 - bubbleWidth,
+    -app.stageWidth / 2 - bubbleWidth
   );
   bubbleY = Math.max(
     Math.min(bubbleY, app.stageHeight / 2 - bubbleHeight),
-    -app.stageHeight / 2,
+    -app.stageHeight / 2
   );
 
   return { x: bubbleX, y: bubbleY };
@@ -522,7 +518,7 @@ export const eventRegistry = {
   stageClick: [],
   timer: [],
   interval: [],
-  custom: new Map(),
+  custom: new Map()
 };
 
 let _activeEventThreadsCount = 0;
@@ -535,7 +531,7 @@ Object.defineProperty(activeEventThreads, "count", {
   set(value) {
     _activeEventThreadsCount = Math.max(0, value);
     updateRunButtonState();
-  },
+  }
 });
 
 function updateRunButtonState() {
@@ -624,8 +620,8 @@ async function runCode() {
       const tempWorkspace = new Blockly.Workspace({
         readOnly: true,
         plugins: {
-          connectionChecker: "CustomChecker",
-        },
+          connectionChecker: "CustomChecker"
+        }
       });
 
       const xmlDom = Blockly.utils.xml.textToDom(spriteData.code || "<xml></xml>");
@@ -646,7 +642,7 @@ async function runCode() {
         code,
         projectStartedTime,
         spriteData,
-        signal,
+        signal
       });
     }
 
@@ -708,7 +704,7 @@ const allowedKeys = new Set([
   " ",
   "Enter",
   "Escape",
-  ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+  ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 ]);
 window.addEventListener("keydown", e => {
   const key = e.key;
@@ -795,7 +791,7 @@ function getProject() {
     sprites: spriteManager.toJSON(),
     extensions: activeExtensions,
     variables: projectVariables ?? {},
-    settings: projectSettings,
+    settings: projectSettings
   };
 }
 
@@ -809,7 +805,7 @@ async function loadProject(ev) {
   await loadProjectFile(file, {
     handleProjectData,
     showLoading,
-    hideLoading,
+    hideLoading
   });
 }
 
@@ -831,7 +827,7 @@ async function handleProjectData(data) {
 
     if (data.extensions) {
       const toLoad = data.extensions.filter(
-        e => !activeExtensions.some(a => (a?.id || a) === (e?.id || e)),
+        e => !activeExtensions.some(a => (a?.id || a) === (e?.id || e))
       );
 
       for (const ext of toLoad) {
@@ -903,7 +899,7 @@ document.getElementById("costume-upload").addEventListener("change", async e => 
         spriteId: activeSprite.id,
         name: newCostume.name,
         id: newCostume.id,
-        texture: reader.result,
+        texture: reader.result
       };
 
       const compressedData = compressData(JSON.stringify(payload));
@@ -911,14 +907,12 @@ document.getElementById("costume-upload").addEventListener("change", async e => 
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
         type: "addCostume",
-        data: compressedData,
+        data: compressedData
       });
     }
 
-    if (document.getElementById("costumes-tab").classList.contains("active")) {
-      tabButtons.forEach(button => {
-        if (button.dataset.tab === "costumes") button.click();
-      });
+    if (store.get("activeTab") === "costumes") {
+      renderCostumesList();
     }
   };
   reader.readAsDataURL(file);
@@ -953,7 +947,7 @@ document.getElementById("sound-upload").addEventListener("change", async e => {
         spriteId: activeSprite.id,
         name: newSound.name,
         id: newSound.id,
-        dataURL,
+        dataURL
       };
 
       const compressedData = await decompressData(JSON.stringify(payload));
@@ -961,11 +955,11 @@ document.getElementById("sound-upload").addEventListener("change", async e => {
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
         type: "addSound",
-        data: compressedData,
+        data: compressedData
       });
     }
 
-    if (document.getElementById("sounds-tab").classList.contains("active")) {
+    if (store.get("activeTab") === "sounds") {
       renderSoundsList();
     }
   };
@@ -1031,7 +1025,7 @@ const extensionsList = document.querySelector(".extensions-list");
 
 function addExtensionButton() {
   const toolboxDiv = document.querySelector(
-    "div.blocklyToolbox div.blocklyToolboxCategoryGroup",
+    "div.blocklyToolbox div.blocklyToolboxCategoryGroup"
   );
   if (!toolboxDiv || !extensionsPopup) return;
 
@@ -1043,7 +1037,7 @@ function addExtensionButton() {
     button.addEventListener(evt, e => {
       e.stopPropagation();
       e.preventDefault();
-    }),
+    })
   );
 
   button.addEventListener("click", () => {
@@ -1068,7 +1062,7 @@ function addExtension(id, emit = false) {
       currentSocket.emit("projectUpdate", {
         roomId: currentRoom,
         type: "addExtension",
-        data: id,
+        data: id
       });
     }
   }
@@ -1132,22 +1126,22 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
     title: "Custom Extensions",
     rows: [
       [
-        "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about.",
+        "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about."
       ],
       [
         "Insert extension code:",
         {
           type: "textarea",
           placeholder: "Rarry.registerExtension({ ... })",
-          className: "extension-code-input",
-        },
+          className: "extension-code-input"
+        }
       ],
       [
         "Run as trusted extension:",
         {
           type: "checkbox",
-          checked: false,
-        },
+          checked: false
+        }
       ],
       [
         {
@@ -1172,13 +1166,11 @@ document.getElementById("extensions-custom-button").addEventListener("click", ()
               console.error("Error in extension:", error);
               alert("Error in extension: " + error);
             }
-          },
+          }
         },
-        isSharing
-          ? "You can't add custom extensions while live sharing the project."
-          : "",
-      ],
-    ],
+        isSharing ? "You can't add custom extensions while live sharing the project." : ""
+      ]
+    ]
   }).show();
 });
 
@@ -1186,7 +1178,7 @@ function createSession() {
   if (currentSocketPromise) return currentSocketPromise;
 
   currentSocket = io(`${config.apiUrl}/live`, {
-    withCredentials: true,
+    withCredentials: true
   });
 
   currentSocketPromise = new Promise((resolve, reject) => {
@@ -1218,7 +1210,7 @@ function createSession() {
       const compressedData = compressData(JSON.stringify(getProject()));
       currentSocket.emit("sendProjectData", {
         to: socketId,
-        data: compressedData,
+        data: compressedData
       });
     }
     updateUsersList();
@@ -1294,8 +1286,8 @@ function createSession() {
           new Sound({
             name: data.name,
             dataURL: data.dataURL,
-            id: data.id,
-          }),
+            id: data.id
+          })
         );
 
         if (activeSprite?.id === target.id) renderSoundsList();
@@ -1370,8 +1362,8 @@ function createSession() {
       _workspace = new Blockly.Workspace({
         readOnly: true,
         plugins: {
-          connectionChecker: "CustomChecker",
-        },
+          connectionChecker: "CustomChecker"
+        }
       });
 
       const xml = Blockly.utils.xml.textToDom(sprite.code || "<xml></xml>");
@@ -1462,7 +1454,7 @@ function updateUsersList() {
         const targetUserId = e.target.dataset.id;
         if (confirm("Kick this user?"))
           currentSocket.emit("kickUser", { roomId: currentRoom, targetUserId });
-      }),
+      })
     );
   }
 }
@@ -1488,9 +1480,9 @@ liveShare.addEventListener("click", async () => {
               invitesEnabled = newStatus;
               currentSocket.emit("toggleInvites", {
                 roomId: currentRoom,
-                enabled: newStatus,
+                enabled: newStatus
               });
-            },
+            }
           }
         : null,
       {
@@ -1506,7 +1498,7 @@ liveShare.addEventListener("click", async () => {
             console.error("Copy failed", e);
             alert(shareUrl);
           }
-        },
+        }
       },
       {
         type: "button",
@@ -1514,7 +1506,7 @@ liveShare.addEventListener("click", async () => {
         label: amHost ? "Close room" : "Leave room",
         onClick: popup => {
           showNotification({
-            message: amHost ? "Room closed" : "Left room",
+            message: amHost ? "Room closed" : "Left room"
           });
 
           popup.hide();
@@ -1523,8 +1515,8 @@ liveShare.addEventListener("click", async () => {
           currentSocket = null;
           currentRoom = null;
           amHost = false;
-        },
-      },
+        }
+      }
     ].filter(Boolean);
 
     const rows = [
@@ -1532,15 +1524,15 @@ liveShare.addEventListener("click", async () => {
         "Users:",
         {
           type: "custom",
-          html: `<div id="room-users"></div>`,
-        },
+          html: `<div id="room-users"></div>`
+        }
       ],
-      buttons,
+      buttons
     ];
 
     new Popup({
       title: roomExisted ? "Current Room" : "Room Created",
-      rows,
+      rows
     }).show();
 
     updateUsersList();
@@ -1594,7 +1586,7 @@ const ignoredEvents = new Set([
   Blockly.Events.BLOCK_DRAG,
   Blockly.Events.THEME_CHANGE,
   Blockly.Events.BUBBLE_OPEN,
-  "backpack_change",
+  "backpack_change"
 ]);
 
 function sanitizeEvent(event) {
@@ -1614,7 +1606,7 @@ workspace.addChangeListener(event => {
     currentSocket.emit("blocklyUpdate", {
       roomId: currentRoom,
       spriteId: activeSprite.id,
-      event: json,
+      event: json
     });
   }
 });
@@ -1652,7 +1644,7 @@ function appendValue(container, value, layer = 1) {
     if (value.length > MAX_ARRAY_ITEMS) {
       if (items.length > 0) container.appendChild(document.createTextNode(", "));
       container.appendChild(
-        document.createTextNode(`+${value.length - MAX_ARRAY_ITEMS} more`),
+        document.createTextNode(`+${value.length - MAX_ARRAY_ITEMS} more`)
       );
     }
 
@@ -1786,7 +1778,7 @@ function executeClickedBlock(blockId) {
     clickRunMode: true,
     onClickResult: (val, error) => {
       showBlockRunBubble(block, val, error);
-    },
+    }
   });
 }
 
@@ -1830,7 +1822,7 @@ workspace.addChangeListener(event => {
   const blockRoot = workspace.getBlockById(event?.blockId)?.getRootBlock();
 
   const anyIsDefinition = [newRoot, oldRoot, blockRoot].some(
-    b => b?.type === "functions_definition",
+    b => b?.type === "functions_definition"
   );
 
   if (!anyIsDefinition) return;
@@ -1862,10 +1854,10 @@ if (window.location.hostname === "localhost") {
               console.log(Blockly.Xml.workspaceToDom(workspace));
 
               popup.hide();
-            },
-          },
-        ],
-      ],
+            }
+          }
+        ]
+      ]
     }).show();
   });
 

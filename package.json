@@ -28,6 +28,7 @@
     "js-md5": "^0.8.3",
     "jszip": "^3.10.1",
     "pixi.js-legacy": "^7.4.3",
-    "socket.io-client": "^4.2.0"
+    "socket.io-client": "^4.2.0",
+    "sortablejs": "^1.15.7"
   }
 }

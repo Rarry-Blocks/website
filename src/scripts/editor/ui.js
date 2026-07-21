@@ -5,8 +5,9 @@ import {
   activeSprite,
   currentSocket,
   app,
-  currentRoom,
+  currentRoom
 } from "../editor";
+import Sortable from "sortablejs";
 
 const playingAudios = {};
 
@@ -105,6 +106,14 @@ function createDeleteButton(onDelete) {
 export function renderSpritesList(renderOthers = false) {
   const listEl = document.getElementById("sprites-list");
   listEl.innerHTML = "";
+  new Sortable(listEl, {
+    swap: true,
+    animation: 150,
+    onEnd: () => {
+      const ids = [...listEl.children].map(el => el.dataset.id).filter(Boolean);
+      spriteManager.reorder(ids);
+    }
+  });
 
   const sprites = spriteManager.getOriginals();
 
@@ -112,6 +121,7 @@ export function renderSpritesList(renderOthers = false) {
 
   sprites.forEach(sprite => {
     const spriteIconContainer = document.createElement("div");
+    spriteIconContainer.dataset.id = sprite.id;
 
     if (activeSprite?.id === sprite.id) {
       spriteIconContainer.className = "active";
@@ -168,8 +178,8 @@ export function renderSpriteInfo() {
           type: "renameSprite",
           data: {
             spriteId: activeSprite.id,
-            newName: newValue,
-          },
+            newName: newValue
+          }
         });
       }
     });
@@ -244,8 +254,8 @@ export function renderCostumesList() {
           data: {
             spriteId: activeSprite.id,
             id: costume.id,
-            newName,
-          },
+            newName
+          }
         });
       }
     });
@@ -283,8 +293,8 @@ export function renderCostumesList() {
           type: "deleteCostume",
           data: {
             spriteId: activeSprite.id,
-            id: deleted.id,
-          },
+            id: deleted.id
+          }
         });
       }
     });
@@ -325,8 +335,8 @@ export function renderSoundsList() {
           data: {
             spriteId: activeSprite.id,
             id: sound.id,
-            newName,
-          },
+            newName
+          }
         });
       }
     });
@@ -352,7 +362,7 @@ export function renderSoundsList() {
 
     playButton.onclick = () => {
       const allButtons = soundsList.querySelectorAll(".play-button");
-      allButtons.forEach(btn => btn.src = "icons/play.svg");
+      allButtons.forEach(btn => (btn.src = "icons/play.svg"));
 
       if (playingAudios[sound.id]) {
         playingAudios[sound.id].pause();
@@ -396,8 +406,8 @@ export function renderSoundsList() {
           type: "deleteSound",
           data: {
             spriteId: activeSprite.id,
-            id: deleted.id,
-          },
+            id: deleted.id
+          }
         });
       }
     });
