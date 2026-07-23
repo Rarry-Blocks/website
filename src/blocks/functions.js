@@ -9,7 +9,7 @@ function typeToBlocklyCheck(type) {
       number: "Number",
       boolean: "Boolean",
       array: "Array",
-      object: "Object",
+      object: "Object"
     }[type] || null
   );
 }
@@ -40,7 +40,7 @@ Blockly.Blocks["functions_argument_block"] = {
     this.setStyle("procedure_blocks");
     this.appendDummyInput().appendField(
       new Blockly.FieldLabel(this.argName_),
-      "ARG_NAME",
+      "ARG_NAME"
     );
 
     this.setOutput(true, null);
@@ -81,7 +81,7 @@ Blockly.Blocks["functions_argument_block"] = {
     } else {
       this.appendDummyInput().appendField(new Blockly.FieldLabel(name), "ARG_NAME");
     }
-  },
+  }
 };
 
 Blockly.Blocks["functions_statement_argument_block"] = {
@@ -91,7 +91,7 @@ Blockly.Blocks["functions_statement_argument_block"] = {
     this.setStyle("procedure_blocks");
     this.appendDummyInput().appendField(
       new Blockly.FieldLabel(this.argName_),
-      "ARG_NAME",
+      "ARG_NAME"
     );
 
     this.setNextStatement(true, "default");
@@ -116,7 +116,7 @@ Blockly.Blocks["functions_statement_argument_block"] = {
     } else {
       this.appendDummyInput().appendField(new Blockly.FieldLabel(name), "ARG_NAME");
     }
-  },
+  }
 };
 
 Blockly.Blocks["functions_definition"] = {
@@ -161,7 +161,7 @@ Blockly.Blocks["functions_definition"] = {
     this.argNames_ = [];
 
     const children = [...xmlElement.children].filter(
-      n => n.tagName.toLowerCase() === "item",
+      n => n.tagName.toLowerCase() === "item"
     );
     for (let i = 0; i < children.length; i++) {
       this.argTypes_[i] = children[i].getAttribute("type");
@@ -186,7 +186,7 @@ Blockly.Blocks["functions_definition"] = {
       argNames: this.argNames_,
       shape: this.blockShape_,
       colour: this.blockColour_,
-      returnTypes: this.returnTypes_,
+      returnTypes: this.returnTypes_
     };
   },
 
@@ -256,7 +256,9 @@ Blockly.Blocks["functions_definition"] = {
     if (savedBody) {
       try {
         newBody.connection.connect(savedBody);
-      } catch (e) {}
+      } catch {
+        /* empty */
+      }
     }
 
     this.setColour(this.blockColour_);
@@ -331,19 +333,16 @@ Blockly.Blocks["functions_definition"] = {
       itemBlock = itemBlock.getNextBlock();
     }
 
-    const newBlockShape = containerBlock.getFieldValue("SHAPEMENU") || "statement";
-    const newBlockColour = containerBlock.getFieldValue("COLOUR") || "#FF6680";
-
-    if (dups.length > 0 || invalid.length > 0) return;
-
-    this.itemCount_ = newTypes.length;
-    this.argTypes_ = newTypes;
-    this.argNames_ = newNames;
-    this.blockShape_ = newBlockShape;
-    this.blockColour_ = newBlockColour;
+    this.blockColour_ = containerBlock.getFieldValue("COLOUR") || "#FF6680";
     this.setColour(this.blockColour_);
 
-    this.updateShape_();
+    if (dups.length === 0 || invalid.length === 0) {
+      this.itemCount_ = newTypes.length;
+      this.argTypes_ = newTypes;
+      this.argNames_ = newNames;
+      this.blockShape_ = containerBlock.getFieldValue("SHAPEMENU") || "statement";
+      this.updateShape_();
+    }
   },
 
   saveConnections: function (containerBlock) {
@@ -384,7 +383,7 @@ Blockly.Blocks["functions_definition"] = {
 
     if (types.size === 0) this.returnTypes_ = [];
     else this.returnTypes_ = [...types];
-  },
+  }
 };
 
 Blockly.Blocks["functions_args_container"] = {
@@ -399,21 +398,21 @@ Blockly.Blocks["functions_args_container"] = {
               src: "/icons/statement.svg",
               width: 98 * 0.6,
               height: 57 * 0.6,
-              alt: "A block with top and bottom connections",
+              alt: "A block with top and bottom connections"
             },
-            "statement",
+            "statement"
           ],
           [
             {
               src: "/icons/terminal.svg",
               width: 98 * 0.6,
               height: 48 * 0.6,
-              alt: "A block with only a top connection",
+              alt: "A block with only a top connection"
             },
-            "terminal",
-          ],
+            "terminal"
+          ]
         ]),
-        "SHAPEMENU",
+        "SHAPEMENU"
       );
     this.appendDummyInput()
       .appendField("colour")
@@ -421,7 +420,7 @@ Blockly.Blocks["functions_args_container"] = {
     this.appendDummyInput().appendField("arguments");
     this.appendStatementInput("STACK");
     this.contextMenu = false;
-  },
+  }
 };
 
 Blockly.Blocks["functions_args_generic"] = {
@@ -438,9 +437,9 @@ Blockly.Blocks["functions_args_generic"] = {
           ["boolean", "boolean"],
           ["array", "array"],
           ["object", "object"],
-          ["statement", "statement"],
+          ["statement", "statement"]
         ]),
-        "ARG_TYPE",
+        "ARG_TYPE"
       )
       .appendField(new Blockly.FieldTextInput("arg"), "ARG_NAME");
 
@@ -448,7 +447,7 @@ Blockly.Blocks["functions_args_generic"] = {
     this.setNextStatement(true);
     this.contextMenu = false;
     this.valueConnection_ = null;
-  },
+  }
 };
 
 Blockly.Blocks["functions_call"] = {
@@ -631,12 +630,14 @@ Blockly.Blocks["functions_call"] = {
       if (oldConnections[key]) {
         try {
           input.connection.connect(
-            oldConnections[key].targetBlock()?.outputConnection || oldConnections[key],
+            oldConnections[key].targetBlock()?.outputConnection || oldConnections[key]
           );
-        } catch (e) {}
+        } catch {
+          /* empty */
+        }
       }
     }
-  },
+  }
 };
 
 Blockly.Blocks["functions_return"] = {
@@ -656,21 +657,18 @@ Blockly.Blocks["functions_return"] = {
     if (typeof this.workspace.updateAllFunctionCalls === "function") {
       this.workspace.updateAllFunctionCalls();
     }
-  },
+  }
 };
 
 javascriptGenerator.forBlock["functions_argument_block"] = block => [
   "__" + block.argType_ + "_" + block.argName_,
-  Order.NONE,
+  Order.NONE
 ];
 
 javascriptGenerator.forBlock["functions_statement_argument_block"] = block =>
   "yield* __statement_" + block.argName_ + "();\n";
 
-javascriptGenerator.forBlock["functions_definition"] = function (
-  block,
-  generator,
-) {
+javascriptGenerator.forBlock["functions_definition"] = function (block, generator) {
   const params = block.argTypes_
     .map((type, i) => {
       if (type === "label") return null;
@@ -698,7 +696,7 @@ javascriptGenerator.forBlock["functions_call"] = function (block, generator) {
   }
 
   const callExpr = `yield* __MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
-    ", ",
+    ", "
   )})`;
 
   if (block.outputConnection) {
