@@ -20,6 +20,30 @@ function clone(generator, code) {
   ]);
   return `${fn}(${code})`;
 }
+function setAndReturn(generator, code) {
+  const temp = generator.nameDB_.getDistinctName(name, Blockly.Names.NameType.VARIABLE);
+  const fn = generator.provideFunction_("objectSetAndReturn", [
+    `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj, key, val) {`,
+    `  if (typeof obj !== "object" || obj == null) return Object.create(null);`,
+    `  const ${temp} = structuredClone(obj);`,
+    `  ${temp}[key] = val;`,
+    `  return ${temp};`,
+    `}`
+  ]);
+  return `${fn}(${code})`;
+}
+function deleteAndReturn(generator, code) {
+  const temp = generator.nameDB_.getDistinctName(name, Blockly.Names.NameType.VARIABLE);
+  const fn = generator.provideFunction_("objectDeleteAndReturn", [
+    `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(obj, key) {`,
+    `  if (typeof obj !== "object" || obj == null) return Object.create(null);`,
+    `  const ${temp} = structuredClone(obj);`,
+    `  delete ${temp}[key];`,
+    `  return ${temp};`,
+    `}`
+  ]);
+  return `${fn}(${code})`;
+}
 
 Blockly.Blocks["json_length"] = {
   init: function () {
@@ -141,8 +165,7 @@ javascriptGenerator.forBlock["json_set_return"] = function (block, generator) {
   const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
   const value = javascriptGenerator.valueToCode(block, "VALUE", Order.NONE) || "null";
 
-  const safe = clone(generator, obj);
-  const code = `(() => { const _ = ${safe}; _[${key}] = ${value}; return _; })()`;
+  const code = setAndReturn(generator, [obj, key, value].join(","));
   return [code, Order.NONE];
 };
 
@@ -162,8 +185,7 @@ javascriptGenerator.forBlock["json_delete_return"] = function (block, generator)
     javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
   const key = javascriptGenerator.valueToCode(block, "KEY", Order.NONE) || '""';
 
-  const safe = clone(generator, obj);
-  const code = `(() => { const _ = ${safe}; delete _[${key}]; return _; })()`;
+  const code = deleteAndReturn(generator, [obj, key].join(","));
   return [code, Order.NONE];
 };
 
@@ -508,5 +530,5 @@ javascriptGenerator.forBlock["json_clone"] = function (block, generator) {
   const obj =
     javascriptGenerator.valueToCode(block, "OBJECT", Order.NONE) || "Object.create(null)";
 
-  return [clone(generator, assure(generator, obj)), Order.FUNCTION_CALL];
+  return [clone(generator, obj), Order.FUNCTION_CALL];
 };
