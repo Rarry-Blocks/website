@@ -4,16 +4,19 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  blockly: github:Rarry-Blocks/rockly#dist
+
 importers:
 
   .:
     dependencies:
       '@blockly/field-colour-hsv-sliders':
         specifier: ^6.0.11
-        version: 6.0.12(blockly@12.2.0)
+        version: 6.0.12(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)
       '@blockly/plugin-strict-connection-checker':
         specifier: ^6.0.1
-        version: 6.0.9(blockly@12.2.0)
+        version: 6.0.9(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)
       '@fortawesome/fontawesome-free':
         specifier: ^7.0.1
         version: 7.2.0
@@ -24,8 +27,8 @@ importers:
         specifier: ^2.5.0
         version: 2.5.1
       blockly:
-        specifier: ^12.2.0
-        version: 12.2.0
+        specifier: github:Rarry-Blocks/rockly#dist
+        version: rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f
       js-md5:
         specifier: ^0.8.3
         version: 0.8.3
@@ -35,6 +38,9 @@ importers:
       pixi.js-legacy:
         specifier: ^7.4.3
         version: 7.4.3(d1d99e8ae917814d844dec1222a79cec)
+      rockly:
+        specifier: github:Rarry-Blocks/rockly#dist
+        version: https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/b55cf429acf2a484c6a6ebbbe2349803d2350150
       socket.io-client:
         specifier: ^4.2.0
         version: 4.8.3
@@ -65,24 +71,28 @@ packages:
 
   '@blockly/field-colour-hsv-sliders@6.0.12':
     resolution: {integrity: sha512-Jxn+QYk7iu4GwmOe5b/ITjrtrswMu21MBdJRzfAbfl43KeGsFIdeCn+IhtokvSzrtWuFyahrsgaj6GX/sEI9LA==}
+    version: 6.0.12
     engines: {node: '>=8.0.0'}
     peerDependencies:
       blockly: ^12.0.0
 
   '@blockly/field-colour@6.0.12':
     resolution: {integrity: sha512-sZUlMtn1Bnj3/inayhZAMJ1ZUxFfR8eISBWPgOvWMBlnUIeCWXJDc76a6JVEcZhnjHFjDI+ihOXYdrp5cedShA==}
+    version: 6.0.12
     engines: {node: '>=8.0.0'}
     peerDependencies:
       blockly: ^12.0.0
 
   '@blockly/field-grid-dropdown@6.0.10':
     resolution: {integrity: sha512-b54xLznsFb5OyAfpFYCFX52M7vRc9dITbLzTBIsETuXfVX8R4TFj3z0+QbJ1znlqNhr5+dgrfDfkUEm8+8zbxg==}
+    version: 6.0.10
     engines: {node: '>=8.17.0'}
     peerDependencies:
       blockly: ^12.0.0
 
   '@blockly/plugin-strict-connection-checker@6.0.9':
     resolution: {integrity: sha512-z8ojvemUf7h/TbVQCtAMGC+KlT9NpMR9u0OFxc94L22YBf+7WkvqLpQHUxayg1P99Mps3o/TEznLVQc/+QHzoA==}
+    version: 6.0.9
     engines: {node: '>=8.17.0'}
     peerDependencies:
       blockly: ^12.0.0
@@ -866,10 +876,6 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
-  blockly@12.2.0:
-    resolution: {integrity: sha512-s4QL9ogEMzc4Pxfe8Oi3Kmu6SQ0ts2thzmRYjdnMSEIVZFpBZ4OUuNKvpFICqujO0yfAo99zON8KzxAFw8hA1w==}
-    engines: {node: '>=18'}
-
   brace-expansion@5.0.7:
     resolution: {integrity: sha512-7oFy703dxfY3/NLxC1fh2SUCQ0H9rmAY+5EpDVfXjUTTs+HEwR2nYaqLv+GWcTsumwxPfiz6CzCNkwXwBUwqCA==}
     engines: {node: 18 || 20 || >=22}
@@ -1246,6 +1252,16 @@ packages:
   readable-stream@2.3.8:
     resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
 
+  rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/b55cf429acf2a484c6a6ebbbe2349803d2350150:
+    resolution: {gitHosted: true, integrity: sha512-E1CmaPxqEcKlSvkngf7+13W0CAjAfpZIQnLDrQdxRpZSXIJEu+tdOhCeWSt2yP5pASu40U9MRoYWlHAnVYQUdQ==, tarball: https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/b55cf429acf2a484c6a6ebbbe2349803d2350150}
+    version: 1.0.0
+    engines: {node: '>=18'}
+
+  rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f:
+    resolution: {gitHosted: true, integrity: sha512-4EdO5yKD4Wgj1aNeST1ZQzAl6lBB5sZGe5WiJGKcuYKOeelmDdFzJ93qB+8uV+CrMfm6U1ZX/RCUqzZLmqCNpA==, tarball: https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f}
+    version: 1.0.0
+    engines: {node: '>=18'}
+
   rollup@4.60.4:
     resolution: {integrity: sha512-WHeFSbZYsPu3+bLoNRUuAO+wavNlocOPf3wSHTP7hcFKVnJeWsYlCDbr3mTS14FCizf9ccIxXA8sGL8zKeQN3g==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
@@ -1464,23 +1480,23 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 10.4.3
 
-  '@blockly/field-colour-hsv-sliders@6.0.12(blockly@12.2.0)':
+  '@blockly/field-colour-hsv-sliders@6.0.12(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)':
     dependencies:
-      '@blockly/field-colour': 6.0.12(blockly@12.2.0)
-      blockly: 12.2.0
+      '@blockly/field-colour': 6.0.12(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)
+      blockly: rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f
 
-  '@blockly/field-colour@6.0.12(blockly@12.2.0)':
+  '@blockly/field-colour@6.0.12(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)':
     dependencies:
-      '@blockly/field-grid-dropdown': 6.0.10(blockly@12.2.0)
-      blockly: 12.2.0
+      '@blockly/field-grid-dropdown': 6.0.10(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)
+      blockly: rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f
 
-  '@blockly/field-grid-dropdown@6.0.10(blockly@12.2.0)':
+  '@blockly/field-grid-dropdown@6.0.10(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)':
     dependencies:
-      blockly: 12.2.0
+      blockly: rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f
 
-  '@blockly/plugin-strict-connection-checker@6.0.9(blockly@12.2.0)':
+  '@blockly/plugin-strict-connection-checker@6.0.9(rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f)':
     dependencies:
-      blockly: 12.2.0
+      blockly: rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f
 
   '@csstools/color-helpers@5.1.0': {}
 
@@ -2043,15 +2059,6 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  blockly@12.2.0:
-    dependencies:
-      jsdom: 26.1.0
-    transitivePeerDependencies:
-      - bufferutil
-      - canvas
-      - supports-color
-      - utf-8-validate
-
   brace-expansion@5.0.7:
     dependencies:
       balanced-match: 4.0.4
@@ -2522,6 +2529,24 @@ snapshots:
       safe-buffer: 5.1.2
       string_decoder: 1.1.1
       util-deprecate: 1.0.2
+
+  rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/b55cf429acf2a484c6a6ebbbe2349803d2350150:
+    dependencies:
+      jsdom: 26.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - canvas
+      - supports-color
+      - utf-8-validate
+
+  rockly@https://codeload.github.com/Rarry-Blocks/rockly/tar.gz/c428f3906b71c3e617364127f5f5a288b912917f:
+    dependencies:
+      jsdom: 26.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - canvas
+      - supports-color
+      - utf-8-validate
 
   rollup@4.60.4:
     dependencies:
