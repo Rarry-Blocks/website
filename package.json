@@ -3,7 +3,6 @@
   "private": true,
   "version": "1.6.5",
   "type": "module",
-  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -24,12 +23,14 @@
     "@fortawesome/fontawesome-free": "^7.0.1",
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-fs": "^2.5.0",
-    "blockly": "^12.2.0",
+    "blockly": "github:Rarry-Blocks/rockly#dist",
     "js-md5": "^0.8.3",
     "jszip": "^3.10.1",
     "pixi.js-legacy": "^7.4.3",
-    "rockly": "github:Rarry-Blocks/rockly#dist",
     "socket.io-client": "^4.2.0",
     "sortablejs": "^1.15.7"
+  },
+  "overrides": {
+    "blockly": "github:Rarry-Blocks/rockly#dist"
   }
 }

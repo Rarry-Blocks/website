@@ -14,9 +14,6 @@ import { io } from "socket.io-client";
 import { save as tauriSave } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 
-import "../functions/patches/block.js";
-import "../functions/patches/connectionchecker.js";
-import "../functions/patches/dragger.js";
 import "../functions/patches/checkbox.js";
 
 import Toolbox from "../components/Toolbox.js";
@@ -236,9 +233,6 @@ export const workspace = Blockly.inject(blocklyDiv, {
     length: 3,
     colour: "#7e7e7e40",
     snap: snapToGrid
-  },
-  plugins: {
-    connectionChecker: "CustomChecker"
   }
 });
 
@@ -618,10 +612,7 @@ async function runCode() {
   try {
     for (const spriteData of spriteManager.getOriginals()) {
       const tempWorkspace = new Blockly.Workspace({
-        readOnly: true,
-        plugins: {
-          connectionChecker: "CustomChecker"
-        }
+        readOnly: true
       });
 
       const xmlDom = Blockly.utils.xml.textToDom(spriteData.code || "<xml></xml>");
@@ -1360,10 +1351,7 @@ function createSession() {
     } else {
       temp = true;
       _workspace = new Blockly.Workspace({
-        readOnly: true,
-        plugins: {
-          connectionChecker: "CustomChecker"
-        }
+        readOnly: true
       });
 
       const xml = Blockly.utils.xml.textToDom(sprite.code || "<xml></xml>");
