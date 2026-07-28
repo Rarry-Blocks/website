@@ -3,6 +3,14 @@ import { defineConfig } from "vite";
 import { resolve } from "path";
 
 export default defineConfig({
+  optimizeDeps: {
+    include: [
+      "blockly/core",
+      "blockly/blocks",
+      "blockly/javascript",
+      "blockly/msg/en",
+    ],
+  },
   build: {
     rollupOptions: {
       input: {
