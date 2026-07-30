@@ -616,12 +616,21 @@ Blockly.Blocks["functions_call"] = {
           const fieldName = type === "string" ? "TEXT" : "NUM";
           const defaultValue = type === "string" ? "" : "0";
 
+          const shadow = Blockly.utils.xml.createElement("shadow");
+          shadow.setAttribute("type", shadowType);
+          const field = Blockly.utils.xml.createElement("field");
+          field.setAttribute("name", fieldName);
+          field.textContent = defaultValue;
+          shadow.appendChild(field);
+
+          input.connection.setShadowDom(shadow);
+        } else if (type === "boolean") {
           const shadowDom = Blockly.utils.xml.createElement("shadow");
-          shadowDom.setAttribute("type", shadowType);
-          const fieldDom = Blockly.utils.xml.createElement("field");
-          fieldDom.setAttribute("name", fieldName);
-          fieldDom.textContent = defaultValue;
-          shadowDom.appendChild(fieldDom);
+          shadowDom.setAttribute("type", "checkbox");
+          const field = Blockly.utils.xml.createElement("field");
+          field.setAttribute("name", "BOOL");
+          field.textContent = "FALSE";
+          shadowDom.appendChild(field);
 
           input.connection.setShadowDom(shadowDom);
         }

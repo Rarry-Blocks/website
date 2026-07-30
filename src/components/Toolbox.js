@@ -27,7 +27,7 @@ function shadowBoolean() {
 }
 
 const Toolbox = `
-  <category name="Events" colour="#ffc400">
+  <category name="Events" colour="#E2C416">
     ${block("when_flag_clicked")}
     ${block("project_timer")}
     ${sep("50")}
@@ -72,7 +72,7 @@ const Toolbox = `
   </category>
 
   <category name="Functions" colour="#FF6680" custom="FUNCTIONS_CATEGORY"></category>
-  
+
   ${sep()}
 
   <category name="Motion" colour="#4C97FF">
