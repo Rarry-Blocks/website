@@ -104,7 +104,7 @@ javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   }
 
   const args = [];
-  const vars = block.getVars();
+  const vars = block.getVarModels().map((m) => m.getId());
   for (let i = 0; i < vars.length; i++) {
     args[i] = generator.getVariableName(vars[i]);
   }
@@ -177,7 +177,7 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
   }
 
   const args = [];
-  const vars = block.getVars();
+  const vars = block.getVarModels().map((m) => m.getId());
   for (let i = 0; i < vars.length; i++) {
     args[i] = generator.getVariableName(vars[i]);
   }
@@ -208,7 +208,7 @@ javascriptGenerator.forBlock["procedures_callreturn"] = function (
   const procedureName = generator.getProcedureName(block.getFieldValue("NAME"));
 
   const args = [];
-  const vars = block.getVars();
+  const vars = block.getVarModels().map((m) => m.getId());
   for (let i = 0; i < vars.length; i++) {
     args[i] =
       generator.valueToCode(block, "ARG" + i, Order.NONE) || "null";

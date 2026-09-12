@@ -14,8 +14,7 @@ export class DuplicateOnDrag {
     if (!this.block.isShadow()) {
       this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.block);
       this.block.setDragStrategy(this.baseStrat);
-      this.baseStrat.startDrag(e);
-      return;
+      return this.baseStrat.startDrag(e);
     }
 
     const ws = this.block.workspace;
@@ -37,20 +36,19 @@ export class DuplicateOnDrag {
 
     this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.copy);
     this.copy.setDragStrategy(this.baseStrat);
-    this.baseStrat.startDrag(e);
+    return this.baseStrat.startDrag(e);
   }
 
-  drag(e) {
+  drag(newLoc, e) {
     if (!this.copy) {
-      this.baseStrat?.drag(e);
+      this.baseStrat?.drag(newLoc, e);
       return;
     }
-    this.block.workspace.getGesture(e).getCurrentDragger().setDraggable(this.copy);
-    this.baseStrat.drag(e);
+    this.baseStrat.drag(newLoc, e);
   }
 
-  endDrag(e) {
-    this.baseStrat?.endDrag(e);
+  endDrag(e, disposition) {
+    this.baseStrat?.endDrag(e, disposition);
   }
 
   revertDrag() {
