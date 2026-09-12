@@ -15,6 +15,8 @@ import { save as tauriSave } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 
 import "../functions/patches/checkbox.js";
+import "../functions/patches/connectionchecker.js";
+import "../functions/patches/dragger.js";
 
 import Toolbox from "../components/Toolbox.js";
 import { setupSettingsButton } from "../functions/theme.js";

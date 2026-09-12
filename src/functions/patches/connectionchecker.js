@@ -67,7 +67,7 @@ export class CustomChecker extends Blockly.ConnectionChecker {
 
 Blockly.registry.register(
   Blockly.registry.Type.CONNECTION_CHECKER,
-  "CustomChecker",
+  Blockly.registry.DEFAULT,
   CustomChecker,
   true,
 );
