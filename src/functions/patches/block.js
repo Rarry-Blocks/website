@@ -1,11 +1,12 @@
 import * as Blockly from "blockly/core";
 
-export class DuplicateOnDrag {
+export class DuplicateOnDrag extends Blockly.dragging.BlockDragStrategy {
+  /** @param {Blockly.BlockSvg} block */
   constructor(block) {
-    /** @type {Blockly.BlockSvg} */
-    this.block = block;
+    super(block);
   }
 
+  /** @override */
   isMovable() {
     return true;
   }
@@ -31,9 +32,10 @@ export class DuplicateOnDrag {
       data.blockState.type = "functions_statement_argument_block";
     }
 
+    /** @type {Blockly.BlockSvg} */
     this.copy = Blockly.clipboard.paste(data, ws);
     this.copy.setShadow(false);
-
+    this.copy.render();
     this.baseStrat = new Blockly.dragging.BlockDragStrategy(this.copy);
     this.copy.setDragStrategy(this.baseStrat);
     return this.baseStrat.startDrag(e);
@@ -60,9 +62,9 @@ export class DuplicateOnDrag {
   }
 }
 
-Blockly.Block.prototype.duplicateOnDrag_ = false;
+Blockly.BlockSvg.prototype.duplicateOnDrag_ = false;
 
-Blockly.Block.prototype.setDuplicateOnDrag = function (value) {
+Blockly.BlockSvg.prototype.setDuplicateOnDrag = function (value) {
   if (!this.setDragStrategy) return;
 
   this.duplicateOnDrag_ = value;
@@ -73,12 +75,39 @@ Blockly.Block.prototype.setDuplicateOnDrag = function (value) {
   }
 };
 
-Blockly.Block.prototype.canDuplicateOnDrag = function () {
+Blockly.BlockSvg.prototype.canDuplicateOnDrag = function () {
   return this.duplicateOnDrag_ && this.isShadow();
 };
 
-const ogJsonInit = Blockly.Block.prototype.jsonInit;
-Blockly.Block.prototype.jsonInit = function (json) {
+// Overrides Blockly 13.3 (PR #9538, "Don't select shadow blocks on click")
+const ogHandleWsStart = Blockly.Gesture.prototype.handleWsStart;
+Blockly.Gesture.prototype.handleWsStart = function (e, ws) {
+  ogHandleWsStart.call(this, e, ws);
+  const block = this.startBlock;
+  if (
+    block &&
+    typeof block.isShadow === "function" &&
+    block.isShadow() &&
+    typeof block.canDuplicateOnDrag === "function" &&
+    block.canDuplicateOnDrag()
+  ) {
+    Blockly.common.setSelected(block);
+  }
+};
+
+const ogGetFocusableElement = Blockly.BlockSvg.prototype.getFocusableElement;
+Blockly.BlockSvg.prototype.getFocusableElement = function () {
+  if (
+    typeof this.canDuplicateOnDrag === "function" &&
+    this.canDuplicateOnDrag()
+  ) {
+    return this.pathObject.svgPath;
+  }
+  return ogGetFocusableElement.call(this);
+};
+
+const ogJsonInit = Blockly.BlockSvg.prototype.jsonInit;
+Blockly.BlockSvg.prototype.jsonInit = function (json) {
   if (json["duplicateOnDrag"] !== undefined) {
     this.setDuplicateOnDrag(json["duplicateOnDrag"]);
   }
