@@ -1,7 +1,8 @@
 import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { Sprite, DisplayObject, ObservablePoint, utils } from "pixi.js-legacy";
-javascriptGenerator.INFINITE_LOOP_TRAP = `if (!thread.fastExecution && vm.isOverBudget()) yield;`;
+import { Popup, prettyXml, escapeHtml } from "./utils";
+javascriptGenerator.INFINITE_LOOP_TRAP = `if (!thread.fastExecution && vm.isOverBudget()) yield;\n`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
@@ -54,7 +55,7 @@ Object.keys(Blockly.Blocks).forEach((type) => {
 
 javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   block,
-  generator
+  generator,
 ) {
   const procedureName = generator.getProcedureName(block.getFieldValue("NAME"));
 
@@ -73,7 +74,7 @@ javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   if (generator.INFINITE_LOOP_TRAP) {
     loopTrap = generator.prefixLines(
       generator.injectId(generator.INFINITE_LOOP_TRAP, block),
-      generator.INDENT
+      generator.INDENT,
     );
   }
 
@@ -84,8 +85,7 @@ javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
 
   let returnCode = "";
   if (block.getInput("RETURN")) {
-    returnCode =
-      generator.valueToCode(block, "RETURN", Order.NONE) || "";
+    returnCode = generator.valueToCode(block, "RETURN", Order.NONE) || "";
   }
 
   let returnWrapper = "";
@@ -124,7 +124,7 @@ javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
 
 javascriptGenerator.forBlock["procedures_defreturn"] = function (
   block,
-  generator
+  generator,
 ) {
   const procedureName = generator.getProcedureName(block.getFieldValue("NAME"));
 
@@ -138,7 +138,7 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
   if (statementWrapper) {
     statementWrapper = generator.prefixLines(
       statementWrapper,
-      generator.INDENT
+      generator.INDENT,
     );
   }
 
@@ -146,7 +146,7 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
   if (generator.INFINITE_LOOP_TRAP) {
     loopTrapCode = generator.prefixLines(
       generator.injectId(generator.INFINITE_LOOP_TRAP, block),
-      generator.INDENT
+      generator.INDENT,
     );
   }
 
@@ -157,8 +157,7 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
 
   let returnCode = "";
   if (block.getInput("RETURN")) {
-    returnCode =
-      generator.valueToCode(block, "RETURN", Order.NONE) || "";
+    returnCode = generator.valueToCode(block, "RETURN", Order.NONE) || "";
   }
 
   let returnWrapper = "";
@@ -197,15 +196,14 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
 
 javascriptGenerator.forBlock["procedures_callreturn"] = function (
   block,
-  generator
+  generator,
 ) {
   const procedureName = generator.getProcedureName(block.getFieldValue("NAME"));
 
   const args = [];
   const vars = block.getVarModels().map((m) => m.getId());
   for (let i = 0; i < vars.length; i++) {
-    args[i] =
-      generator.valueToCode(block, "ARG" + i, Order.NONE) || "null";
+    args[i] = generator.valueToCode(block, "ARG" + i, Order.NONE) || "null";
   }
 
   return [
@@ -216,7 +214,7 @@ javascriptGenerator.forBlock["procedures_callreturn"] = function (
 
 javascriptGenerator.forBlock["procedures_callnoreturn"] = function (
   block,
-  generator
+  generator,
 ) {
   const code = generator.forBlock.procedures_callreturn(block, generator)[0];
   return code + ";\n";
@@ -224,21 +222,15 @@ javascriptGenerator.forBlock["procedures_callnoreturn"] = function (
 
 export const SpriteChangeEvents = new utils.EventEmitter();
 
-const originalX = Object.getOwnPropertyDescriptor(
-  DisplayObject.prototype,
-  "x"
-);
-const originalY = Object.getOwnPropertyDescriptor(
-  DisplayObject.prototype,
-  "y"
-);
+const originalX = Object.getOwnPropertyDescriptor(DisplayObject.prototype, "x");
+const originalY = Object.getOwnPropertyDescriptor(DisplayObject.prototype, "y");
 const originalAngle = Object.getOwnPropertyDescriptor(
   DisplayObject.prototype,
-  "angle"
+  "angle",
 );
 const originalTexture = Object.getOwnPropertyDescriptor(
   Sprite.prototype,
-  "texture"
+  "texture",
 );
 
 Object.defineProperty(Sprite.prototype, "x", {
@@ -323,5 +315,65 @@ Blockly.registry.register(
   Blockly.registry.Type.TOOLBOX_ITEM,
   Blockly.ToolboxCategory.registrationName,
   ToolboxBubbleCategory,
-  true
+  true,
 );
+
+function showBlockCode(block) {
+  let code = "";
+  try {
+    const generator = javascriptGenerator;
+    generator.init(block.workspace);
+    let rawCode = generator.blockToCode(block);
+    if (Array.isArray(rawCode)) rawCode = rawCode[0];
+    if (typeof rawCode === "string") code = generator.finish(rawCode);
+  } catch (err) {
+    console.error("Failed to generate code for block:", err);
+  }
+
+  const position = block.getRelativeToSurfaceXY();
+  const xml = prettyXml(Blockly.Xml.blockToDom(block));
+
+  const tabs = [
+    {
+      label: "Code",
+      innerHTML: `<pre class="block-code-preview">${
+        code.trim() ? escapeHtml(code) : "<em>No code generated for this block.</em>"
+      }</pre>`,
+    },
+    {
+      label: "Properties",
+      rows: [
+        ["Type:", block.type],
+        ["ID:", block.id],
+        ["Position (x, y):", `${position.x.toFixed(2)}, ${position.y.toFixed(2)}`],
+        ["Shadow:", block.isShadow() ? "Yes" : "No"],
+        ["Child blocks:", String(block.getChildren().length)],
+      ],
+      innerHTML: `<pre class="block-code-preview">${escapeHtml(xml)}</pre>`,
+    },
+  ];
+
+  const popup = new Popup({
+    title: `Block - ${block.type}`,
+    tabs,
+  });
+  popup.show();
+  popup.element.classList.add("block-code-popup");
+}
+
+Blockly.ContextMenuRegistry.registry.register({
+  id: "rarryViewGeneratedCode",
+  weight: 100,
+  preconditionFn: (scope) => {
+    if (localStorage.getItem("blockCodeContextMenu") !== "true")
+      return "hidden";
+    const block = scope.focusedNode;
+    if (!(block instanceof Blockly.BlockSvg) || block.isShadow())
+      return "hidden";
+    return "enabled";
+  },
+  displayText: "View generated code",
+  callback: (scope) => {
+    showBlockCode(scope.focusedNode);
+  },
+});

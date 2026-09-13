@@ -17,6 +17,7 @@ const snapToGrid = localStorage.getItem("snapToGrid") === "true" || false;
 const scrollbars = localStorage.getItem("scrollbars") !== "false";
 const sounds = localStorage.getItem("sounds") !== "false";
 const squaredStrings = localStorage.getItem("squaredStrings") === "true";
+const blockCodeContextMenu = localStorage.getItem("blockCodeContextMenu") === "true";
 
 const blockStyles = {
   logic_blocks: {
@@ -260,6 +261,10 @@ export function toggleSquaredStrings(enabled) {
   localStorage.setItem("squaredStrings", String(enabled));
 }
 
+export function toggleBlockCodeContextMenu(enabled) {
+  localStorage.setItem("blockCodeContextMenu", String(enabled));
+}
+
 export function setupSettingsButton(workspace) {
   toggleTheme(theme, workspace);
   toggleIcons(icons);
@@ -271,6 +276,7 @@ export function setupSettingsButton(workspace) {
   toggleScrollbars(scrollbars, workspace);
   toggleSounds(sounds, workspace);
   toggleSquaredStrings(squaredStrings);
+  toggleBlockCodeContextMenu(blockCodeContextMenu);
   setCategoryBubble(categoryBubble, workspace);
 
   const settingsButton = document.getElementById("settings-button");
@@ -449,6 +455,9 @@ export function setupSettingsButton(workspace) {
             label: "Editor",
             rows: [
               [
+                "<div><h3>Visuals</h3><small style='opacity:0.7'>Changes how the editor looks and feels.</small></div>",
+              ],
+              [
                 "Stage on left",
                 {
                   type: "checkbox",
@@ -498,6 +507,17 @@ export function setupSettingsButton(workspace) {
                   type: "checkbox",
                   checked: localStorage.getItem("squaredStrings") === "true",
                   onChange: checked => toggleSquaredStrings(checked),
+                },
+              ],
+              [
+                "<div><h3>Advanced</h3><small style='opacity:0.7'>Developer features and extra tools.</small></div>",
+              ],
+              [
+                "Show generated code in block context menu",
+                {
+                  type: "checkbox",
+                  checked: localStorage.getItem("blockCodeContextMenu") === "true",
+                  onChange: checked => toggleBlockCodeContextMenu(checked),
                 },
               ],
             ],

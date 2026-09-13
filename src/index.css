@@ -292,6 +292,7 @@ html.removeIcons button i:not(.stay) {
   background: var(--color2);
   color: var(--dark);
   min-width: 70%;
+  max-width: 95%;
   height: max(300px, 70%);
   border-radius: 0.5rem;
   animation: scaleIn 0.3s ease;
@@ -309,6 +310,24 @@ html.removeIcons button i:not(.stay) {
 .popup-body textarea.extension-code-input {
   resize: vertical;
   width: 100%;
+}
+
+.popup-body .block-code-preview {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 0.4rem;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  white-space: pre;
+}
+
+.block-code-popup .popup-tab-content.active {
+  min-height: 0;
 }
 
 .popup-body,

@@ -115,8 +115,8 @@ export class Popup {
     if (titleEl) titleEl.textContent = title;
 
     const bodyEl = this.element.querySelector(".popup-body");
-    let bodyHTML = "";
-
+    let bodyHTML;
+    
     if (Array.isArray(tabs) && tabs.length > 0) {
       tabs = tabs.filter(t => t);
       if (this.currentTabIndex >= tabs.length) this.currentTabIndex = 0;
@@ -522,4 +522,36 @@ export function getLuminance(color) {
 export function capitalizeFirstLetter(string) {
   if (string.length === 0) return "";
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export function escapeHtml(str) {
+  return str
+    .trim()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function prettyXml(node, level = 0) {
+  const indent = "  ".repeat(level);
+  const childNodes = Array.from(node.childNodes);
+  const elements = childNodes.filter((n) => n.nodeType === Node.ELEMENT_NODE);
+  const text = childNodes
+    .filter((n) => n.nodeType === Node.TEXT_NODE)
+    .map((n) => n.nodeValue.trim())
+    .join("");
+
+  const attrs = Array.from(node.attributes || [])
+    .map((a) => ` ${a.name}="${escapeHtml(a.value)}"`)
+    .join("");
+
+  if (elements.length === 0) {
+    return `${indent}<${node.nodeName}${attrs}>${escapeHtml(text)}</${node.nodeName}>`;
+  }
+
+  const inner = elements
+    .map((child) => prettyXml(child, level + 1))
+    .join("\n");
+  return `${indent}<${node.nodeName}${attrs}>\n${inner}\n${indent}</${node.nodeName}>`;
 }
