@@ -301,7 +301,7 @@ export function setupSettingsButton(workspace) {
                 "<div><h3>Stage Size</h3><small style='opacity:0.7'>The size of the canvas in pixels.</small></div>",
               ],
               [
-                "Width",
+                "Width:",
                 {
                   type: "number",
                   value: _projectAPI.settings.stageWidth,
@@ -312,7 +312,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Height",
+                "Height:",
                 {
                   type: "number",
                   value: _projectAPI.settings.stageHeight,
@@ -353,7 +353,7 @@ export function setupSettingsButton(workspace) {
             label: "Appearance",
             rows: [
               [
-                "Show icon on buttons",
+                "Show icon on buttons:",
                 {
                   type: "checkbox",
                   checked: !document.documentElement.classList.contains("removeIcons"),
@@ -363,7 +363,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Show Rarry logo on toolbar",
+                "Show Rarry logo on toolbar:",
                 {
                   type: "checkbox",
                   checked:
@@ -374,7 +374,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Toolbar position",
+                "Toolbar position:",
                 {
                   type: "menu",
                   value: localStorage.getItem("toolboxPosition") || "default",
@@ -388,7 +388,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Category bubble",
+                "Category bubble:",
                 {
                   type: "menu",
                   value: localStorage.getItem("categoryBubble") || "default",
@@ -458,7 +458,7 @@ export function setupSettingsButton(workspace) {
                 "<div><h3>Visuals</h3><small style='opacity:0.7'>Changes how the editor looks and feels.</small></div>",
               ],
               [
-                "Stage on left",
+                "Stage on left:",
                 {
                   type: "checkbox",
                   checked: document.documentElement.classList.contains("stageLeft"),
@@ -468,7 +468,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Event hat bumps",
+                "Event hat bumps:",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("startHats") === "true",
@@ -478,7 +478,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Scrollbars",
+                "Scrollbars:",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("scrollbars") !== "false",
@@ -486,7 +486,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Snap blocks to grid (applies after refresh)",
+                "Snap blocks to grid (applies after refresh):",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("snapToGrid") === "true",
@@ -494,7 +494,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Block sounds (applies after refresh)",
+                "Block sounds (applies after refresh):",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("sounds") !== "false",
@@ -502,7 +502,7 @@ export function setupSettingsButton(workspace) {
                 },
               ],
               [
-                "Squared text inputs",
+                "Squared text inputs:",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("squaredStrings") === "true",
@@ -513,7 +513,7 @@ export function setupSettingsButton(workspace) {
                 "<div><h3>Advanced</h3><small style='opacity:0.7'>Developer features and extra tools.</small></div>",
               ],
               [
-                "Show generated code in block context menu",
+                "Show generated code in block context menu:",
                 {
                   type: "checkbox",
                   checked: localStorage.getItem("blockCodeContextMenu") === "true",
