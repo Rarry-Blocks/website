@@ -34,13 +34,7 @@ Blockly.Blocks["text"] = {
     this.setStyle("text_blocks");
     this.setTooltip(Blockly.Msg["TEXT_TEXT_TOOLTIP"]);
     this.setHelpUrl(Blockly.Msg["TEXT_TEXT_HELPURL"]);
-
     Blockly.Extensions.apply("parent_tooltip_when_inline", this, false);
-    setTimeout(() => {
-      if (!this.isShadow()) {
-        Blockly.Extensions.apply("text_quotes", this, false);
-      }
-    });
   },
 };
 
