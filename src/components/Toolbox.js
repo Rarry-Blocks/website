@@ -27,7 +27,7 @@ function shadowBoolean() {
 }
 
 const Toolbox = `
-  <category name="Events" colour="#E2C416">
+  <category name="Events" categorystyle="events_blocks">
     ${block("when_flag_clicked")}
     ${block("project_timer")}
     ${sep("50")}
@@ -40,7 +40,7 @@ const Toolbox = `
     ${block("trigger_custom_event")}
   </category>
 
-  <category name="Control" colour="#FFAB19">
+  <category name="Control" categorystyle="control_blocks">
     ${block("wait_block", value("AMOUNT", shadowNumber(2)))}
     ${sep("50")}
     ${block("controls_if", value("IF0", shadowBoolean()))}
@@ -71,11 +71,11 @@ const Toolbox = `
     ${block("controls_run_instantly")}
   </category>
 
-  <category name="Functions" colour="#FF6680" custom="FUNCTIONS_CATEGORY"></category>
+  <category name="Functions" categorystyle="procedure_blocks" custom="FUNCTIONS_CATEGORY"></category>
 
   ${sep()}
 
-  <category name="Motion" colour="#4C97FF">
+  <category name="Motion" categorystyle="motion_blocks">
     ${block("move_steps", value("STEPS", shadowNumber()))}
     ${block("goto_position", value("x", shadowNumber(0)), value("y", shadowNumber(0)))}
     ${block("set_position", value("AMOUNT", shadowNumber(0)))}
@@ -88,7 +88,7 @@ const Toolbox = `
     ${block("get_angle")}
   </category>
 
-  <category name="Looks" colour="#9966FF">
+  <category name="Looks" categorystyle="looks_blocks">
     ${block("looks_setVisibility_sprite", value("VISIBLE", shadowBoolean()))}
     ${block("looks_isVisible")}
     ${sep("50")}
@@ -107,7 +107,7 @@ const Toolbox = `
     ${block("get_sprite_scale")}
   </category>
 
-  <category name="Sounds" colour="#ff66ba">
+  <category name="Sounds" categorystyle="sound_blocks">
     ${block("play_sound", value("name", shadow("sound_sounds_menu")))}
     ${block("stop_sound", value("name", shadow("sound_sounds_menu")))}
     ${block("stop_all_sounds")}
@@ -118,7 +118,7 @@ const Toolbox = `
 
   ${sep()}
 
-  <category name="Operators" colour="#59ba57">
+  <category name="Operators" categorystyle="logic_blocks">
     ${label("Logic")}
     ${block("logic_compare")}
     ${block("logic_operation_extra", value("A", shadowBoolean()), value("B", shadowBoolean()))}
@@ -162,7 +162,7 @@ const Toolbox = `
     ${block("text_trim", value("TEXT", shadowText()))}
   </category>
 
-  <category name="System" colour="#5CB1D6">
+  <category name="System" categorystyle="system_blocks">
     ${block("key_pressed")}
     ${block("all_keys_pressed")}
     ${sep("50")}
@@ -185,7 +185,7 @@ const Toolbox = `
     ${block("system_sprites_list")}
   </category>
 
-  <category name="Lists" colour="#e35340">
+  <category name="Lists" categorystyle="list_blocks">
     ${block("lists_extendable")}
     ${block("lists_repeat", value("NUM", shadowNumber(5)))}
     ${sep("50")}
@@ -222,7 +222,7 @@ const Toolbox = `
     )}
   </category>
 
-  <category name="Objects" colour="#ff8349">
+  <category name="Objects" categorystyle="json_blocks">
     ${block("json_create_statement")}
     ${block(
       "json_key_value_statement",
@@ -234,14 +234,14 @@ const Toolbox = `
     ${block("json_isEmpty")}
     ${block("json_has_key", value("KEY", shadowText("key")))}
     ${block("json_get", value("KEY", shadowText("key")))}
-    ${block("json_set_return", value("KEY", shadowText("key")))}
+    ${block("json_set_return", value("KEY", shadowText("key")), value("VALUE", shadowText("val")))}
     ${block("json_delete_return", value("KEY", shadowText("key")))}
     ${block("json_property_list")}
     ${block("json_parse")}
     ${block("json_clone")}
   </category>
 
-  <category name="Variables" colour="#FF8C1A" custom="GLOBAL_VARIABLES"></category>
+  <category name="Variables" categorystyle="variable_blocks" custom="GLOBAL_VARIABLES"></category>
 `;
 
 export default Toolbox;

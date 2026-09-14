@@ -268,15 +268,31 @@ const blockStyles = {
   },
 };
 
+const categoryStyles = {
+  events_blocks: { colour: "#E2C416" },
+  control_blocks: { colour: "#FFAB19" },
+  procedure_blocks: { colour: "#FF6680" },
+  motion_blocks: { colour: "#4C97FF" },
+  looks_blocks: { colour: "#9966FF" },
+  sound_blocks: { colour: "#ff66ba" },
+  logic_blocks: { colour: "#59BA57" },
+  system_blocks: { colour: "#5CB1D6" },
+  list_blocks: { colour: "#E35340" },
+  json_blocks: { colour: "#FF8349" },
+  variable_blocks: { colour: "#FF8C1A" },
+};
+
 const lightTheme = Blockly.Theme.defineTheme("customLightTheme", {
   base: Blockly.Themes.Classic,
   blockStyles: blockStyles,
+  categoryStyles: categoryStyles,
   startHats: hats,
 });
 
 const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
   base: Blockly.Themes.Classic,
   blockStyles: blockStyles,
+  categoryStyles: categoryStyles,
   componentStyles: {
     workspaceBackgroundColour: "#1a1e25",
     toolboxBackgroundColour: "#303236",
@@ -307,6 +323,12 @@ function applyBlockStyleOverrides() {
       : { ...blockStyles[styleName] };
     lightTheme.setBlockStyle(styleName, style);
     darkTheme.setBlockStyle(styleName, style);
+  }
+  for (const styleName in categoryStyles) {
+    const colour = overrides[styleName] || blockStyles[styleName].colourPrimary;
+    const style = { colour };
+    lightTheme.setCategoryStyle(styleName, style);
+    darkTheme.setCategoryStyle(styleName, style);
   }
 }
 
