@@ -20,7 +20,7 @@ Blockly.Blocks["logic_operation_extra"] = {
       );
     this.setInputsInline(true);
     this.setOutput(true, "Boolean");
-    this.setStyle("text_blocks");
+    this.setStyle("logic_blocks");
   },
 };
 
@@ -63,7 +63,7 @@ Blockly.Blocks["logic_ternary"] = {
     this.appendValueInput("ELSE").setCheck(null).appendField("else");
     this.setInputsInline(true);
     this.setOutput(true, null);
-    this.setStyle("text_blocks");
+    this.setStyle("logic_blocks");
   },
 };
 

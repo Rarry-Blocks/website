@@ -2,7 +2,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import * as Blockly from "blockly/core";
 import config from "../config";
 import { cache } from "../cache";
-import { capitalizeFirstLetter, getLuminance, shadeColor, Popup } from "./utils";
+import { capitalizeFirstLetter, getLuminance, shadeColor, Popup, chunk } from "./utils";
 import { attachAvatarChanger } from "./avatar";
 
 const root = document.documentElement;
@@ -20,29 +20,17 @@ const squaredStrings = localStorage.getItem("squaredStrings") === "true";
 const blockCodeContextMenu = localStorage.getItem("blockCodeContextMenu") === "true";
 
 const blockStyles = {
-  logic_blocks: {
-    colourPrimary: "#59BA57",
+  events_blocks: {
+    colourPrimary: "#E2C416",
   },
-  math_blocks: {
-    colourPrimary: "#59BA57",
-  },
-  text_blocks: {
-    colourPrimary: "#59BA57",
+  control_blocks: {
+    colourPrimary: "#FFAB19",
   },
   loop_blocks: {
     colourPrimary: "#FFAB19",
   },
-  variable_blocks: {
-    colourPrimary: "#FF8C1A",
-  },
-  list_blocks: {
-    colourPrimary: "#E35340",
-  },
   procedure_blocks: {
     colourPrimary: "#FF6680",
-  },
-  system_blocks: {
-    colourPrimary: "#5CB1D6",
   },
   motion_blocks: {
     colourPrimary: "#4C97FF",
@@ -53,14 +41,26 @@ const blockStyles = {
   sound_blocks: {
     colourPrimary: "#ff66ba",
   },
-  events_blocks: {
-    colourPrimary: "#E2C416",
+  logic_blocks: {
+    colourPrimary: "#59BA57",
   },
-  control_blocks: {
-    colourPrimary: "#FFAB19",
+  math_blocks: {
+    colourPrimary: "#59BA57",
   },
-  json_category: {
+  text_blocks: {
+    colourPrimary: "#59BA57",
+  },
+  system_blocks: {
+    colourPrimary: "#5CB1D6",
+  },
+  list_blocks: {
+    colourPrimary: "#E35340",
+  },
+  json_blocks: {
     colourPrimary: "#FF8349",
+  },
+  variable_blocks: {
+    colourPrimary: "#FF8C1A",
   },
   set_blocks: {
     colourPrimary: "#2CC2A9",
@@ -91,6 +91,58 @@ const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
   },
   startHats: hats,
 });
+
+let currentWorkspace = null;
+
+export function getBlockColorOverrides() {
+  return JSON.parse(localStorage.getItem("blockColors") || "{}");
+}
+
+function applyBlockStyleOverrides() {
+  const overrides = getBlockColorOverrides();
+  for (const styleName in blockStyles) {
+    const style = overrides[styleName]
+      ? { colourPrimary: overrides[styleName] }
+      : { ...blockStyles[styleName] };
+    lightTheme.setBlockStyle(styleName, style);
+    darkTheme.setBlockStyle(styleName, style);
+  }
+}
+
+export function updateBlockColor(styleName, value) {
+  const overrides = getBlockColorOverrides();
+  const isDefault =
+    value.toLowerCase() === blockStyles[styleName].colourPrimary.toLowerCase();
+  if (!value || isDefault) delete overrides[styleName];
+  else overrides[styleName] = value;
+
+  localStorage.setItem("blockColors", JSON.stringify(overrides));
+
+  applyBlockStyleOverrides();
+  if (!currentWorkspace) return;
+  const dark = localStorage.getItem("theme") === "dark";
+  currentWorkspace.setTheme(dark ? darkTheme : lightTheme);
+}
+
+function buildBlockStyleCell(styleName, overrides) {
+  const color = overrides[styleName] || blockStyles[styleName].colourPrimary;
+  const label = capitalizeFirstLetter(
+    styleName.replace("_blocks", "").replaceAll("_", " ")
+  );
+  return `
+    <div class="block-style-cell">
+      <div class="block-style-controls">
+        <button class="block-style-reset" data-style="${styleName}" title="Reset color">
+          <i class="fa-solid fa-arrows-rotate stay"></i>
+        </button>
+        <input class="block-style-color" type="color" data-style="${styleName}" value="${color}" />
+        <span>${label}</span>
+      </div>
+    </div>
+  `;
+}
+
+applyBlockStyleOverrides();
 
 const baseColorKeys = ["toolbar-header", "dark", "primary", "danger", "color"];
 const allColorKeys = [
@@ -266,6 +318,7 @@ export function toggleBlockCodeContextMenu(enabled) {
 }
 
 export function setupSettingsButton(workspace) {
+  currentWorkspace = workspace;
   toggleTheme(theme, workspace);
   toggleIcons(icons);
   toggleRarryToolbar(rarryToolbar);
@@ -282,7 +335,7 @@ export function setupSettingsButton(workspace) {
   const settingsButton = document.getElementById("settings-button");
   if (settingsButton)
     settingsButton.addEventListener("click", async () => {
-      let currentColors, _projectAPI;
+      let currentColors, currentBlockOverrides, _projectAPI;
       if (workspace) {
         const { projectAPI } = await import("../scripts/editor");
         _projectAPI = projectAPI;
@@ -292,6 +345,7 @@ export function setupSettingsButton(workspace) {
         title: "Settings",
         beforeRender: () => {
           currentColors = JSON.parse(localStorage.getItem("colors") || "{}");
+          currentBlockOverrides = getBlockColorOverrides();
         },
         tabs: () => [
           workspace ? {
@@ -439,7 +493,6 @@ export function setupSettingsButton(workspace) {
                       popup.refresh();
                     },
                   },
-                  `${capitalizeFirstLetter(key).replaceAll("-", " ")}:`,
                   {
                     type: "color",
                     value:
@@ -447,8 +500,18 @@ export function setupSettingsButton(workspace) {
                       getComputedStyle(root).getPropertyValue(`--${cssVar}`).trim(),
                     onChange: value => updateCustomColor(key, value),
                   },
+                  `${capitalizeFirstLetter(key).replaceAll("-", " ")}`,
                 ];
               }),
+              [
+                "<div><h3>Block styles</h3><small style='opacity:0.7'>Customize the color of each block category.</small></div>",
+              ],
+              ...chunk(Object.keys(blockStyles), 3).map(group =>
+                group.map(styleName => ({
+                  type: "custom",
+                  html: buildBlockStyleCell(styleName, currentBlockOverrides),
+                }))
+              ),
             ],
           },
           {
@@ -525,6 +588,19 @@ export function setupSettingsButton(workspace) {
         ],
       });
       popup.show();
+
+      popup.element.addEventListener("click", event => {
+        const reset = event.target.closest(".block-style-reset");
+        if (!reset) return;
+        updateBlockColor(reset.dataset.style, "");
+        popup.refresh();
+      });
+
+      popup.element.addEventListener("input", event => {
+        const colorInput = event.target.closest(".block-style-color");
+        if (!colorInput) return;
+        updateBlockColor(colorInput.dataset.style, colorInput.value);
+      });
     });
 }
 

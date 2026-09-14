@@ -333,7 +333,7 @@ html.removeIcons button i:not(.stay) {
 .popup-body,
 .popup-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .popup-body {
@@ -396,6 +396,20 @@ html.removeIcons button i:not(.stay) {
 
 .popup-tab-content.active {
   display: flex;
+}
+
+.block-style-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.block-style-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .notification-container {

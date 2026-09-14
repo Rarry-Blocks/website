@@ -555,3 +555,11 @@ export function prettyXml(node, level = 0) {
     .join("\n");
   return `${indent}<${node.nodeName}${attrs}>\n${inner}\n${indent}</${node.nodeName}>`;
 }
+
+export function chunk(array, size) {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
