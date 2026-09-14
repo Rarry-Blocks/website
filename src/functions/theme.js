@@ -282,14 +282,14 @@ const categoryStyles = {
   variable_blocks: { colour: "#FF8C1A" },
 };
 
-const lightTheme = Blockly.Theme.defineTheme("customLightTheme", {
+export const lightTheme = Blockly.Theme.defineTheme("customLightTheme", {
   base: Blockly.Themes.Classic,
   blockStyles: blockStyles,
   categoryStyles: categoryStyles,
   startHats: hats,
 });
 
-const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
+export const darkTheme = Blockly.Theme.defineTheme("customDarkTheme", {
   base: Blockly.Themes.Classic,
   blockStyles: blockStyles,
   categoryStyles: categoryStyles,
@@ -345,6 +345,12 @@ export function updateBlockColor(styleName, value) {
   if (!currentWorkspace) return;
   const dark = localStorage.getItem("theme") === "dark";
   currentWorkspace.setTheme(dark ? darkTheme : lightTheme);
+
+  const toolbox = currentWorkspace.getToolbox();
+  if (toolbox) {
+    toolbox.refreshTheme();     
+    toolbox.render(toolbox.toolboxDef_); 
+  }
 }
 
 function buildBlockStyleCell(styleName, overrides) {

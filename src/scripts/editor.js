@@ -19,7 +19,7 @@ import "../functions/patches/connectionchecker.js";
 import "../functions/patches/dragger.js";
 
 import Toolbox from "../components/Toolbox.js";
-import { setupSettingsButton } from "../functions/theme.js";
+import { darkTheme, lightTheme, setupSettingsButton } from "../functions/theme.js";
 import { compressAudio, showNotification, Popup } from "../functions/utils.js";
 
 import { Costume, Sound, Sprite, SpriteManager } from "../components/Sprite.js";
@@ -212,6 +212,7 @@ Blockly.blockRendering.register("custom_zelos", CustomRenderer);
 const snapToGrid = localStorage.getItem("snapToGrid") === "true";
 const scrollbars = localStorage.getItem("scrollbars") !== "false";
 const sounds = localStorage.getItem("sounds") !== "false";
+const isDark = localStorage.getItem("theme") === "dark";
 
 const blocklyDiv = document.getElementById("blocklyDiv");
 const toolbox = document.getElementById("toolbox");
@@ -222,6 +223,7 @@ export const workspace = Blockly.inject(blocklyDiv, {
   sounds,
   trashcan: true,
   renderer: "custom_zelos",
+  theme: isDark ? darkTheme : lightTheme,
   zoom: {
     controls: true,
     wheel: true,
