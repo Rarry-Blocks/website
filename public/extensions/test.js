@@ -147,17 +147,15 @@ Rarry.registerExtension({
   ],
 
   code: {
-    statement: inputs => {
-      console.log(inputs.poop?.());
+    statement: function* (inputs) {
+      if (inputs.poop) yield* inputs.poop();
     },
-    if: inputs => {
-      console.log(inputs);
-      if (inputs.bool) inputs.code?.();
+    if: function* (inputs) {
+      if (inputs.bool) yield* inputs.code();
     },
-    ifElse: inputs => {
-      console.log(inputs);
-      if (inputs.bool) inputs.code?.();
-      else inputs.codeElse?.();
+    ifElse: function* (inputs) {
+      if (inputs.bool) yield* inputs.code();
+      else if (inputs.codeElse) yield* inputs.codeElse();
     },
     evil: () => {
       console.warn("evil is near");
