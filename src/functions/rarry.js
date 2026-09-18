@@ -5,11 +5,11 @@ export const BlockType = Object.freeze({
 });
 
 export const BlockShape = Object.freeze({
-  NUMBER: 1,
+  NUMBER: 2,
   STRING: 2,
   ARGUMENT: 3,
-  ARRAY: 4,
-  OBJECT: 5,
+  OBJECT: 4,
+  ARRAY: 5,
   SET: 6
 });
 
