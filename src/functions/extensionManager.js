@@ -50,6 +50,9 @@ function textToBlock(block, text, fields = {}) {
         typeof item === "string" ? [item, item] : [item.text, item.value]
       );
       block.appendDummyInput().appendField(new Blockly.FieldDropdown(items), inputName);
+      if (spec.default !== undefined) {
+        block.setFieldValue(String(spec.default), inputName);
+      }
     } else {
       block.appendDummyInput().appendField(`[${inputName}]`);
     }
@@ -166,7 +169,7 @@ function registerBlocks(id, blocks, categoryColor, categoryEl) {
   return blockDefs;
 }
 
-function collectInputs(block, fields) {
+function collectInputs(block, fields, includeStatements = true) {
   const inputs = {};
 
   for (const input of block.inputList) {
@@ -179,8 +182,9 @@ function collectInputs(block, fields) {
       const code = javascriptGenerator.valueToCode(block, name, Order.ATOMIC);
       if (code) inputs[name] = code;
     } else if (input.type === Blockly.inputs.StatementInput) {
+      if (!includeStatements) continue;
       const code = javascriptGenerator.statementToCode(block, name);
-      if (code) inputs[name] = `async () => { ${code} }`;
+      if (code) inputs[name] = `function* () { ${code} }`;
     }
   }
 
@@ -202,9 +206,13 @@ function registerCodeGenerators(id, codeGen, blockDefs, isTrusted) {
     }
 
     const def = blockDefs[fullType] ?? {};
+    const handler = isTrusted ? codeGen[blockId] : null;
+    const isGenerator =
+      typeof handler === "function" &&
+      handler.constructor?.name === "GeneratorFunction";
 
     javascriptGenerator.forBlock[fullType] = function (block) {
-      const inputs = collectInputs(block, def.fields);
+      const inputs = collectInputs(block, def.fields, isTrusted);
       const argsLiteral = `{${Object.entries(inputs)
         .map(([k, v]) => `${JSON.stringify(k)}:${v}`)
         .join(",")}}`;
@@ -212,10 +220,20 @@ function registerCodeGenerators(id, codeGen, blockDefs, isTrusted) {
       let call, expr;
       if (isTrusted) {
         call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, thread)`;
-        expr = def.promise ? `(yield* waitForPromise(${call}))` : call;
+        if (isGenerator) {
+          expr = `(yield* ${call})`;
+        } else if (def.promise) {
+          expr = `(yield* waitForPromise(${call}))`;
+        } else {
+          expr = call;
+        }
       } else {
         call = `extensionBridges.get(${JSON.stringify(id)}).runBlock(${JSON.stringify(blockId)}, ${argsLiteral})`;
-        expr = `(yield* waitForPromise(${call}))`;
+        if (block.outputConnection || def.promise) {
+          expr = `(yield* waitForPromise(${call}))`;
+        } else {
+          expr = call;
+        }
       }
 
       return block.outputConnection ? [expr, Order.NONE] : `${expr};\n`;
