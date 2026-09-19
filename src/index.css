@@ -359,6 +359,7 @@ html.removeIcons button i:not(.stay) {
   display: flex;
   flex-direction: row;
   height: 100%;
+  flex: 1;
 }
 
 .popup-tab-buttons {
@@ -366,6 +367,9 @@ html.removeIcons button i:not(.stay) {
   flex-direction: column;
   background-color: var(--color1);
   border-right: 2px solid var(--color3);
+  height: 100%;    
+  flex-shrink: 0;   
+  overflow-y: auto; 
 }
 
 .popup-tab-button {
