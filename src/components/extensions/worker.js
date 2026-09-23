@@ -63,7 +63,7 @@ self.onmessage = async e => {
     try {
       pendingDescriptor = null;
       cachedHandlers = null;
-      new Function("api", `"use strict"; ${payload.code}`)();
+      new Function("api", `"use strict"; ${payload.code}`)(api);
 
       if (pendingDescriptor) {
         cachedHandlers = pendingDescriptor.code ?? {};
