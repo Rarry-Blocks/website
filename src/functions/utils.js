@@ -1,4 +1,8 @@
-export function showNotification({ message = "", duration = 5000, closable = true }) {
+export function showNotification({
+  message = "",
+  duration = 5000,
+  closable = true
+}) {
   const notification = document.createElement("div");
   notification.className = "notification";
   notification.innerHTML = `
@@ -25,7 +29,9 @@ export function showNotification({ message = "", duration = 5000, closable = tru
   }
 
   if (closable) {
-    notification.querySelector(".notification-close")?.addEventListener("click", hide);
+    notification
+      .querySelector(".notification-close")
+      ?.addEventListener("click", hide);
   }
 
   setTimeout(hide, duration);
@@ -45,7 +51,7 @@ export class Popup {
       noAnimation: false,
       onClose: null,
       beforeRender: null,
-      ...options,
+      ...options
     };
     this.element = null;
     this.currentTabIndex = 0;
@@ -116,15 +122,15 @@ export class Popup {
 
     const bodyEl = this.element.querySelector(".popup-body");
     let bodyHTML;
-    
+
     if (Array.isArray(tabs) && tabs.length > 0) {
-      tabs = tabs.filter(t => t);
+      tabs = tabs.filter((t) => t);
       if (this.currentTabIndex >= tabs.length) this.currentTabIndex = 0;
 
       const tabButtons = tabs
         .map(
           (tab, i) =>
-            `<button class="popup-tab-button ${i === this.currentTabIndex ? "active" : ""}" data-tab-btn="${i}">${tab.label}</button>`,
+            `<button class="popup-tab-button ${i === this.currentTabIndex ? "active" : ""}" data-tab-btn="${i}">${tab.label}</button>`
         )
         .join("");
 
@@ -135,7 +141,7 @@ export class Popup {
             ${this._generateRowsHTML(tab.rows || [], i)}
             ${tab.innerHTML || ""}
           </div>
-        `,
+        `
         )
         .join("");
 
@@ -149,17 +155,28 @@ export class Popup {
       bodyHTML = `${this._generateRowsHTML(rows || [])}${innerHTML || ""}`;
     }
 
+    const scrollSelectors = [".popup-tab-content.active", ".popup-tab-buttons"];
+    const bodyScroll = bodyEl.scrollTop;
+    const tabScrolls = scrollSelectors.map(
+      (selector) => bodyEl.querySelector(selector)?.scrollTop ?? 0
+    );
+
     bodyEl.innerHTML = bodyHTML;
+    bodyEl.scrollTop = bodyScroll;
+    scrollSelectors.forEach((selector, i) => {
+      const el = bodyEl.querySelector(selector);
+      if (el) el.scrollTop = tabScrolls[i];
+    });
 
     if (Array.isArray(tabs) && tabs.length > 0) {
       const buttons = bodyEl.querySelectorAll("[data-tab-btn]");
       const contents = bodyEl.querySelectorAll("[data-tab-content]");
 
-      buttons.forEach(btn => {
+      buttons.forEach((btn) => {
         btn.addEventListener("click", () => {
           this.currentTabIndex = parseInt(btn.getAttribute("data-tab-btn"), 10);
-          buttons.forEach(b => b.classList.remove("active"));
-          contents.forEach(c => c.classList.remove("active"));
+          buttons.forEach((b) => b.classList.remove("active"));
+          contents.forEach((c) => c.classList.remove("active"));
           btn.classList.add("active");
           bodyEl
             .querySelector(`[data-tab-content="${this.currentTabIndex}"]`)
@@ -167,7 +184,9 @@ export class Popup {
         });
       });
 
-      tabs.forEach((tab, tabIndex) => this._attachRowListeners(tab.rows || [], tabIndex));
+      tabs.forEach((tab, tabIndex) =>
+        this._attachRowListeners(tab.rows || [], tabIndex)
+      );
     } else {
       this._attachRowListeners(rows || []);
     }
@@ -179,13 +198,16 @@ export class Popup {
         const rowHTML = row
           .map((item, colIndex) => {
             if (typeof item === "string") {
-              return item === "" ? "" : `<span class="popup-label">${item}</span>`;
+              return item === ""
+                ? ""
+                : `<span class="popup-label">${item}</span>`;
             }
 
             const dataAttr = tabIndex !== null ? `data-tab="${tabIndex}"` : "";
             let inputMin = item.min !== undefined ? `min="${item.min}"` : "";
             let inputMax = item.max !== undefined ? `max="${item.max}"` : "";
-            let inputStep = item.step !== undefined ? `step="${item.step}"` : "";
+            let inputStep =
+              item.step !== undefined ? `step="${item.step}"` : "";
 
             switch (item.type) {
               case "custom":
@@ -202,7 +224,7 @@ export class Popup {
                 return `<span class="popup-label">${item.text}</span>`;
               case "menu":
                 return `<select class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr}>
-                  ${item.options.map(opt => `<option value="${opt.value}" ${opt.value === item.value ? "selected" : ""}>${opt.label}</option>`).join("")}
+                  ${item.options.map((opt) => `<option value="${opt.value}" ${opt.value === item.value ? "selected" : ""}>${opt.label}</option>`).join("")}
                 </select>`;
               case "color":
                 return `<input type="color" value="${item.value || "#ffffff"}" class="${item.className || ""}" data-row="${rowIndex}" data-col="${colIndex}" ${dataAttr} />`;
@@ -221,7 +243,10 @@ export class Popup {
   _attachRowListeners(rowsArr, tabIndex = null) {
     rowsArr.forEach((row, rowIndex) => {
       row.forEach((item, colIndex) => {
-        const selectorParts = [`[data-row="${rowIndex}"]`, `[data-col="${colIndex}"]`];
+        const selectorParts = [
+          `[data-row="${rowIndex}"]`,
+          `[data-col="${colIndex}"]`
+        ];
         if (tabIndex !== null) selectorParts.push(`[data-tab="${tabIndex}"]`);
 
         const el = this.element.querySelector(selectorParts.join(""));
@@ -231,16 +256,24 @@ export class Popup {
           el.addEventListener("click", () => item.onClick(this));
         }
         if (item.type === "input" && item.onInput) {
-          el.addEventListener("input", e => item.onInput(e.target.value, this));
+          el.addEventListener("input", (e) =>
+            item.onInput(e.target.value, this)
+          );
         }
         if (item.type === "checkbox" && item.onChange) {
-          el.addEventListener("change", e => item.onChange(e.target.checked, this));
+          el.addEventListener("change", (e) =>
+            item.onChange(e.target.checked, this)
+          );
         }
         if (item.type === "textarea" && item.onInput) {
-          el.addEventListener("input", e => item.onInput(e.target.value, this));
+          el.addEventListener("input", (e) =>
+            item.onInput(e.target.value, this)
+          );
         }
         if (item.type === "menu" && item.onChange) {
-          el.addEventListener("change", e => item.onChange(e.target.value, this));
+          el.addEventListener("change", (e) =>
+            item.onChange(e.target.value, this)
+          );
         }
         if (item.type === "number") {
           function clamp(val) {
@@ -253,20 +286,22 @@ export class Popup {
           }
 
           if (item.onChange) {
-            el.addEventListener("change", e => {
+            el.addEventListener("change", (e) => {
               const clamped = clamp(e.target.value);
               e.target.value = clamped;
               item.onChange(clamped, this);
             });
           }
           if (item.onInput) {
-            el.addEventListener("input", e => {
+            el.addEventListener("input", (e) => {
               item.onInput(Number(e.target.value), this);
             });
           }
         }
         if (item.type === "color" && item.onChange) {
-          el.addEventListener("input", e => item.onChange(e.target.value, this));
+          el.addEventListener("input", (e) =>
+            item.onChange(e.target.value, this)
+          );
         }
       });
     });
@@ -284,9 +319,9 @@ export function promiseWithAbort(promiseOrFn, signal) {
       p,
       new Promise((_, rej) => {
         signal.addEventListener("abort", () => rej(new Error("shouldStop")), {
-          once: true,
+          once: true
         });
-      }),
+      })
     ]);
   } catch (err) {
     return Promise.reject(err);
@@ -297,7 +332,7 @@ async function encodeOggFast(dataURL) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
   const base64 = dataURL.split(",")[1];
-  const raw = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const raw = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
   const buffer = await audioCtx.decodeAudioData(raw.buffer);
 
   const targetRate = 22050;
@@ -305,7 +340,7 @@ async function encodeOggFast(dataURL) {
   const offlineCtx = new OfflineAudioContext(
     1,
     Math.ceil(buffer.duration * targetRate),
-    targetRate,
+    targetRate
   );
 
   const src = offlineCtx.createBufferSource();
@@ -339,13 +374,13 @@ async function encodeOggFast(dataURL) {
   liveSrc.connect(dest);
 
   const recorder = new MediaRecorder(dest.stream, {
-    mimeType: "audio/ogg",
+    mimeType: "audio/ogg"
   });
 
   const chunks = [];
-  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.ondataavailable = (e) => chunks.push(e.data);
 
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: "audio/ogg" });
       const fr = new FileReader();
@@ -372,7 +407,7 @@ export async function compressImage(dataURL) {
   if (!dataURL || typeof dataURL !== "string") return null;
   if (dataURL.startsWith("data:image/webp")) return dataURL;
 
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -387,67 +422,72 @@ export async function compressImage(dataURL) {
 }
 
 export const tweenEasing = {
-  InLinear: t => t,
-  OutLinear: t => t,
-  InOutLinear: t => t,
-  InSine: t => 1 - Math.cos((t * Math.PI) / 2),
-  OutSine: t => Math.sin((t * Math.PI) / 2),
-  InOutSine: t => -(Math.cos(Math.PI * t) - 1) / 2,
-  InQuad: t => t * t,
-  OutQuad: t => 1 - (1 - t) * (1 - t),
-  InOutQuad: t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
-  InCubic: t => t * t * t,
-  OutCubic: t => 1 - Math.pow(1 - t, 3),
-  InOutCubic: t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
-  InQuart: t => t * t * t * t,
-  OutQuart: t => 1 - Math.pow(1 - t, 4),
-  InOutQuart: t => (t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2),
-  InQuint: t => t * t * t * t * t,
-  OutQuint: t => 1 - Math.pow(1 - t, 5),
-  InOutQuint: t => (t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2),
-  InExpo: t => (t === 0 ? 0 : Math.pow(2, 10 * t - 10)),
-  OutExpo: t => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
-  InOutExpo: t => {
+  InLinear: (t) => t,
+  OutLinear: (t) => t,
+  InOutLinear: (t) => t,
+  InSine: (t) => 1 - Math.cos((t * Math.PI) / 2),
+  OutSine: (t) => Math.sin((t * Math.PI) / 2),
+  InOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
+  InQuad: (t) => t * t,
+  OutQuad: (t) => 1 - (1 - t) * (1 - t),
+  InOutQuad: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
+  InCubic: (t) => t * t * t,
+  OutCubic: (t) => 1 - Math.pow(1 - t, 3),
+  InOutCubic: (t) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  InQuart: (t) => t * t * t * t,
+  OutQuart: (t) => 1 - Math.pow(1 - t, 4),
+  InOutQuart: (t) =>
+    t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2,
+  InQuint: (t) => t * t * t * t * t,
+  OutQuint: (t) => 1 - Math.pow(1 - t, 5),
+  InOutQuint: (t) =>
+    t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2,
+  InExpo: (t) => (t === 0 ? 0 : Math.pow(2, 10 * t - 10)),
+  OutExpo: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+  InOutExpo: (t) => {
     if (t === 0) return 0;
     if (t === 1) return 1;
-    return t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2;
+    return t < 0.5
+      ? Math.pow(2, 20 * t - 10) / 2
+      : (2 - Math.pow(2, -20 * t + 10)) / 2;
   },
-  InCirc: t => 1 - Math.sqrt(1 - Math.pow(t, 2)),
-  OutCirc: t => Math.sqrt(1 - Math.pow(t - 1, 2)),
-  InOutCirc: t =>
+  InCirc: (t) => 1 - Math.sqrt(1 - Math.pow(t, 2)),
+  OutCirc: (t) => Math.sqrt(1 - Math.pow(t - 1, 2)),
+  InOutCirc: (t) =>
     t < 0.5
       ? (1 - Math.sqrt(1 - Math.pow(2 * t, 2))) / 2
       : (Math.sqrt(1 - Math.pow(-2 * t + 2, 2)) + 1) / 2,
-  InBack: t => {
+  InBack: (t) => {
     const c1 = 1.70158,
       c3 = c1 + 1;
     return c3 * t * t * t - c1 * t * t;
   },
-  OutBack: t => {
+  OutBack: (t) => {
     const c1 = 1.70158,
       c3 = c1 + 1;
     return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
   },
-  InOutBack: t => {
+  InOutBack: (t) => {
     const c1 = 1.70158,
       c2 = c1 * 1.525;
     return t < 0.5
       ? (Math.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2)) / 2
       : (Math.pow(2 * t - 2, 2) * ((c2 + 1) * (2 * t - 2) + c2) + 2) / 2;
   },
-  InElastic: t => {
+  InElastic: (t) => {
     const c4 = (2 * Math.PI) / 3;
     if (t === 0) return 0;
     if (t === 1) return 1;
     return -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * c4);
   },
-  OutElastic: t => {
+  OutElastic: (t) => {
     const c4 = (2 * Math.PI) / 3;
     if (t === 0) return 0;
     if (t === 1) return 1;
     return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
   },
-  InOutElastic: t => {
+  InOutElastic: (t) => {
     const c5 = (2 * Math.PI) / 4.5;
     if (t === 0) return 0;
     if (t === 1) return 1;
@@ -455,8 +495,8 @@ export const tweenEasing = {
       ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * c5)) / 2
       : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * c5)) / 2 + 1;
   },
-  InBounce: t => 1 - tweenEasing.OutBounce(1 - t),
-  OutBounce: t => {
+  InBounce: (t) => 1 - tweenEasing.OutBounce(1 - t),
+  OutBounce: (t) => {
     const n1 = 7.5625,
       d1 = 2.75;
     if (t < 1 / d1) {
@@ -469,10 +509,10 @@ export const tweenEasing = {
       return n1 * (t -= 2.625 / d1) * t + 0.984375;
     }
   },
-  InOutBounce: t =>
+  InOutBounce: (t) =>
     t < 0.5
       ? (1 - tweenEasing.OutBounce(1 - 2 * t)) / 2
-      : (1 + tweenEasing.OutBounce(2 * t - 1)) / 2,
+      : (1 + tweenEasing.OutBounce(2 * t - 1)) / 2
 };
 
 /**
@@ -550,9 +590,7 @@ export function prettyXml(node, level = 0) {
     return `${indent}<${node.nodeName}${attrs}>${escapeHtml(text)}</${node.nodeName}>`;
   }
 
-  const inner = elements
-    .map((child) => prettyXml(child, level + 1))
-    .join("\n");
+  const inner = elements.map((child) => prettyXml(child, level + 1)).join("\n");
   return `${indent}<${node.nodeName}${attrs}>\n${inner}\n${indent}</${node.nodeName}>`;
 }
 

@@ -150,7 +150,9 @@ input[type="file"] {
   color: var(--color1);
   cursor: pointer;
   will-change: background-color, scale;
-  transition: background-color 0.15s, scale 0.15s;
+  transition:
+    background-color 0.15s,
+    scale 0.15s;
 }
 
 input[type="text"],
@@ -307,7 +309,7 @@ html.removeIcons button i:not(.stay) {
   height: fit-content;
 }
 
-.popup-body textarea.extension-code-input {
+.popup-body textarea.resize-code {
   resize: vertical;
   width: 100%;
 }
@@ -355,11 +357,15 @@ html.removeIcons button i:not(.stay) {
   padding: 0.5rem;
 }
 
+.popup-body:has(> .popup-tabs) {
+  overflow: hidden;
+}
+
 .popup-tabs {
   display: flex;
   flex-direction: row;
-  height: 100%;
   flex: 1;
+  min-height: 0;
 }
 
 .popup-tab-buttons {
@@ -367,9 +373,8 @@ html.removeIcons button i:not(.stay) {
   flex-direction: column;
   background-color: var(--color1);
   border-right: 2px solid var(--color3);
-  height: 100%;    
-  flex-shrink: 0;   
-  overflow-y: auto; 
+  flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .popup-tab-button {
@@ -382,7 +387,8 @@ html.removeIcons button i:not(.stay) {
   transition: background-color 0.15s ease;
 }
 
-.popup-tab-button:hover, .popup-tab-button.active {
+.popup-tab-button:hover,
+.popup-tab-button.active {
   background: var(--color2);
 }
 
@@ -400,6 +406,13 @@ html.removeIcons button i:not(.stay) {
 
 .popup-tab-content.active {
   display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.popup-tab-content > * {
+  flex-shrink: 0;
 }
 
 .block-style-cell {
@@ -537,7 +550,8 @@ footer {
   transition: filter 0.15s ease;
 }
 
-.userTagAvatarWrapper, #userTagAvatar {
+.userTagAvatarWrapper,
+#userTagAvatar {
   margin: 0;
   padding: 0;
   position: relative;

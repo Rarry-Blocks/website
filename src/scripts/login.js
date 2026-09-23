@@ -1,9 +1,8 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { toggleIcons, toggleTheme } from "../functions/theme";
+import { setupSettingsButton } from "../functions/theme";
 import config from "../config";
 
-toggleTheme();
-toggleIcons();
+setupSettingsButton();
 
 const usernameInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
@@ -28,10 +27,10 @@ async function onLoginClick(e) {
     const response = await fetch(`${config.apiUrl}/users/login`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       credentials: "include",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password })
     });
 
     if (!response.ok) {
@@ -40,7 +39,9 @@ async function onLoginClick(e) {
         const errJson = await response.json();
 
         errText = errJson.message || JSON.stringify(errJson);
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
       throw new Error(errText);
     }
   } catch (err) {

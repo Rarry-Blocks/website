@@ -19,7 +19,12 @@ import "../functions/patches/connectionchecker.js";
 import "../functions/patches/dragger.js";
 
 import Toolbox from "../components/Toolbox.js";
-import { darkTheme, lightTheme, setupSettingsButton } from "../functions/theme.js";
+import {
+  darkTheme,
+  getSetting,
+  lightTheme,
+  setupSettingsButton
+} from "../functions/theme.js";
 import { compressAudio, showNotification, Popup } from "../functions/utils.js";
 
 import { Costume, Sound, Sprite, SpriteManager } from "../components/Sprite.js";
@@ -81,7 +86,9 @@ const wrapper = document.getElementById("stage-wrapper");
 const stageContainer = document.getElementById("stage");
 const loadInput = document.getElementById("load-input");
 const loadButton = document.getElementById("load-button");
-export const deleteSpriteButton = document.getElementById("delete-sprite-button");
+export const deleteSpriteButton = document.getElementById(
+  "delete-sprite-button"
+);
 export const runButton = document.getElementById("run-button");
 export const tabButtons = document.querySelectorAll(".tab-button");
 export const tabContents = document.querySelectorAll(".tab-content");
@@ -94,20 +101,35 @@ export const projectSettings = {
   fps: 60,
   stageWidth: BASE_WIDTH,
   stageHeight: BASE_HEIGHT,
-  cloneLimit: 200
+  cloneLimit: 200,
+  stageColor: "#ffffff"
 };
+
+const defaultProjectSettings = { ...projectSettings };
 
 export const projectAPI = {
   get settings() {
     return projectSettings;
   },
   set settings(value) {
-    for (const [key, val] of Object.entries(value)) {
+    // Settings missing from the loaded project fall back to their defaults
+    // instead of keeping the previous project's values.
+    for (const [key, val] of Object.entries({
+      ...defaultProjectSettings,
+      ...value
+    })) {
       this.updateSetting(key, val);
     }
   },
   updateSetting(key, value) {
+    if (key === "stageColor" && !/^#[0-9a-f]{6}$/i.test(value)) {
+      value = defaultProjectSettings.stageColor;
+    }
     projectSettings[key] = value;
+
+    if (key === "stageColor") {
+      app.renderer.background.color = value;
+    }
 
     if (key === "stageWidth" || key === "stageHeight") {
       app.stageWidth = projectSettings.stageWidth;
@@ -146,7 +168,8 @@ function calculateWrapperDimensions() {
   const targetH = projectSettings.stageHeight;
   const maxHeight = window.innerHeight * 0.3;
 
-  const maxAvailableWidth = wrapper.parentElement?.clientWidth || wrapper.clientWidth;
+  const maxAvailableWidth =
+    wrapper.parentElement?.clientWidth || wrapper.clientWidth;
   if (maxAvailableWidth === 0) return null;
 
   let h = (maxAvailableWidth / targetW) * targetH;
@@ -227,20 +250,22 @@ export const workspace = Blockly.inject(blocklyDiv, {
   zoom: {
     controls: true,
     wheel: true,
-    startScale: 0.9,
-    maxScale: 3,
-    minScale: 0.3,
-    scaleSpeed: 1.2
+    startScale: getSetting("zoomStart"),
+    maxScale: Math.max(getSetting("zoomMin"), getSetting("zoomMax")),
+    minScale: Math.min(getSetting("zoomMin"), getSetting("zoomMax")),
+    scaleSpeed: getSetting("zoomSpeed")
   },
   grid: {
-    spacing: 20,
+    spacing: getSetting("gridSpacing"),
     length: 3,
     colour: "#7e7e7e40",
     snap: snapToGrid
   }
 });
 
-const workspaceObserver = new ResizeObserver(() => Blockly.svgResize(workspace));
+const workspaceObserver = new ResizeObserver(() =>
+  Blockly.svgResize(workspace)
+);
 workspaceObserver.observe(blocklyDiv);
 
 setupSubscriptions({
@@ -376,9 +401,9 @@ function dynamicFunctionsCategory(workspace) {
 
   const defs = workspace
     .getTopBlocks(false)
-    .filter(b => b.type === "functions_definition");
+    .filter((b) => b.type === "functions_definition");
 
-  defs.forEach(defBlock => {
+  defs.forEach((defBlock) => {
     const block = document.createElement("block");
     block.setAttribute("type", "functions_call");
 
@@ -387,7 +412,10 @@ function dynamicFunctionsCategory(workspace) {
     mutation.setAttribute("shape", defBlock.blockShape_);
     mutation.setAttribute("colour", defBlock.blockColour_);
     mutation.setAttribute("items", defBlock.argTypes_.length);
-    mutation.setAttribute("returntypes", JSON.stringify(defBlock.returnTypes_ || []));
+    mutation.setAttribute(
+      "returntypes",
+      JSON.stringify(defBlock.returnTypes_ || [])
+    );
 
     for (let i = 0; i < defBlock.argTypes_.length; i++) {
       const item = document.createElement("item");
@@ -403,7 +431,10 @@ function dynamicFunctionsCategory(workspace) {
   return xmlList;
 }
 
-workspace.registerToolboxCategoryCallback("FUNCTIONS_CATEGORY", dynamicFunctionsCategory);
+workspace.registerToolboxCategoryCallback(
+  "FUNCTIONS_CATEGORY",
+  dynamicFunctionsCategory
+);
 
 export const spriteManager = new SpriteManager(app);
 
@@ -472,7 +503,8 @@ export function setActiveSprite(sprite) {
   if (workspace.getToolbox()) workspace.refreshToolboxSelection();
 
   const xmlText =
-    activeSprite?.code || '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
+    activeSprite?.code ||
+    '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
   const xmlDom = Blockly.utils.xml.textToDom(xmlText);
   Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
 
@@ -557,7 +589,7 @@ function stopAllScripts() {
   }
   hideBlockRunBubble();
 
-  runningScripts.forEach(script => {
+  runningScripts.forEach((script) => {
     if (script.type === "timeout") clearTimeout(script.id);
     else if (script.type === "interval") clearInterval(script.id);
     else if (script.type === "raf") cancelAnimationFrame(script.id);
@@ -576,13 +608,13 @@ function stopAllScripts() {
   for (const k in keysPressed) delete keysPressed[k];
   for (const k in mouseButtonsPressed) delete mouseButtonsPressed[k];
 
-  Object.values(eventRegistry).forEach(registry => {
+  Object.values(eventRegistry).forEach((registry) => {
     if (registry instanceof Map) registry.clear();
     else if (Array.isArray(registry)) registry.length = 0;
   });
 
-  spriteManager.getOriginals().forEach(sprite => {
-    sprite.clones.forEach(clone => {
+  spriteManager.getOriginals().forEach((sprite) => {
+    sprite.clones.forEach((clone) => {
       spriteManager.remove(clone);
     });
 
@@ -603,7 +635,7 @@ function stopAllScripts() {
 
 async function runCode() {
   stopAllScripts();
-  await new Promise(r => requestAnimationFrame(r));
+  await new Promise((r) => requestAnimationFrame(r));
 
   runButton.classList.add("active");
 
@@ -619,14 +651,18 @@ async function runCode() {
         readOnly: true
       });
 
-      const xmlDom = Blockly.utils.xml.textToDom(spriteData.code || "<xml></xml>");
+      const xmlDom = Blockly.utils.xml.textToDom(
+        spriteData.code || "<xml></xml>"
+      );
       Blockly.Xml.domToWorkspace(xmlDom, tempWorkspace);
 
       let code = "";
       javascriptGenerator.init(tempWorkspace);
       for (const block of tempWorkspace.getTopBlocks(true)) {
         const isHat =
-          !block.previousConnection && !block.nextConnection && !block.outputConnection;
+          !block.previousConnection &&
+          !block.nextConnection &&
+          !block.outputConnection;
         if (isHat) code += javascriptGenerator.blockToCode(block);
       }
       code = javascriptGenerator.finish(code);
@@ -641,7 +677,7 @@ async function runCode() {
       });
     }
 
-    eventRegistry.flag.forEach(entry => entry.trigger());
+    eventRegistry.flag.forEach((entry) => entry.trigger());
 
     for (const entry of eventRegistry.timer) {
       const id = setTimeout(() => entry.trigger(), entry.value * 1000);
@@ -661,7 +697,8 @@ async function runCode() {
 let accumulator = 0;
 
 app.ticker.add(() => {
-  const mainActive = currentRunController && !currentRunController.signal.aborted;
+  const mainActive =
+    currentRunController && !currentRunController.signal.aborted;
   const clickActive =
     currentClickRunController && !currentClickRunController.signal.aborted;
 
@@ -701,22 +738,22 @@ const allowedKeys = new Set([
   "Escape",
   ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 ]);
-window.addEventListener("keydown", e => {
+window.addEventListener("keydown", (e) => {
   const key = e.key;
   if (!allowedKeys.has(key)) return;
 
   keysPressed[key] = true;
 
   if (eventRegistry.key.has("any")) {
-    eventRegistry.key.get("any").forEach(entry => entry.trigger());
+    eventRegistry.key.get("any").forEach((entry) => entry.trigger());
   }
 
   if (eventRegistry.key.has(key)) {
-    eventRegistry.key.get(key).forEach(entry => entry.trigger());
+    eventRegistry.key.get(key).forEach((entry) => entry.trigger());
   }
 });
 
-window.addEventListener("keyup", e => {
+window.addEventListener("keyup", (e) => {
   delete keysPressed[e.key];
 });
 
@@ -726,10 +763,10 @@ window.addEventListener("blur", () => {
   }
 });
 
-window.addEventListener("mousedown", e => {
+window.addEventListener("mousedown", (e) => {
   mouseButtonsPressed[e.button] = true;
 });
-window.addEventListener("mouseup", e => {
+window.addEventListener("mouseup", (e) => {
   mouseButtonsPressed[e.button] = false;
 });
 
@@ -738,17 +775,21 @@ document.getElementById("add-sprite-button").addEventListener("click", () => {
   setActiveSprite(spriteData);
 });
 
-deleteSpriteButton.addEventListener("click", () => deleteSprite(activeSprite.id, true));
+deleteSpriteButton.addEventListener("click", () =>
+  deleteSprite(activeSprite.id, true)
+);
 
 runButton.addEventListener("click", runCode);
-document.getElementById("stop-button").addEventListener("click", stopAllScripts);
+document
+  .getElementById("stop-button")
+  .addEventListener("click", stopAllScripts);
 
-tabButtons.forEach(button => {
+tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     hideBlockRunBubble();
     const tab = button.dataset.tab;
     if (tab !== "sounds") {
-      document.querySelectorAll("#sounds-list .button").forEach(i => {
+      document.querySelectorAll("#sounds-list .button").forEach((i) => {
         if (i.audio) {
           i.audio.pause();
           i.audio.currentTime = 0;
@@ -758,13 +799,13 @@ tabButtons.forEach(button => {
       });
     }
 
-    tabButtons.forEach(i => {
+    tabButtons.forEach((i) => {
       i.classList.add("inactive");
     });
 
     button.classList.remove("inactive");
 
-    tabContents.forEach(content => {
+    tabContents.forEach((content) => {
       content.classList.toggle("active", content.id === `${tab}-tab`);
     });
 
@@ -777,7 +818,9 @@ tabButtons.forEach(button => {
 });
 
 function getProjectName() {
-  return String(document.getElementById("project-name-input").value ?? "Untitled");
+  return String(
+    document.getElementById("project-name-input").value ?? "Untitled"
+  );
 }
 
 function getProject() {
@@ -818,11 +861,12 @@ async function handleProjectData(data) {
       data = { sprites: data, extensions: [] };
     }
 
-    document.getElementById("project-name-input").value = data.projectName ?? "Untitled";
+    document.getElementById("project-name-input").value =
+      data.projectName ?? "Untitled";
 
     if (data.extensions) {
       const toLoad = data.extensions.filter(
-        e => !activeExtensions.some(a => (a?.id || a) === (e?.id || e))
+        (e) => !activeExtensions.some((a) => (a?.id || a) === (e?.id || e))
       );
 
       for (const ext of toLoad) {
@@ -863,105 +907,111 @@ loadButton.addEventListener("click", () => {
 });
 loadInput.addEventListener("change", loadProject);
 
-document.getElementById("costume-upload").addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if (!file || !activeSprite) return;
+document
+  .getElementById("costume-upload")
+  .addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file || !activeSprite) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const texture = Texture.from(reader.result);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const texture = Texture.from(reader.result);
 
-    let baseName = file.name.split(".")[0];
-    let uniqueName = baseName;
-    let counter = 1;
+      let baseName = file.name.split(".")[0];
+      let uniqueName = baseName;
+      let counter = 1;
 
-    const nameExists = name => activeSprite.costumes.some(c => c.name === name);
+      const nameExists = (name) =>
+        activeSprite.costumes.some((c) => c.name === name);
 
-    while (nameExists(uniqueName)) {
-      counter++;
-      uniqueName = `${baseName}_${counter}`;
-    }
+      while (nameExists(uniqueName)) {
+        counter++;
+        uniqueName = `${baseName}_${counter}`;
+      }
 
-    const newCostume = new Costume({ name: uniqueName, texture });
-    activeSprite.costumes.push(newCostume);
+      const newCostume = new Costume({ name: uniqueName, texture });
+      activeSprite.costumes.push(newCostume);
 
-    if (activeSprite.pixiSprite.texture === Texture.EMPTY) {
-      activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
-    }
+      if (activeSprite.pixiSprite.texture === Texture.EMPTY) {
+        activeSprite.pixiSprite.texture = activeSprite.costumes[0].texture;
+      }
 
-    if (currentSocket && currentRoom) {
-      const payload = {
-        spriteId: activeSprite.id,
-        name: newCostume.name,
-        id: newCostume.id,
-        texture: reader.result
-      };
+      if (currentSocket && currentRoom) {
+        const payload = {
+          spriteId: activeSprite.id,
+          name: newCostume.name,
+          id: newCostume.id,
+          texture: reader.result
+        };
 
-      const compressedData = compressData(JSON.stringify(payload));
+        const compressedData = compressData(JSON.stringify(payload));
 
-      currentSocket.emit("projectUpdate", {
-        roomId: currentRoom,
-        type: "addCostume",
-        data: compressedData
-      });
-    }
+        currentSocket.emit("projectUpdate", {
+          roomId: currentRoom,
+          type: "addCostume",
+          data: compressedData
+        });
+      }
 
-    if (store.get("activeTab") === "costumes") {
-      renderCostumesList();
-    }
-  };
-  reader.readAsDataURL(file);
-  e.target.value = "";
-});
+      if (store.get("activeTab") === "costumes") {
+        renderCostumesList();
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  });
 
-document.getElementById("sound-upload").addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if (!file || !activeSprite) return;
+document
+  .getElementById("sound-upload")
+  .addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file || !activeSprite) return;
 
-  const reader = new FileReader();
-  reader.onload = async () => {
-    let dataURL = reader.result;
-    dataURL = await compressAudio(dataURL);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      let dataURL = reader.result;
+      dataURL = await compressAudio(dataURL);
 
-    let baseName = file.name.split(".")[0];
-    let uniqueName = baseName;
-    let counter = 1;
+      let baseName = file.name.split(".")[0];
+      let uniqueName = baseName;
+      let counter = 1;
 
-    const nameExists = name => activeSprite.sounds.some(s => s.name === name);
+      const nameExists = (name) =>
+        activeSprite.sounds.some((s) => s.name === name);
 
-    while (nameExists(uniqueName)) {
-      counter++;
-      uniqueName = `${baseName}_${counter}`;
-    }
+      while (nameExists(uniqueName)) {
+        counter++;
+        uniqueName = `${baseName}_${counter}`;
+      }
 
-    const newSound = new Sound({ name: uniqueName, dataURL });
-    activeSprite.sounds.push(newSound);
+      const newSound = new Sound({ name: uniqueName, dataURL });
+      activeSprite.sounds.push(newSound);
 
-    if (currentSocket && currentRoom) {
-      const payload = {
-        spriteId: activeSprite.id,
-        name: newSound.name,
-        id: newSound.id,
-        dataURL
-      };
+      if (currentSocket && currentRoom) {
+        const payload = {
+          spriteId: activeSprite.id,
+          name: newSound.name,
+          id: newSound.id,
+          dataURL
+        };
 
-      const compressedData = await decompressData(JSON.stringify(payload));
+        const compressedData = await decompressData(JSON.stringify(payload));
 
-      currentSocket.emit("projectUpdate", {
-        roomId: currentRoom,
-        type: "addSound",
-        data: compressedData
-      });
-    }
+        currentSocket.emit("projectUpdate", {
+          roomId: currentRoom,
+          type: "addSound",
+          data: compressedData
+        });
+      }
 
-    if (store.get("activeTab") === "sounds") {
-      renderSoundsList();
-    }
-  };
+      if (store.get("activeTab") === "sounds") {
+        renderSoundsList();
+      }
+    };
 
-  reader.readAsDataURL(file);
-  e.target.value = "";
-});
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  });
 
 function isXmlEmpty(input = "") {
   input = input.trim();
@@ -971,22 +1021,24 @@ function isXmlEmpty(input = "") {
   );
 }
 
-window.addEventListener("beforeunload", e => {
-  if (spriteManager.getOriginals().some(s => !isXmlEmpty(s.code))) {
+window.addEventListener("beforeunload", (e) => {
+  if (spriteManager.getOriginals().some((s) => !isXmlEmpty(s.code))) {
     e.preventDefault();
     e.returnValue = "";
     if (currentSocket) currentSocket?.disconnect?.();
   }
 });
 
-SpriteChangeEvents.on("scaleChanged", sprite => {
+SpriteChangeEvents.on("scaleChanged", (sprite) => {
   if (activeSprite?.pixiSprite === sprite) updateSpriteInfoValues();
 });
 
-SpriteChangeEvents.on("positionChanged", sprite => {
+SpriteChangeEvents.on("positionChanged", (sprite) => {
   if (activeSprite?.pixiSprite === sprite) updateSpriteInfoValues();
 
-  const spriteData = spriteManager.getAll().find(s => s?.pixiSprite === sprite);
+  const spriteData = spriteManager
+    .getAll()
+    .find((s) => s?.pixiSprite === sprite);
   if (!spriteData) return;
 
   if (spriteData.currentBubble) {
@@ -1028,8 +1080,8 @@ function addExtensionButton() {
   button.innerHTML = '<i class="fa-solid fa-plus stay"></i>';
   button.id = "extensionButton";
 
-  ["pointerdown", "mousedown", "mouseup", "click"].forEach(evt =>
-    button.addEventListener(evt, e => {
+  ["pointerdown", "mousedown", "mouseup", "click"].forEach((evt) =>
+    button.addEventListener(evt, (e) => {
       e.stopPropagation();
       e.preventDefault();
     })
@@ -1045,7 +1097,7 @@ function addExtensionButton() {
 function addExtension(id, emit = false) {
   if (activeExtensions.includes(id)) return;
 
-  const extension = builtInExtensions.find(e => e?.id === id);
+  const extension = builtInExtensions.find((e) => e?.id === id);
   if (!extension) return;
 
   function finalize() {
@@ -1064,13 +1116,13 @@ function addExtension(id, emit = false) {
 
   if (typeof extension.url === "string") {
     fetch(extension.url)
-      .then(r => {
+      .then((r) => {
         if (!r.ok) throw new Error(`Failed to fetch extension: ${r.status}`);
         return r.text();
       })
-      .then(code => registerExtension(code, true))
+      .then((code) => registerExtension(code, true))
       .then(() => finalize())
-      .catch(err => {
+      .catch((err) => {
         console.error("Error fetching built-in extension:", err);
         alert("Error fetching extension: " + err.message);
       });
@@ -1091,7 +1143,7 @@ function addExtension(id, emit = false) {
 
 addExtensionButton();
 
-builtInExtensions.forEach(e => {
+builtInExtensions.forEach((e) => {
   if (!e || !e.id) return;
 
   const extension = document.createElement("div");
@@ -1115,59 +1167,67 @@ fullscreenButton.addEventListener("click", () => {
   resizeCanvas();
 });
 
-document.getElementById("extensions-custom-button").addEventListener("click", () => {
-  const isSharing = currentSocket && currentRoom;
-  new Popup({
-    title: "Custom Extensions",
-    rows: [
-      [
-        "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about."
-      ],
-      [
-        "Insert extension code:",
-        {
-          type: "textarea",
-          placeholder: "Rarry.registerExtension({ ... })",
-          className: "extension-code-input"
-        }
-      ],
-      [
-        "Run as trusted extension:",
-        {
-          type: "checkbox",
-          checked: false
-        }
-      ],
-      [
-        {
-          type: "button",
-          label: '<i class="fa-solid fa-plus"></i> Add',
-          className: "primary",
-          disabled: isSharing,
-          onClick: async popup => {
-            const input = popup.element.querySelector('[data-row="1"][data-col="1"]');
-            const trusted =
-              popup.element.querySelector('[data-row="2"][data-col="1"]')?.checked ??
-              false;
-            const userCode = input ? input.value : "";
-
-            try {
-              await registerExtension(userCode, trusted);
-              console.log("extension registered.");
-
-              popup.hide();
-              document.getElementById("extensions-popup")?.classList.add("hidden");
-            } catch (error) {
-              console.error("Error in extension:", error);
-              alert("Error in extension: " + error);
-            }
+document
+  .getElementById("extensions-custom-button")
+  .addEventListener("click", () => {
+    const isSharing = currentSocket && currentRoom;
+    new Popup({
+      title: "Custom Extensions",
+      rows: [
+        [
+          "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about."
+        ],
+        [
+          "Insert extension code:",
+          {
+            type: "textarea",
+            placeholder: "Rarry.registerExtension({ ... })",
+            className: "resize-code"
           }
-        },
-        isSharing ? "You can't add custom extensions while live sharing the project." : ""
+        ],
+        [
+          "Run as trusted extension:",
+          {
+            type: "checkbox",
+            checked: false
+          }
+        ],
+        [
+          {
+            type: "button",
+            label: '<i class="fa-solid fa-plus"></i> Add',
+            className: "primary",
+            disabled: isSharing,
+            onClick: async (popup) => {
+              const input = popup.element.querySelector(
+                '[data-row="1"][data-col="1"]'
+              );
+              const trusted =
+                popup.element.querySelector('[data-row="2"][data-col="1"]')
+                  ?.checked ?? false;
+              const userCode = input ? input.value : "";
+
+              try {
+                await registerExtension(userCode, trusted);
+                console.log("extension registered.");
+
+                popup.hide();
+                document
+                  .getElementById("extensions-popup")
+                  ?.classList.add("hidden");
+              } catch (error) {
+                console.error("Error in extension:", error);
+                alert("Error in extension: " + error);
+              }
+            }
+          },
+          isSharing
+            ? "You can't add custom extensions while live sharing the project."
+            : ""
+        ]
       ]
-    ]
-  }).show();
-});
+    }).show();
+  });
 
 function createSession() {
   if (currentSocketPromise) return currentSocketPromise;
@@ -1182,7 +1242,7 @@ function createSession() {
       resolve(currentSocket);
     });
 
-    currentSocket.on("connect_error", err => {
+    currentSocket.on("connect_error", (err) => {
       console.error("Liveshare connection error:", err);
       currentSocketPromise = null;
       reject(err);
@@ -1195,7 +1255,7 @@ function createSession() {
     });
   });
 
-  currentSocket.on("userList", users => {
+  currentSocket.on("userList", (users) => {
     connectedUsers = users;
     updateUsersList();
   });
@@ -1214,7 +1274,9 @@ function createSession() {
   async function optionalDecompressData(data) {
     if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
       try {
-        const decompressed = await decompressData(new Uint8Array(data), { to: "string" });
+        const decompressed = await decompressData(new Uint8Array(data), {
+          to: "string"
+        });
         return JSON.parse(decompressed);
       } catch (err) {
         throw new Error("Failed to decompress data: " + err);
@@ -1223,7 +1285,7 @@ function createSession() {
     return data;
   }
 
-  currentSocket.on("projectData", async data => {
+  currentSocket.on("projectData", async (data) => {
     console.log("received project data from host");
 
     data = await optionalDecompressData(data);
@@ -1268,7 +1330,9 @@ function createSession() {
         if (!target) return;
 
         const texture = Texture.from(data.texture);
-        target.costumes.push(new Costume({ name: data.name, texture, id: data.id }));
+        target.costumes.push(
+          new Costume({ name: data.name, texture, id: data.id })
+        );
 
         if (activeSprite?.id === target.id) renderCostumesList();
         break;
@@ -1292,7 +1356,7 @@ function createSession() {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
 
-        const costume = target.costumes.find(c => c.id === data.id);
+        const costume = target.costumes.find((c) => c.id === data.id);
         if (costume) costume.name = data.newName;
 
         if (activeSprite?.id === target.id) renderCostumesList();
@@ -1304,7 +1368,7 @@ function createSession() {
 
         const wasActive = target.currentCostumeId === data.id;
 
-        target.costumes = target.costumes.filter(c => c.id !== data.id);
+        target.costumes = target.costumes.filter((c) => c.id !== data.id);
 
         if (wasActive) {
           target.currentCostumeId = target.costumes[0]?.id || null;
@@ -1318,7 +1382,7 @@ function createSession() {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
 
-        const sound = target.sounds.find(s => s.id === data.id);
+        const sound = target.sounds.find((s) => s.id === data.id);
         if (sound) sound.name = data.newName;
 
         if (activeSprite?.id === target.id) renderSoundsList();
@@ -1328,7 +1392,7 @@ function createSession() {
         const target = spriteManager.get(data.spriteId);
         if (!target) return;
 
-        target.sounds = target.sounds.filter(s => s.id !== data.id);
+        target.sounds = target.sounds.filter((s) => s.id !== data.id);
 
         if (activeSprite?.id === target.id) renderSoundsList();
         break;
@@ -1368,12 +1432,17 @@ function createSession() {
     } catch (err) {
       console.error("blockly update error:", err, event);
     } finally {
-      if (event.type === Blockly.Events.BLOCK_CHANGE && event.element === "mutation") {
+      if (
+        event.type === Blockly.Events.BLOCK_CHANGE &&
+        event.element === "mutation"
+      ) {
         updateAllFunctionCalls(workspace);
       }
 
       if (temp) {
-        const newXml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(_workspace));
+        const newXml = Blockly.Xml.domToText(
+          Blockly.Xml.workspaceToDom(_workspace)
+        );
         sprite.code = newXml;
 
         _workspace.dispose();
@@ -1386,9 +1455,13 @@ function createSession() {
   currentSocket.on("invitesStatus", ({ enabled }) => {
     invitesEnabled = enabled;
 
-    const toggleInvites = document.querySelector('[data-row="1"][data-col="0"]');
+    const toggleInvites = document.querySelector(
+      '[data-row="1"][data-col="0"]'
+    );
     if (toggleInvites)
-      toggleInvites.textContent = enabled ? "Disable Invites" : "Enable Invites";
+      toggleInvites.textContent = enabled
+        ? "Disable Invites"
+        : "Enable Invites";
 
     const copyLink = document.querySelector('[data-row="1"][data-col="1"]');
     if (copyLink) copyLink.disabled = !enabled;
@@ -1418,7 +1491,7 @@ function updateUsersList() {
   if (!container) return;
 
   container.innerHTML = connectedUsers
-    .map(u => {
+    .map((u) => {
       const canKick = amHost && !u.isHost;
       return `
         <div>
@@ -1441,8 +1514,8 @@ function updateUsersList() {
   `;
 
   if (amHost) {
-    container.querySelectorAll(".kick-button").forEach(btn =>
-      btn.addEventListener("click", e => {
+    container.querySelectorAll(".kick-button").forEach((btn) =>
+      btn.addEventListener("click", (e) => {
         const targetUserId = e.target.dataset.id;
         if (confirm("Kick this user?"))
           currentSocket.emit("kickUser", { roomId: currentRoom, targetUserId });
@@ -1459,7 +1532,9 @@ liveShare.addEventListener("click", async () => {
 
   function showRoomPopup() {
     const shareUrl =
-      window.location.origin + window.location.pathname + `?room=${currentRoom}`;
+      window.location.origin +
+      window.location.pathname +
+      `?room=${currentRoom}`;
 
     const invitesLabel = invitesEnabled ? "Disable Invites" : "Enable Invites";
     const buttons = [
@@ -1496,7 +1571,7 @@ liveShare.addEventListener("click", async () => {
         type: "button",
         className: "danger",
         label: amHost ? "Close room" : "Leave room",
-        onClick: popup => {
+        onClick: (popup) => {
           showNotification({
             message: amHost ? "Room closed" : "Left room"
           });
@@ -1531,7 +1606,7 @@ liveShare.addEventListener("click", async () => {
   }
 
   if (!roomExisted) {
-    currentSocket.emit("createRoom", {}, res => {
+    currentSocket.emit("createRoom", {}, (res) => {
       if (res?.error) {
         console.error(res.error);
         showNotification({ message: `Error: ${res.error}` });
@@ -1551,7 +1626,7 @@ const roomId = urlParams.get("room");
 if (roomId) {
   createSession();
 
-  currentSocket.emit("joinRoom", { roomId }, res => {
+  currentSocket.emit("joinRoom", { roomId }, (res) => {
     if (res?.error) {
       showNotification({ message: `Error: ${res.error}` });
       setActiveSprite(addSprite());
@@ -1588,9 +1663,11 @@ function sanitizeEvent(event) {
   return JSON.parse(JSON.stringify(raw));
 }
 
-workspace.addChangeListener(event => {
+workspace.addChangeListener((event) => {
   if (ignoredEvents.has(event.type) || !activeSprite)
-    activeSprite.code = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
+    activeSprite.code = Blockly.Xml.domToText(
+      Blockly.Xml.workspaceToDom(workspace)
+    );
 
   if (currentSocket && currentRoom) {
     const json = sanitizeEvent(event);
@@ -1634,7 +1711,8 @@ function appendValue(container, value, layer = 1) {
     });
 
     if (value.length > MAX_ARRAY_ITEMS) {
-      if (items.length > 0) container.appendChild(document.createTextNode(", "));
+      if (items.length > 0)
+        container.appendChild(document.createTextNode(", "));
       container.appendChild(
         document.createTextNode(`+${value.length - MAX_ARRAY_ITEMS} more`)
       );
@@ -1673,7 +1751,8 @@ function showBlockRunBubble(block, value, error = false) {
   const rect = svgRoot.getBoundingClientRect();
 
   const div = document.createElement("div");
-  div.className = error === true ? "block-run-bubble error" : "block-run-bubble";
+  div.className =
+    error === true ? "block-run-bubble error" : "block-run-bubble";
 
   const content = document.createElement("div");
   content.className = "block-run-content";
@@ -1721,7 +1800,7 @@ function executeClickedBlock(blockId) {
 
     const allBlocks = workspace.getAllBlocks(false);
     functionsCode = "";
-    allBlocks.forEach(b => {
+    allBlocks.forEach((b) => {
       if (
         b.type === "functions_definition" ||
         b.type === "procedures_defnoreturn" ||
@@ -1774,7 +1853,7 @@ function executeClickedBlock(blockId) {
   });
 }
 
-workspace.addChangeListener(event => {
+workspace.addChangeListener((event) => {
   if (
     event.type !== Blockly.Events.CLICK ||
     event.targetType !== "block" ||
@@ -1787,15 +1866,15 @@ workspace.addChangeListener(event => {
 
 function updateAllFunctionCalls(workspace) {
   const allBlocks = workspace.getAllBlocks(false);
-  const defs = allBlocks.filter(b => b.type === "functions_definition");
-  const calls = allBlocks.filter(b => b.type === "functions_call");
+  const defs = allBlocks.filter((b) => b.type === "functions_definition");
+  const calls = allBlocks.filter((b) => b.type === "functions_call");
 
   Blockly.Events.disable();
   try {
-    defs.forEach(def => def.updateReturnState_());
+    defs.forEach((def) => def.updateReturnState_());
 
-    calls.forEach(callBlock => {
-      const def = defs.find(d => d.functionId_ === callBlock.functionId_);
+    calls.forEach((callBlock) => {
+      const def = defs.find((d) => d.functionId_ === callBlock.functionId_);
       if (!def) return;
 
       callBlock.matchDefinition(def);
@@ -1805,7 +1884,7 @@ function updateAllFunctionCalls(workspace) {
   }
 }
 
-workspace.addChangeListener(event => {
+workspace.addChangeListener((event) => {
   if (event.type !== Blockly.Events.SELECTED) hideBlockRunBubble();
   if (event.isUiEvent || event.isBlank || event.isNull()) return;
 
@@ -1814,7 +1893,7 @@ workspace.addChangeListener(event => {
   const blockRoot = workspace.getBlockById(event?.blockId)?.getRootBlock();
 
   const anyIsDefinition = [newRoot, oldRoot, blockRoot].some(
-    b => b?.type === "functions_definition"
+    (b) => b?.type === "functions_definition"
   );
 
   if (!anyIsDefinition) return;
@@ -1842,7 +1921,7 @@ if (window.location.hostname === "localhost") {
           {
             type: "button",
             label: "Console log workspace XML",
-            onClick: popup => {
+            onClick: (popup) => {
               console.log(Blockly.Xml.workspaceToDom(workspace));
 
               popup.hide();
