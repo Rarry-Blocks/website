@@ -663,6 +663,16 @@ export const themePresets = [
       variable_blocks: "#ffb466",
       set_blocks: "#76d9c6"
     }
+  },
+  {
+    name: "Green Tea",
+    dark: false,
+    colors: {
+      "toolbar-header": "#79d27b",
+      primary: "#86d071",
+      danger: "#ce5050",
+      color: "#e0f0db"
+    }
   }
 ];
 
