@@ -204,8 +204,8 @@ function collectInputs(block, fields, includeStatements = true) {
     const name = input.name;
 
     if (
-      input.type === Blockly.inputs.ValueInput ||
-      input.type === Blockly.inputs.DummyInput
+      input.type === Blockly.inputs.inputTypes.ValueInput ||
+      input.type === Blockly.inputs.inputTypes.DummyInput
     ) {
       const code = javascriptGenerator.valueToCode(block, name, Order.ATOMIC);
       if (code) inputs[name] = code;
