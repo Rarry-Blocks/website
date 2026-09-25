@@ -15,7 +15,9 @@ export const extensionBridges = new Map();
 
 function rarryRegisterExtension(descriptor) {
   if (!descriptor || typeof descriptor !== "object") {
-    throw new Error("Rarry.registerExtension expects an extension descriptor object");
+    throw new Error(
+      "Rarry.registerExtension expects an extension descriptor object"
+    );
   }
   if (!descriptor.id) {
     throw new Error("Extension descriptor must have an id");
@@ -46,10 +48,12 @@ function textToBlock(block, text, fields = {}) {
     } else if (spec?.kind === "value") {
       block.appendValueInput(inputName).setCheck(spec.type ?? null);
     } else if (spec?.kind === "menu") {
-      const items = spec.items.map(item =>
+      const items = spec.items.map((item) =>
         typeof item === "string" ? [item, item] : [item.text, item.value]
       );
-      block.appendDummyInput().appendField(new Blockly.FieldDropdown(items), inputName);
+      block
+        .appendDummyInput()
+        .appendField(new Blockly.FieldDropdown(items), inputName);
       if (spec.default !== undefined) {
         block.setFieldValue(String(spec.default), inputName);
       }
@@ -65,7 +69,7 @@ function textToBlock(block, text, fields = {}) {
 }
 
 /** Builds a shadow element with a default value. */
-function buildShadowElement(type, defaultValue) {
+function buildShadowElement(type, defaultValue, shadowOverride) {
   const SHADOW_CONFIG = {
     Number: { type: "math_number", field: "NUM", value: defaultValue },
     String: { type: "text", field: "TEXT", value: defaultValue },
@@ -76,18 +80,32 @@ function buildShadowElement(type, defaultValue) {
     }
   };
 
-  const config = SHADOW_CONFIG[type] ?? SHADOW_CONFIG[null];
-  if (!config) return null;
+  function makeShadow(blockType, fieldName, fieldValue) {
+    const shadow = document.createElement("shadow");
+    shadow.setAttribute("type", blockType);
 
-  const shadow = document.createElement("shadow");
-  shadow.setAttribute("type", config.type);
+    const field = document.createElement("field");
+    field.setAttribute("name", fieldName);
+    field.textContent = fieldValue;
+    shadow.appendChild(field);
 
-  const field = document.createElement("field");
-  field.setAttribute("name", config.field);
-  field.textContent = config.value;
-  shadow.appendChild(field);
+    return shadow;
+  }
 
-  return shadow;
+  if (shadowOverride) {
+    if (Object.hasOwn(SHADOW_CONFIG, shadowOverride)) {
+      const config = SHADOW_CONFIG[shadowOverride];
+      return makeShadow(config.type, config.field, config.value);
+    }
+
+    const shadow = document.createElement("shadow");
+    shadow.setAttribute("type", shadowOverride);
+    return shadow;
+  }
+
+  if (!Object.hasOwn(SHADOW_CONFIG, type)) return null;
+  const config = SHADOW_CONFIG[type];
+  return makeShadow(config.type, config.field, config.value);
 }
 
 /** Builds a block element for the toolbox, including values with defaults. */
@@ -137,11 +155,17 @@ function registerBlocks(id, blocks, categoryColor, categoryEl) {
 
         switch (blockDef.type) {
           case "statement":
-            this.setPreviousStatement(true, blockDef.statementType ?? "default");
+            this.setPreviousStatement(
+              true,
+              blockDef.statementType ?? "default"
+            );
             this.setNextStatement(true, blockDef.statementType ?? "default");
             break;
           case "cap":
-            this.setPreviousStatement(true, blockDef.statementType ?? "default");
+            this.setPreviousStatement(
+              true,
+              blockDef.statementType ?? "default"
+            );
             break;
           case "output":
             this.setOutput(true, blockDef.outputType ?? null);
@@ -151,12 +175,16 @@ function registerBlocks(id, blocks, categoryColor, categoryEl) {
             console.warn(
               `Unknown block type "${blockDef.type}" for ${blockType}; defaulting to statement`
             );
-            this.setPreviousStatement(true, blockDef.statementType ?? "default");
+            this.setPreviousStatement(
+              true,
+              blockDef.statementType ?? "default"
+            );
             this.setNextStatement(true, blockDef.statementType ?? "default");
         }
 
         if (blockDef.tooltip) this.setTooltip(String(blockDef.tooltip));
-        if (blockDef.duplicateOnDrag) this.setDragStrategy(new DuplicateOnDrag(this));
+        if (blockDef.duplicateOnDrag)
+          this.setDragStrategy(new DuplicateOnDrag(this));
 
         this.setColour(String(blockDef.color ?? categoryColor ?? "#888"));
         this.setInputsInline(blockDef.inlineInputs ?? true);
@@ -244,7 +272,7 @@ function registerCodeGenerators(id, codeGen, blockDefs, isTrusted) {
 function registerExtensionFromDescriptor(descriptor, codeString, isTrusted) {
   const id = descriptor.id;
 
-  if (activeExtensions.some(i => (i?.id ?? i) === id)) {
+  if (activeExtensions.some((i) => (i?.id ?? i) === id)) {
     console.warn(`Extension "${id}" is already registered; skipping`);
     return;
   }
@@ -328,9 +356,9 @@ export async function registerExtension(codeString, trusted = false) {
     }
   } else {
     return new Promise((resolve, reject) => {
-      const bridge = new ExtensionBridge("temp_id", codeString, extInfo => {
+      const bridge = new ExtensionBridge("temp_id", codeString, (extInfo) => {
         const id = extInfo.id;
-        if (activeExtensions.some(i => (i?.id ?? i) === id)) {
+        if (activeExtensions.some((i) => (i?.id ?? i) === id)) {
           console.warn(`Extension "${id}" is already registered; skipping`);
           bridge.terminate();
           resolve();
@@ -342,7 +370,12 @@ export async function registerExtension(codeString, trusted = false) {
 
         const categoryEl = buildCategoryElement(extInfo.category);
         const categoryColor = extInfo.category?.color ?? "#888";
-        const blockDefs = registerBlocks(id, extInfo.blocks, categoryColor, categoryEl);
+        const blockDefs = registerBlocks(
+          id,
+          extInfo.blocks,
+          categoryColor,
+          categoryEl
+        );
 
         if (categoryEl) {
           const toolbox = document.getElementById("toolbox");
@@ -362,7 +395,7 @@ export async function registerExtension(codeString, trusted = false) {
         resolve();
       });
 
-      bridge.worker.addEventListener("error", err => {
+      bridge.worker.addEventListener("error", (err) => {
         reject(err);
       });
     });
