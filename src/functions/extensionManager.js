@@ -119,7 +119,7 @@ function buildBlockElement(blockType, fields = {}) {
 
     const valueEl = document.createElement("value");
     valueEl.setAttribute("name", name.trim());
-    const shadow = buildShadowElement(spec.type ?? null, spec.default);
+    const shadow = buildShadowElement(spec.type, spec.default, spec.shadow);
     if (shadow) valueEl.appendChild(shadow);
     blockEl.appendChild(valueEl);
   }
