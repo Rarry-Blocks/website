@@ -204,12 +204,12 @@ function collectInputs(block, fields, includeStatements = true) {
     const name = input.name;
 
     if (
-      input.type === Blockly.inputs.inputTypes.ValueInput ||
-      input.type === Blockly.inputs.inputTypes.DummyInput
+      input.type === Blockly.inputs.inputTypes.VALUE ||
+      input.type === Blockly.inputs.inputTypes.DUMMY
     ) {
       const code = javascriptGenerator.valueToCode(block, name, Order.ATOMIC);
       if (code) inputs[name] = code;
-    } else if (input.type === Blockly.inputs.StatementInput) {
+    } else if (input.type === Blockly.inputs.inputTypes.STATEMENT) {
       if (!includeStatements) continue;
       const code = javascriptGenerator.statementToCode(block, name);
       if (code) inputs[name] = `function* () { ${code} }`;
