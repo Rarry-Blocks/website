@@ -1769,9 +1769,9 @@ function showBlockRunBubble(block, value, error = false) {
   div.appendChild(copy);
   document.body.appendChild(div);
 
-  const bubbleH = 8 + (div.offsetHeight || 30) / 2;
+  const gap = 16;
   div.style.left = `${rect.left + rect.width / 2}px`;
-  div.style.top = `${rect.top + rect.height + bubbleH}px`;
+  div.style.top = `${rect.top + rect.height + gap}px`;
 
   blockRunBubble = div;
 }

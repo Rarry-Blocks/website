@@ -423,7 +423,9 @@ html.category-bubble-line .categoryBubble {
   z-index: -1;
 }
 
-html.category-bubble-line .blocklyToolboxCategory.blocklyToolboxSelected .categoryBubble {
+html.category-bubble-line
+  .blocklyToolboxCategory.blocklyToolboxSelected
+  .categoryBubble {
   width: 100%;
   border-radius: 0;
 }
@@ -464,10 +466,9 @@ html.category-bubble-none .categoryBubble {
 
 .block-run-bubble {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   position: fixed;
   pointer-events: auto;
-  white-space: nowrap;
   background: var(--dark);
   color: var(--color1);
   z-index: 10;
@@ -478,8 +479,10 @@ html.category-bubble-none .categoryBubble {
   font-weight: 600;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
   max-width: max(33%, 300px);
+  max-height: max(33%, 300px);
   transform: translateX(-50%);
   animation: blockRunBubbleFadeIn 0.12s ease;
+  overflow: visible;
 }
 
 .block-run-bubble.error {
@@ -492,10 +495,14 @@ html.category-bubble-none .categoryBubble {
   display: block;
   min-width: 0;
   max-width: 100%;
+  max-height: max(33vh - 40px, 260px);
   overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: normal;
   text-align: left;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color1) var(--dark-light);
 }
 
 .block-run-content::-webkit-scrollbar {
