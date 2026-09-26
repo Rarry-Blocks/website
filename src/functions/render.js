@@ -164,7 +164,7 @@ class CustomConstantProvider extends Blockly.zelos.ConstantProvider {
             }
 
             return {
-              type: shapes.ROUND,
+              type: shapes.HEXAGONAL,
               isDynamic: true,
               width: h => Math.min(h / 2, maxWidth),
               height: h => h,

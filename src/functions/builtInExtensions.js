@@ -126,4 +126,9 @@ export default [
     name: "Temporary Variables",
     url: "/extensions/temp_variables.js",
   },
+  {
+    id: "big_numbers",
+    name: "Big Numbers",
+    url: "/extensions/big_numbers.js",
+  },
 ];

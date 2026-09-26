@@ -647,9 +647,7 @@ async function runCode() {
 
   try {
     for (const spriteData of spriteManager.getOriginals()) {
-      const tempWorkspace = new Blockly.Workspace({
-        readOnly: true
-      });
+      const tempWorkspace = new Blockly.Workspace();
 
       const xmlDom = Blockly.utils.xml.textToDom(
         spriteData.code || "<xml></xml>"
@@ -1152,7 +1150,7 @@ builtInExtensions.forEach((e) => {
   addButton.dataset.extensionId = e.id;
   addButton.innerText = "Add";
   extension.innerHTML = `<h2>${e?.name ?? "Extension Name"}</h2>
-    <img src="./icons/${e.id}.svg">`;
+    <img src="./icons/extensions/${e.id}.svg">`;
   extension.appendChild(addButton);
   extensionsList.appendChild(extension);
 });

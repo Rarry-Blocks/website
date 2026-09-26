@@ -375,6 +375,17 @@ html.dark .blocklyToolboxCategory.blocklyToolboxSelected {
   color: var(--color4);
 }
 
+.blocklyDialog {
+  margin: auto;
+  border-color: var(--dark-light);
+}
+
+form.blocklyDialogForm {
+  background-color: var(--color1);
+  color: var(--dark);
+  padding: 1rem;
+}
+
 .categoryBubble {
   margin: 0;
   padding: 0;

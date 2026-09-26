@@ -89,7 +89,7 @@ export class VM {
   }
 
   isOverBudget() {
-    return performance.now() - this.stepStart > 8;
+    return performance.now() - this.stepStart > 12;
   }
 
   stopAll() {
