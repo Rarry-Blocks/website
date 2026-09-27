@@ -257,6 +257,10 @@ export function runCodeWithFunctions({
     return (Date.now() - projectStartedTime) / 1000;
   }
 
+  function listKeysPressed() {
+    return Object.keys(keysPressed).filter(p => keysPressed[p]);
+  }
+
   function isKeyPressed(key) {
     if (key === "any") return Object.values(keysPressed).some(p => p);
     return !!keysPressed[key];
@@ -525,6 +529,7 @@ export function runCodeWithFunctions({
     pointsTowards,
     projectTime,
     isKeyPressed,
+    listKeysPressed,
     isMouseButtonPressed,
     getCostumeSize,
     getSpriteScale,

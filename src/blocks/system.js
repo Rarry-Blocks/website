@@ -128,13 +128,13 @@ javascriptGenerator.forBlock["mouse_button_pressed"] = function (
 };
 
 javascriptGenerator.forBlock["all_keys_pressed"] = () => [
-  "Object.keys(keysPressed).filter(k => keysPressed[k])",
-  Order.NONE,
+  "listKeysPressed()",
+  Order.FUNCTION_CALL,
 ];
 
 javascriptGenerator.forBlock["mouse_over"] = () => [
   "isMouseTouchingSprite()",
-  Order.NONE,
+  Order.FUNCTION_CALL,
 ];
 
 Blockly.Blocks["window_size"] = {
