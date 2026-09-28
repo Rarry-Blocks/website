@@ -2,7 +2,10 @@ import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { Sprite, DisplayObject, ObservablePoint, utils } from "pixi.js-legacy";
 import { Popup, prettyXml, escapeHtml } from "./utils";
-javascriptGenerator.INFINITE_LOOP_TRAP = `if (!runtime.fastExecution && runtime.isOverBudget()) yield;\n`;
+javascriptGenerator.INFINITE_LOOP_TRAP = `if (runtime.yield || (!runtime.fastExecution && runtime.isOverBudget())) {
+  yield;
+  runtime.yield = false;
+}\n`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 
@@ -10,7 +13,7 @@ Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
   "controls_if",
   "controls_if_if",
   "controls_if_elseif",
-  "controls_if_else",
+  "controls_if_else"
 ].forEach((type) => {
   if (!Blockly.Blocks[type]) return;
   Blockly.Blocks[type].init = (function (original) {
@@ -36,7 +39,7 @@ Blockly.Blocks["text"] = {
     this.setTooltip(Blockly.Msg["TEXT_TEXT_TOOLTIP"]);
     this.setHelpUrl(Blockly.Msg["TEXT_TEXT_HELPURL"]);
     Blockly.Extensions.apply("parent_tooltip_when_inline", this, false);
-  },
+  }
 };
 
 Object.keys(Blockly.Blocks).forEach((type) => {
@@ -55,7 +58,7 @@ Object.keys(Blockly.Blocks).forEach((type) => {
 
 javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   block,
-  generator,
+  generator
 ) {
   const procedureName = generator.getProcedureName(block.getFieldValue("NAME"));
 
@@ -74,7 +77,7 @@ javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
   if (generator.INFINITE_LOOP_TRAP) {
     loopTrap = generator.prefixLines(
       generator.injectId(generator.INFINITE_LOOP_TRAP, block),
-      generator.INDENT,
+      generator.INDENT
     );
   }
 
@@ -124,7 +127,7 @@ javascriptGenerator.forBlock["procedures_defnoreturn"] = function (
 
 javascriptGenerator.forBlock["procedures_defreturn"] = function (
   block,
-  generator,
+  generator
 ) {
   const procedureName = generator.getProcedureName(block.getFieldValue("NAME"));
 
@@ -138,7 +141,7 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
   if (statementWrapper) {
     statementWrapper = generator.prefixLines(
       statementWrapper,
-      generator.INDENT,
+      generator.INDENT
     );
   }
 
@@ -146,7 +149,7 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
   if (generator.INFINITE_LOOP_TRAP) {
     loopTrapCode = generator.prefixLines(
       generator.injectId(generator.INFINITE_LOOP_TRAP, block),
-      generator.INDENT,
+      generator.INDENT
     );
   }
 
@@ -196,7 +199,7 @@ javascriptGenerator.forBlock["procedures_defreturn"] = function (
 
 javascriptGenerator.forBlock["procedures_callreturn"] = function (
   block,
-  generator,
+  generator
 ) {
   const procedureName = generator.getProcedureName(block.getFieldValue("NAME"));
 
@@ -208,13 +211,13 @@ javascriptGenerator.forBlock["procedures_callreturn"] = function (
 
   return [
     "await " + procedureName + "(" + args.join(", ") + ")",
-    Order.FUNCTION_CALL,
+    Order.FUNCTION_CALL
   ];
 };
 
 javascriptGenerator.forBlock["procedures_callnoreturn"] = function (
   block,
-  generator,
+  generator
 ) {
   const code = generator.forBlock.procedures_callreturn(block, generator)[0];
   return code + ";\n";
@@ -226,11 +229,11 @@ const originalX = Object.getOwnPropertyDescriptor(DisplayObject.prototype, "x");
 const originalY = Object.getOwnPropertyDescriptor(DisplayObject.prototype, "y");
 const originalAngle = Object.getOwnPropertyDescriptor(
   DisplayObject.prototype,
-  "angle",
+  "angle"
 );
 const originalTexture = Object.getOwnPropertyDescriptor(
   Sprite.prototype,
-  "texture",
+  "texture"
 );
 
 Object.defineProperty(Sprite.prototype, "x", {
@@ -242,7 +245,7 @@ Object.defineProperty(Sprite.prototype, "x", {
       originalX.set.call(this, value);
       SpriteChangeEvents.emit("positionChanged", this);
     }
-  },
+  }
 });
 
 Object.defineProperty(Sprite.prototype, "y", {
@@ -254,7 +257,7 @@ Object.defineProperty(Sprite.prototype, "y", {
       originalY.set.call(this, value);
       SpriteChangeEvents.emit("positionChanged", this);
     }
-  },
+  }
 });
 
 Sprite.prototype.setPosition = function (x = null, y = null, add = false) {
@@ -275,7 +278,7 @@ Object.defineProperty(Sprite.prototype, "angle", {
       originalAngle.set.call(this, value);
       SpriteChangeEvents.emit("positionChanged", this);
     }
-  },
+  }
 });
 
 Object.defineProperty(Sprite.prototype, "texture", {
@@ -289,7 +292,7 @@ Object.defineProperty(Sprite.prototype, "texture", {
     } else {
       originalTexture.set.call(this, value);
     }
-  },
+  }
 });
 
 const originalObsPointSet = ObservablePoint.prototype.set;
@@ -315,7 +318,7 @@ Blockly.registry.register(
   Blockly.registry.Type.TOOLBOX_ITEM,
   Blockly.ToolboxCategory.registrationName,
   ToolboxBubbleCategory,
-  true,
+  true
 );
 
 function showBlockCode(block) {
@@ -337,25 +340,30 @@ function showBlockCode(block) {
     {
       label: "Code",
       innerHTML: `<pre class="block-code-preview">${
-        code.trim() ? escapeHtml(code) : "<em>No code generated for this block.</em>"
-      }</pre>`,
+        code.trim()
+          ? escapeHtml(code)
+          : "<em>No code generated for this block.</em>"
+      }</pre>`
     },
     {
       label: "Properties",
       rows: [
         ["Type:", block.type],
         ["ID:", block.id],
-        ["Position (x, y):", `${position.x.toFixed(2)}, ${position.y.toFixed(2)}`],
+        [
+          "Position (x, y):",
+          `${position.x.toFixed(2)}, ${position.y.toFixed(2)}`
+        ],
         ["Shadow:", block.isShadow() ? "Yes" : "No"],
-        ["Child blocks:", String(block.getChildren().length)],
+        ["Child blocks:", String(block.getChildren().length)]
       ],
-      innerHTML: `<pre class="block-code-preview">${escapeHtml(xml)}</pre>`,
-    },
+      innerHTML: `<pre class="block-code-preview">${escapeHtml(xml)}</pre>`
+    }
   ];
 
   const popup = new Popup({
     title: `Block - ${block.type}`,
-    tabs,
+    tabs
   });
   popup.show();
   popup.element.classList.add("block-code-popup");
@@ -375,5 +383,5 @@ Blockly.ContextMenuRegistry.registry.register({
   displayText: "View generated code",
   callback: (scope) => {
     showBlockCode(scope.focusedNode);
-  },
+  }
 });

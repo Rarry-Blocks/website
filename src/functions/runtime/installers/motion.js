@@ -1,6 +1,6 @@
 import { app } from "../../../scripts/editor";
 
-export function install({ getTarget }) {
+export function install({ getTarget, spriteManager }) {
   const renderer = app.renderer;
   const stage = app.stage;
 
@@ -30,5 +30,16 @@ export function install({ getTarget }) {
       360;
   }
 
-  return { moveSteps, setAngle, pointsTowards };
+  function isTouchingSprite(id) {
+    const bounds = getTarget().getBounds();
+    const target = spriteManager.get(id);
+    if (!target) return false;
+
+    const root = target.root ?? target;
+    return [root, ...root.clones].some((sprite) =>
+      bounds.intersects(sprite.pixiSprite.getBounds())
+    );
+  }
+
+  return { moveSteps, setAngle, pointsTowards, isTouchingSprite };
 }

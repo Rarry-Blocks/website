@@ -168,6 +168,7 @@ const Toolbox = `
     ${sep("50")}
     ${block("mouse_button_pressed")}
     ${block("mouse_over")}
+    ${block("touching_sprite", value("ID", shadow("system_sprites_menu")))}
     ${block("get_mouse_position")}
     ${sep("50")}
     ${block("window_size")}

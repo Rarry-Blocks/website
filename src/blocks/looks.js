@@ -135,7 +135,7 @@ Blockly.Blocks["looks_isVisible"] = {
 javascriptGenerator.forBlock["say_message"] = function (block, generator) {
   const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
 
-  return `runtime.sayMessage(${message});\nyield;\n`;
+  return `runtime.sayMessage(${message});\nruntime.yield = true;\n`;
 };
 
 javascriptGenerator.forBlock["say_message_duration"] = function (
@@ -145,7 +145,7 @@ javascriptGenerator.forBlock["say_message_duration"] = function (
   const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
   const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
 
-  return `runtime.sayMessage(${message}, ${duration});\nyield;\n`;
+  return `runtime.sayMessage(${message}, ${duration});\nruntime.yield = true;\n`;
 };
 
 javascriptGenerator.forBlock["say_message_duration_waiting"] = function (
@@ -160,17 +160,17 @@ javascriptGenerator.forBlock["say_message_duration_waiting"] = function (
 
 javascriptGenerator.forBlock["switch_costume"] = function (block, generator) {
   var costume = generator.valueToCode(block, "COSTUME", Order.ATOMIC);
-  return `runtime.switchCostume(${costume});\nyield;\n`;
+  return `runtime.switchCostume(${costume});\nruntime.yield = true;\n`;
 };
 
 javascriptGenerator.forBlock["set_size"] = function (block, generator) {
   const amount = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
-  return `runtime.setSize(${amount}, false);\nyield;\n`;
+  return `runtime.setSize(${amount}, false);\nruntime.yield = true;\n`;
 };
 
 javascriptGenerator.forBlock["change_size"] = function (block, generator) {
   const amount = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
-  return `runtime.setSize(${amount}, true);\nyield;\n`;
+  return `runtime.setSize(${amount}, true);\nruntime.yield = true;\n`;
 };
 
 javascriptGenerator.forBlock["get_costume_size"] = function (block) {
@@ -183,11 +183,11 @@ javascriptGenerator.forBlock["get_sprite_scale"] = function () {
 };
 
 javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
-  return "runtime.toggleVisibility(false);\nyield;\n";
+  return "runtime.toggleVisibility(false);\nruntime.yield = true;\n";
 };
 
 javascriptGenerator.forBlock["looks_show_sprite"] = function () {
-  return "runtime.toggleVisibility(true);\nyield;\n";
+  return "runtime.toggleVisibility(true);\nruntime.yield = true;\n";
 };
 
 javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
@@ -197,7 +197,7 @@ javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
   const visible =
     generator.valueToCode(block, "VISIBLE", Order.ATOMIC) ?? "false";
 
-  return `runtime.toggleVisibility(${visible});\nyield;\n`;
+  return `runtime.toggleVisibility(${visible});\nruntime.yield = true;\n`;
 };
 
 javascriptGenerator.forBlock["looks_isVisible"] = () => [

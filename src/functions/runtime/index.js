@@ -12,6 +12,7 @@ export function createRuntime(ctx) {
     ...globals,
     ...core,
     myFunctions: {},
+    yield: false,
     get thread() {
       return vm.currentThread;
     },
@@ -22,7 +23,9 @@ export function createRuntime(ctx) {
 
   for (const path of Object.keys(installerModules).sort()) {
     const { install } = installerModules[path];
-    if (typeof install !== "function") continue;
+    if (typeof install !== "function") {
+      throw new Error(`Runtime installer ${path} must export an install() function`);
+    }
 
     const added = Object.getOwnPropertyDescriptors(install(env));
     for (const name of Object.keys(added)) {
@@ -33,5 +36,5 @@ export function createRuntime(ctx) {
     }
   }
 
-  return Object.freeze(runtime);
+  return Object.seal(runtime);
 }

@@ -137,6 +137,19 @@ javascriptGenerator.forBlock["mouse_over"] = () => [
   Order.FUNCTION_CALL
 ];
 
+Blockly.Blocks["touching_sprite"] = {
+  init: function () {
+    this.appendValueInput("ID").setCheck("String").appendField("touching");
+    this.setOutput(true, "Boolean");
+    this.setStyle("system_blocks");
+  }
+};
+
+javascriptGenerator.forBlock["touching_sprite"] = function (block, generator) {
+  const ID = generator.valueToCode(block, "ID", Order.ATOMIC);
+  return [`runtime.isTouchingSprite(${ID})`, Order.FUNCTION_CALL];
+};
+
 Blockly.Blocks["window_size"] = {
   init: function () {
     this.appendDummyInput()
