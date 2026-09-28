@@ -8,10 +8,10 @@ Blockly.Blocks["pen_down"] = {
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Put the pen down to draw");
-  },
+  }
 };
 javascriptGenerator.forBlock["pen_down"] = function () {
-  return "setPenStatus(true);\n";
+  return "runtime.setPenStatus(true);\n";
 };
 
 Blockly.Blocks["pen_up"] = {
@@ -21,10 +21,10 @@ Blockly.Blocks["pen_up"] = {
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Lift the pen up");
-  },
+  }
 };
 javascriptGenerator.forBlock["pen_up"] = function () {
-  return "setPenStatus(false);\n";
+  return "runtime.setPenStatus(false);\n";
 };
 
 Blockly.Blocks["pen_print"] = {
@@ -37,14 +37,14 @@ Blockly.Blocks["pen_print"] = {
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Draw text on the stage at a specific position");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["pen_print"] = function (block, generator) {
   const text = generator.valueToCode(block, "TEXT", Order.ATOMIC) || "''";
   const x = generator.valueToCode(block, "X", Order.ATOMIC) || 0;
   const y = generator.valueToCode(block, "Y", Order.ATOMIC) || 0;
-  return `penPrint(${text}, ${x}, ${y});\n`;
+  return `runtime.penPrint(${text}, ${x}, ${y});\n`;
 };
 
 Blockly.Blocks["set_pen_color"] = {
@@ -58,13 +58,13 @@ Blockly.Blocks["set_pen_color"] = {
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Set the pen color to a RGB value");
-  },
+  }
 };
 javascriptGenerator.forBlock["set_pen_color"] = function (block, generator) {
   const r = generator.valueToCode(block, "R", Order.ATOMIC) || 0;
   const g = generator.valueToCode(block, "G", Order.ATOMIC) || 0;
   const b = generator.valueToCode(block, "B", Order.ATOMIC) || 0;
-  return `setPenColor(${r}, ${g}, ${b});\n`;
+  return `runtime.setPenColor(${r}, ${g}, ${b});\n`;
 };
 
 Blockly.Blocks["set_pen_color_combined"] = {
@@ -74,9 +74,9 @@ Blockly.Blocks["set_pen_color_combined"] = {
       .appendField(
         new Blockly.FieldDropdown([
           ["RGB", "RGB"],
-          ["HEX", "HEX"],
+          ["HEX", "HEX"]
         ]),
-        "MODE",
+        "MODE"
       );
     this.appendValueInput("VALUE").setCheck(["String", "Number"]);
     this.setInputsInline(true);
@@ -84,30 +84,35 @@ Blockly.Blocks["set_pen_color_combined"] = {
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Set the pen color to a RGB or HEX value.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["set_pen_color_combined"] = function (block, generator) {
+javascriptGenerator.forBlock["set_pen_color_combined"] = function (
+  block,
+  generator
+) {
   const mode = block.getFieldValue("MODE");
   const value = generator.valueToCode(block, "VALUE", Order.ATOMIC);
-  if (mode === "HEX") return `setPenColorHex(${value});\n`;
-  else return `setPenColor(${value});\n`;
+  if (mode === "HEX") return `runtime.setPenColorHex(${value});\n`;
+  else return `runtime.setPenColor(${value});\n`;
 };
 
 Blockly.Blocks["set_pen_size"] = {
   init: function () {
-    this.appendValueInput("SIZE").setCheck("Number").appendField("set pen size to");
+    this.appendValueInput("SIZE")
+      .setCheck("Number")
+      .appendField("set pen size to");
     this.appendDummyInput().appendField("px");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Set the pen thickness to a specific value in pixels");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["set_pen_size"] = function (block, generator) {
   const size = generator.valueToCode(block, "SIZE", Order.ATOMIC) || 1;
-  return `setPenSize("${size}");\n`;
+  return `runtime.setPenSize(${size});\n`;
 };
 
 Blockly.Blocks["set_pen_print_direction"] = {
@@ -120,12 +125,15 @@ Blockly.Blocks["set_pen_print_direction"] = {
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Set the rotation angle for printed text");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["set_pen_print_direction"] = function (block, generator) {
+javascriptGenerator.forBlock["set_pen_print_direction"] = function (
+  block,
+  generator
+) {
   const angle = generator.valueToCode(block, "ANGLE", Order.ATOMIC) || 0;
-  return `setPenPrintDirection(${angle});\n`;
+  return `runtime.setPenPrintDirection(${angle});\n`;
 };
 
 Blockly.Blocks["clear_pen"] = {
@@ -135,7 +143,7 @@ Blockly.Blocks["clear_pen"] = {
     this.setNextStatement(true, "default");
     this.setColour("#0fbd8c");
     this.setTooltip("Clear all pen drawings");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["clear_pen"] = () => "clearPen();\n";
+javascriptGenerator.forBlock["clear_pen"] = () => "runtime.clearPen();\n";

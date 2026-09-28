@@ -68,8 +68,8 @@ Blockly.Blocks["sets_create_extendable"] = {
           18,
           25,
           "remove an input",
-          this.decrease_.bind(this),
-        ),
+          this.decrease_.bind(this)
+        )
       )
       .appendField(
         new Blockly.FieldImage(
@@ -77,8 +77,8 @@ Blockly.Blocks["sets_create_extendable"] = {
           18,
           25,
           "add an input",
-          this.increase_.bind(this),
-        ),
+          this.increase_.bind(this)
+        )
       );
   },
 
@@ -92,10 +92,13 @@ Blockly.Blocks["sets_create_extendable"] = {
     if (this.itemCount_ < 1) return;
     this.itemCount_--;
     this.updateShape_();
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_create_extendable"] = function (block, generator) {
+javascriptGenerator.forBlock["sets_create_extendable"] = function (
+  block,
+  generator
+) {
   const parts = [];
 
   for (let i = 0; i < block.itemCount_; i++) {
@@ -230,7 +233,7 @@ Blockly.Blocks["sets_create_with"] = {
       this.removeInput("ADD" + i);
       i++;
     }
-  },
+  }
 };
 
 Blockly.Blocks["sets_create_with_container"] = {
@@ -239,7 +242,7 @@ Blockly.Blocks["sets_create_with_container"] = {
     this.appendDummyInput().appendField("set");
     this.appendStatementInput("STACK").setCheck("default");
     this.contextMenu = false;
-  },
+  }
 };
 
 Blockly.Blocks["sets_create_with_item"] = {
@@ -251,17 +254,13 @@ Blockly.Blocks["sets_create_with_item"] = {
     this.contextMenu = false;
     /** @type {Blockly.Connection?} */
     this.valueConnection_ = null;
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_create_with"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_create_with"] = function (block, generator) {
   const elements = [];
   for (let i = 0; i < block.itemCount_; i++) {
-    const code =
-      generator.valueToCode(block, "ADD" + i, Order.NONE) || "null";
+    const code = generator.valueToCode(block, "ADD" + i, Order.NONE) || "null";
     elements.push(code);
   }
   let code;
@@ -277,7 +276,7 @@ Blockly.Blocks["sets_convert"] = {
   init: function () {
     const dropdown = new Blockly.FieldDropdown([
       ["set from list", "SET"],
-      ["list from set", "LIST"],
+      ["list from set", "LIST"]
     ]);
     dropdown.setValidator((newMode) => {
       this.updateType_(newMode);
@@ -337,16 +336,12 @@ Blockly.Blocks["sets_convert"] = {
   },
   loadExtraState: function (state) {
     this.updateType_(state["mode"]);
-  },
+  }
 };
 
 javascriptGenerator.forBlock["sets_convert"] = function (block) {
   const input =
-    javascriptGenerator.valueToCode(
-      block,
-      "INPUT",
-      Order.ATOMIC
-    ) || "null";
+    javascriptGenerator.valueToCode(block, "INPUT", Order.ATOMIC) || "null";
   const mode = block.getFieldValue("MODE");
 
   if (mode === "SET") {
@@ -366,13 +361,10 @@ Blockly.Blocks["sets_add"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Adds a value to the set.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_add"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_add"] = function (block, generator) {
   const set = generator.valueToCode(block, "SET", Order.ATOMIC);
   const value = generator.valueToCode(block, "VALUE", Order.ATOMIC);
   return `${set}.add(${value});\n`;
@@ -387,13 +379,10 @@ Blockly.Blocks["sets_delete"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Deletes a value from the set.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_delete"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_delete"] = function (block, generator) {
   const set = generator.valueToCode(block, "SET", Order.ATOMIC);
   const value = generator.valueToCode(block, "VALUE", Order.ATOMIC);
   return `${set}.delete(${value});\n`;
@@ -408,13 +397,10 @@ Blockly.Blocks["sets_add_return"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Adds a value to the set.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_add_return"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_add_return"] = function (block, generator) {
   const set = generator.valueToCode(block, "SET", Order.ATOMIC) || "new Set()";
   const value = generator.valueToCode(block, "VALUE", Order.ATOMIC);
 
@@ -430,7 +416,7 @@ Blockly.Blocks["sets_delete_return"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Deletes a value from the set.");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["sets_delete_return"] = function (
@@ -452,13 +438,10 @@ Blockly.Blocks["sets_has"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Returns true if the set contains the value.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_has"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_has"] = function (block, generator) {
   const set = generator.valueToCode(block, "SET", Order.ATOMIC) || "new Set()";
   const value = generator.valueToCode(block, "VALUE", Order.ATOMIC);
   return [`${set}.has(${value})`, Order.NONE];
@@ -471,13 +454,10 @@ Blockly.Blocks["sets_size"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Returns the length of a set.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_size"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_size"] = function (block, generator) {
   const set = generator.valueToCode(block, "SET", Order.ATOMIC) || "new Set()";
   return [`${set}.size`, Order.MEMBER];
 };
@@ -490,13 +470,10 @@ Blockly.Blocks["sets_isEmpty"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Returns true if the set is empty.");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_isEmpty"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_isEmpty"] = function (block, generator) {
   const set = generator.valueToCode(block, "SET", Order.ATOMIC) || "new Set()";
   return [`${set}.size === 0`, Order.EQUALITY];
 };
@@ -509,24 +486,21 @@ Blockly.Blocks["sets_merge"] = {
     this.setInputsInline(true);
     this.setStyle("set_blocks");
     this.setTooltip("Creates a new set combining all values from two sets");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_merge"] = function (
-  block,
-  generator
-) {
-  const set1 = generator.valueToCode(block, "SET1", Order.ATOMIC) || "new Set()";
-  const set2 = generator.valueToCode(block, "SET2", Order.ATOMIC) || "new Set()";
+javascriptGenerator.forBlock["sets_merge"] = function (block, generator) {
+  const set1 =
+    generator.valueToCode(block, "SET1", Order.ATOMIC) || "new Set()";
+  const set2 =
+    generator.valueToCode(block, "SET2", Order.ATOMIC) || "new Set()";
   return [`new Set([...${set1}, ...${set2}])`, Order.NONE];
 };
 
 Blockly.Blocks["sets_foreach"] = {
   init: function () {
     this.appendValueInput("ITEM").appendField("for each");
-    this.appendValueInput("SET")
-      .setCheck("Set")
-      .appendField("in set");
+    this.appendValueInput("SET").setCheck("Set").appendField("in set");
     this.appendStatementInput("DO").appendField("do").setCheck("default");
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
@@ -535,13 +509,10 @@ Blockly.Blocks["sets_foreach"] = {
     this.setTooltip(
       "Loops through every item in a set and runs the code inside for each one."
     );
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sets_foreach"] = function (
-  block,
-  generator
-) {
+javascriptGenerator.forBlock["sets_foreach"] = function (block, generator) {
   const set = generator.valueToCode(block, "SET", Order.NONE) || "[]";
   const branch = generator.statementToCode(block, "DO");
   const code = `${set}.forEach(function* (setsForEachItem) => {\n${branch}});\n`;
@@ -555,10 +526,10 @@ Blockly.Blocks["sets_foreach_item"] = {
     this.setOutput(true, "Number");
     this.setDuplicateOnDrag(true);
     this.setStyle("set_blocks");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["sets_foreach_item"] = () => [
   "setsForEachItem",
-  Order.NONE,
+  Order.NONE
 ];

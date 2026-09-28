@@ -7,22 +7,10 @@ const keywords = new Set([
 ]);
 const globals = new Set(Object.getOwnPropertyNames(globalThis));
 const engine = new Set([
-  "BUBBLE_TEXTSTYLE", "MyFunctions", "Thread", "_", "_startTween",
-  "abort", "activeEventThreads", "app", "clearPen", "code",
-  "costumeMap", "eventRegistry", "fastExecution", "findOrFilterItem",
-  "getAngle", "getCostumeSize", "getMousePosition",
-  "getSpriteScale", "hideSprite", "indexForEach", "isKeyPressed",
-  "isMouseButtonPressed", "isMouseTouchingSprite", "keysPressed",
-  "mouseButtonsPressed", "moveSteps", "penGraphics", "playSound",
-  "playingSounds", "projectStartedTime", "projectTime",
-  "registerEvent", "renderer", "runningScripts", "sayMessage",
-  "setAngle", "setPenColor", "setPenColorHex", "setPenSize",
-  "setPenStatus", "setSize", "setSoundProperty", "setsForEachItem",
-  "showSprite", "signal", "soundMap", "soundProperties", "sprite",
-  "spriteData", "spriteManager", "stage", "startTween",
-  "stopAllSounds", "stopSound", "stopped", "switchCostume",
-  "triggerCustomEvent", "wait", "waitOneFrame", "whenFlagClicked",
-  "projectBlockValues", "projectVariables"
+  "runtime",
+  "arguments", "eval",
+  "implements", "interface", "package", "private", "protected", "public",
+  "static",
 ]);
 
 const localhost = window.location.hostname === "localhost";

@@ -2,7 +2,7 @@ import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { Sprite, DisplayObject, ObservablePoint, utils } from "pixi.js-legacy";
 import { Popup, prettyXml, escapeHtml } from "./utils";
-javascriptGenerator.INFINITE_LOOP_TRAP = `if (!thread.fastExecution && vm.isOverBudget()) yield;\n`;
+javascriptGenerator.INFINITE_LOOP_TRAP = `if (!runtime.fastExecution && runtime.isOverBudget()) yield;\n`;
 
 Blockly.VerticalFlyout.prototype.getFlyoutScale = () => 0.8;
 

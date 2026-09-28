@@ -170,14 +170,14 @@ Blockly.Blocks["wait_block"] = {
   },
 };
 
-javascriptGenerator.forBlock["wait_one_frame"] = function (block) {
-  return `yield* waitOneFrame();\n`;
+javascriptGenerator.forBlock["wait_one_frame"] = function () {
+  return `yield;\n`;
 };
 
 javascriptGenerator.forBlock["wait_block"] = function (block, generator) {
   const duration = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU") || 0;
-  return `yield* wait(${duration} * ${+menu});\n`;
+  return `yield* runtime.wait(${duration} * ${+menu});\n`;
 };
 
 Blockly.Blocks["controls_thread_create"] = {
@@ -196,7 +196,7 @@ javascriptGenerator.forBlock["controls_thread_create"] = function (
   generator,
 ) {
   const code = generator.statementToCode(block, "code");
-  return `vm.execute(function* (sprite) {\n${code}}, getTargetData());\n`;
+  return `runtime.vm.execute(function* (sprite) {\n${code}}, runtime.getTargetData());\n`;
 };
 
 Blockly.Blocks["controls_thread_current"] = {
@@ -292,7 +292,7 @@ Blockly.Blocks["controls_run_instantly"] = {
 
 javascriptGenerator.forBlock["controls_run_instantly"] = function (block) {
   const branch = javascriptGenerator.statementToCode(block, "do");
-  return `const __prevFast = thread.fastExecution;\nthread.fastExecution = true;\n${branch}thread.fastExecution = __prevFast;\n`;
+  return `const __prevFast = runtime.thread.fastExecution;\nruntime.thread.fastExecution = true;\n${branch}runtime.thread.fastExecution = __prevFast;\n`;
 };
 
 Blockly.Blocks["controls_stopscript"] = {
@@ -360,9 +360,11 @@ javascriptGenerator.forBlock["controls_stopblock"] = block => {
   const mode = block.getFieldValue("MODE");
 
   if (mode === "script") return "return;\n";
-  if (mode === "others") return "vm.stopOtherScriptsForTarget(getTargetData());\n";
-  if (mode === "othersprites") return "vm.stopAllExceptTarget(getTargetData());\n";
-  if (mode === "project") return "stopProject();\n";
+  if (mode === "others")
+    return "runtime.vm.stopOtherScriptsForTarget(runtime.getTargetData());\n";
+  if (mode === "othersprites")
+    return "runtime.vm.stopAllExceptTarget(runtime.getTargetData());\n";
+  if (mode === "project") return "runtime.stopProject();\n";
 
   return "";
 };
@@ -382,7 +384,7 @@ javascriptGenerator.forBlock["controls_stop_sprite"] = function (
   generator,
 ) {
   const spriteId = generator.valueToCode(block, "ID", Order.ATOMIC) || "''";
-  return `vm.stopForTarget(vm.runtime.getTargetById(${spriteId}));\n`;
+  return `runtime.stopSprite(${spriteId});\n`;
 };
 
 Blockly.Blocks["controls_sprites_menu"] = {
@@ -422,7 +424,7 @@ javascriptGenerator.forBlock["controls_createclone"] = function (
   generator,
 ) {
   const ID = generator.valueToCode(block, "ID", Order.ATOMIC);
-  return `spriteManager.clone(spriteManager.get(${ID}));\n`;
+  return `runtime.spriteManager.clone(runtime.spriteManager.get(${ID}));\n`;
 };
 
 Blockly.Blocks["controls_delete_this_clone"] = {
@@ -434,8 +436,8 @@ Blockly.Blocks["controls_delete_this_clone"] = {
 };
 
 javascriptGenerator.forBlock["controls_delete_this_clone"] = function () {
-  return `if (getTargetData().clone) {
-  spriteManager.remove(getTargetData()); 
+  return `if (runtime.getTargetData().clone) {
+  runtime.spriteManager.remove(runtime.getTargetData()); 
   return;
 }\n`;
 };
@@ -454,7 +456,7 @@ javascriptGenerator.forBlock["controls_delete_all_clones"] = function (
   generator,
 ) {
   const ID = generator.valueToCode(block, "ID", Order.ATOMIC);
-  return `spriteManager.removeClones(spriteManager.get(${ID}));\n`;
+  return `runtime.spriteManager.removeClones(runtime.spriteManager.get(${ID}));\n`;
 };
 
 Blockly.Blocks["controls_is_clone"] = {
@@ -466,7 +468,7 @@ Blockly.Blocks["controls_is_clone"] = {
 };
 
 javascriptGenerator.forBlock["controls_is_clone"] = function () {
-  return ["getTargetData().clone", Order.ATOMIC];
+  return ["runtime.getTargetData().clone", Order.ATOMIC];
 };
 
 Blockly.Blocks["controls_whenstartasclone"] = {
@@ -482,7 +484,7 @@ javascriptGenerator.forBlock["controls_whenstartasclone"] = function (
   generator,
 ) {
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("clone", null, function* (sprite) {\n${branch}});\n`;
+  return `runtime.registerEvent("clone", null, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["controls_as_sprite"] = {
@@ -503,7 +505,7 @@ javascriptGenerator.forBlock["controls_as_sprite"] = function (
   const target = generator.valueToCode(block, "ID", Order.NONE) || '""';
   const code = generator.statementToCode(block, "DO");
 
-  return `vm.execute(function* () {\n${code}}, spriteManager.get(${target}));\n`;
+  return `runtime.vm.execute(function* () {\n${code}}, runtime.spriteManager.get(${target}));\n`;
 };
 
 Blockly.Blocks["controls_forever"] = {

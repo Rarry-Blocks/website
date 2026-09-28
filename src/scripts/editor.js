@@ -8,11 +8,7 @@ import.meta.glob("../blocks/**/*.js", { eager: true });
 import { javascriptGenerator } from "blockly/javascript";
 
 import { Application, Graphics, Texture } from "pixi.js-legacy";
-import JSZip from "jszip";
 import { io } from "socket.io-client";
-
-import { save as tauriSave } from "@tauri-apps/plugin-dialog";
-import { writeFile } from "@tauri-apps/plugin-fs";
 
 import "../functions/patches/checkbox.js";
 import "../functions/patches/connectionchecker.js";
@@ -631,6 +627,10 @@ function stopAllScripts() {
   activeEventThreads.count = 0;
 
   updateRunButtonState();
+}
+
+export function stopProject() {
+  stopAllScripts();
 }
 
 async function runCode() {
@@ -1277,7 +1277,7 @@ function createSession() {
         });
         return JSON.parse(decompressed);
       } catch (err) {
-        throw new Error("Failed to decompress data: " + err);
+        throw new Error("Failed to decompress data: " + err, { cause: err });
       }
     }
     return data;
@@ -1815,19 +1815,19 @@ function executeClickedBlock(blockId) {
   let code;
   if (Array.isArray(rawCode)) {
     const [expression] = rawCode;
-    rawCode = `${functionsCode}registerEvent('clickRun', null, function* (thread) {
+    rawCode = `${functionsCode}runtime.registerEvent('clickRun', null, function* (thread) {
   try {
-    setClickResult((${expression}), false);
+    runtime.setClickResult((${expression}), false);
   } catch (err) {
-    setClickResult(err, true);
+    runtime.setClickResult(err, true);
   }
 });`;
     code = generator.finish(rawCode);
   } else if (rawCode) {
-    rawCode = `${functionsCode}registerEvent('clickRun', null, function* (thread) {
+    rawCode = `${functionsCode}runtime.registerEvent('clickRun', null, function* (thread) {
   try {
     ${rawCode}  } catch (err) {
-    setClickResult(err, true);
+    runtime.setClickResult(err, true);
   }
 });`;
     code = generator.finish(rawCode);

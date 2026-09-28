@@ -19,7 +19,7 @@ javascriptGenerator.forBlock["when_flag_clicked"] = function (
   generator
 ) {
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("flag", null, function* (sprite) {\n${branch}});\n`;
+  return `runtime.registerEvent("flag", null, function* (sprite) {\n${branch}});\n`;
 };
 
 const normalKeys = [
@@ -58,7 +58,7 @@ javascriptGenerator.forBlock["when_key_clicked"] = function (
   const key = block.getFieldValue("KEY");
   const safeKey = generator.quote_(key);
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("key", ${safeKey}, function* (sprite) {\n${branch}});\n`;
+  return `runtime.registerEvent("key", ${safeKey}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["when_stage_clicked"] = {
@@ -75,7 +75,7 @@ javascriptGenerator.forBlock["when_stage_clicked"] = function (
   generator
 ) {
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("stageClick", null, function* (sprite) {\n${branch}});\n`;
+  return `runtime.registerEvent("stageClick", null, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["project_timer"] = {
@@ -87,7 +87,7 @@ Blockly.Blocks["project_timer"] = {
 };
 
 javascriptGenerator.forBlock["project_timer"] = function (block) {
-  return ["projectTime()", Order.NONE];
+  return ["runtime.projectTime()", Order.NONE];
 };
 
 Blockly.Blocks["when_timer_reaches"] = {
@@ -107,7 +107,7 @@ javascriptGenerator.forBlock["when_timer_reaches"] = function (
 ) {
   const value = block.getFieldValue("VALUE");
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("timer", ${value}, function* (sprite) {\n${branch}});\n`;
+  return `runtime.registerEvent("timer", ${value}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["every_seconds"] = {
@@ -127,7 +127,7 @@ javascriptGenerator.forBlock["every_seconds"] = function (
 ) {
   const seconds = block.getFieldValue("SECONDS");
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("interval", ${seconds}, function* (sprite) {\n${branch}});\n`;
+  return `runtime.registerEvent("interval", ${seconds}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["when_custom_event_triggered"] = {
@@ -147,7 +147,7 @@ javascriptGenerator.forBlock["when_custom_event_triggered"] = function (
 ) {
   const event = generator.quote_(block.getFieldValue("EVENT"));
   const branch = generator.statementToCode(block, "DO");
-  return `registerEvent("custom", ${event}, function* (sprite) {\n${branch}});\n`;
+  return `runtime.registerEvent("custom", ${event}, function* (sprite) {\n${branch}});\n`;
 };
 
 Blockly.Blocks["trigger_custom_event"] = {
@@ -165,5 +165,5 @@ javascriptGenerator.forBlock["trigger_custom_event"] = function (
   block
 ) {
   const event = javascriptGenerator.quote_(block.getFieldValue("EVENT"));
-  return `triggerCustomEvent(${event});\n`;
+  return `runtime.triggerCustomEvent(${event});\n`;
 };

@@ -247,18 +247,18 @@ function registerCodeGenerators(id, codeGen, blockDefs, isTrusted) {
 
       let call, expr;
       if (isTrusted) {
-        call = `extensions[${JSON.stringify(fullType)}](${argsLiteral}, thread)`;
+        call = `runtime.extensions[${JSON.stringify(fullType)}](${argsLiteral}, runtime.thread)`;
         if (isGenerator) {
           expr = `(yield* ${call})`;
         } else if (def.promise) {
-          expr = `(yield* waitForPromise(${call}))`;
+          expr = `(yield* runtime.waitForPromise(${call}))`;
         } else {
           expr = call;
         }
       } else {
-        call = `extensionBridges.get(${JSON.stringify(id)}).runBlock(${JSON.stringify(blockId)}, ${argsLiteral})`;
+        call = `runtime.extensionBridges.get(${JSON.stringify(id)}).runBlock(${JSON.stringify(blockId)}, ${argsLiteral})`;
         if (block.outputConnection || def.promise) {
-          expr = `(yield* waitForPromise(${call}))`;
+          expr = `(yield* runtime.waitForPromise(${call}))`;
         } else {
           expr = call;
         }

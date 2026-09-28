@@ -12,7 +12,7 @@ const tweensList = [
   ["circ", "Circ"],
   ["back", "Back"],
   ["elastic", "Elastic"],
-  ["bounce", "Bounce"],
+  ["bounce", "Bounce"]
 ];
 
 Blockly.Blocks["tween_block"] = {
@@ -23,15 +23,12 @@ Blockly.Blocks["tween_block"] = {
     this.appendValueInput("DURATION").setCheck("Number");
     this.appendDummyInput().appendField("seconds using");
     this.appendDummyInput()
-      .appendField(
-        new Blockly.FieldDropdown(tweensList),
-        "EASING_TYPE"
-      )
+      .appendField(new Blockly.FieldDropdown(tweensList), "EASING_TYPE")
       .appendField(
         new Blockly.FieldDropdown([
           ["in", "In"],
           ["out", "Out"],
-          ["in-out", "InOut"],
+          ["in-out", "InOut"]
         ]),
         "EASING_MODE"
       );
@@ -42,7 +39,7 @@ Blockly.Blocks["tween_block"] = {
       .appendField(
         new Blockly.FieldDropdown([
           ["wait", "WAIT"],
-          ["don't wait", "DONT_WAIT"],
+          ["don't wait", "DONT_WAIT"]
         ]),
         "WAIT_MODE"
       )
@@ -54,24 +51,20 @@ Blockly.Blocks["tween_block"] = {
     this.setTooltip(
       "Tween a value from one number to another over time using easing"
     );
-  },
+  }
 };
 
 javascriptGenerator.forBlock["tween_block"] = function (block, generator) {
   const easingType = block.getFieldValue("EASING_TYPE");
   const easingMode = block.getFieldValue("EASING_MODE");
-  const from =
-    generator.valueToCode(block, "FROM", Order.ATOMIC) ||
-    "0";
-  const to =
-    generator.valueToCode(block, "TO", Order.ATOMIC) || "0";
+  const from = generator.valueToCode(block, "FROM", Order.ATOMIC) || "0";
+  const to = generator.valueToCode(block, "TO", Order.ATOMIC) || "0";
   const duration =
-    generator.valueToCode(block, "DURATION", Order.ATOMIC) ||
-    "1";
+    generator.valueToCode(block, "DURATION", Order.ATOMIC) || "1";
   const waitMode = block.getFieldValue("WAIT_MODE");
   const branch = javascriptGenerator.statementToCode(block, "DO");
 
-  const code = `yield* startTween({
+  const code = `yield* runtime.startTween({
   from: ${from},
   to: ${to},
   duration: ${duration},
@@ -90,12 +83,12 @@ Blockly.Blocks["tween_block_value"] = {
     this.setInputsInline(true);
     this.setColour("#32a2c0");
     this.setOutput(true, "Number");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["tween_block_value"] = () => [
   "tweenValue",
-  Order.NONE,
+  Order.NONE
 ];
 
 Blockly.Blocks["tween_sprite_property"] = {
@@ -108,7 +101,7 @@ Blockly.Blocks["tween_sprite_property"] = {
           ["x position", "x"],
           ["y position", "y"],
           ["angle", "angle"],
-          ["size", "size"],
+          ["size", "size"]
         ]),
         "PROPERTY"
       )
@@ -116,15 +109,12 @@ Blockly.Blocks["tween_sprite_property"] = {
     this.appendValueInput("DURATION").setCheck("Number").appendField("in");
     this.appendDummyInput()
       .appendField("seconds using")
-      .appendField(
-        new Blockly.FieldDropdown(tweensList),
-        "EASING_TYPE"
-      )
+      .appendField(new Blockly.FieldDropdown(tweensList), "EASING_TYPE")
       .appendField(
         new Blockly.FieldDropdown([
           ["in", "In"],
           ["out", "Out"],
-          ["in-out", "InOut"],
+          ["in-out", "InOut"]
         ]),
         "EASING_MODE"
       );
@@ -135,7 +125,7 @@ Blockly.Blocks["tween_sprite_property"] = {
     this.setTooltip(
       "Tween a sprite property to a target value over time using easing"
     );
-  },
+  }
 };
 
 javascriptGenerator.forBlock["tween_sprite_property"] = function (
@@ -143,27 +133,25 @@ javascriptGenerator.forBlock["tween_sprite_property"] = function (
   generator
 ) {
   const prop = block.getFieldValue("PROPERTY");
-  const to =
-    generator.valueToCode(block, "TO", Order.ATOMIC) || "0";
+  const to = generator.valueToCode(block, "TO", Order.ATOMIC) || "0";
   const duration =
-    generator.valueToCode(block, "DURATION", Order.ATOMIC) ||
-    "1";
+    generator.valueToCode(block, "DURATION", Order.ATOMIC) || "1";
   const easingType = block.getFieldValue("EASING_TYPE");
   const easingMode = block.getFieldValue("EASING_MODE");
 
   let fromGetter, setter;
   if (prop === "size") {
-    fromGetter = "getSpriteScale()";
-    setter = `setSize(tweenValue, false)`;
+    fromGetter = "runtime.getSpriteScale()";
+    setter = `runtime.setSize(tweenValue, false)`;
   } else if (prop === "angle") {
-    fromGetter = `getTarget().angle`;
-    setter = `setAngle(tweenValue, false)`;
+    fromGetter = `runtime.getTarget().angle`;
+    setter = `runtime.setAngle(tweenValue, false)`;
   } else {
-    fromGetter = `getTarget().${prop}`;
-    setter = `getTarget().${prop} = tweenValue`;
+    fromGetter = `runtime.getTarget().${prop}`;
+    setter = `runtime.getTarget().${prop} = tweenValue`;
   }
 
-  const code = `yield* startTween({
+  const code = `yield* runtime.startTween({
   from: ${fromGetter},
   to: ${to},
   duration: ${duration},

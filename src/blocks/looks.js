@@ -9,7 +9,7 @@ Blockly.Blocks["say_message"] = {
     this.setNextStatement(true, "default");
     this.setInputsInline(true);
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["say_message_duration"] = {
@@ -21,7 +21,7 @@ Blockly.Blocks["say_message_duration"] = {
     this.setNextStatement(true, "default");
     this.setInputsInline(true);
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["say_message_duration_waiting"] = {
@@ -33,36 +33,42 @@ Blockly.Blocks["say_message_duration_waiting"] = {
     this.setNextStatement(true, "default");
     this.setInputsInline(true);
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["switch_costume"] = {
   init: function () {
-    this.appendValueInput("COSTUME").setCheck("String").appendField("switch costume to");
+    this.appendValueInput("COSTUME")
+      .setCheck("String")
+      .appendField("switch costume to");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["set_size"] = {
   init: function () {
-    this.appendValueInput("AMOUNT").setCheck("Number").appendField("set size to");
+    this.appendValueInput("AMOUNT")
+      .setCheck("Number")
+      .appendField("set size to");
     this.appendDummyInput().appendField("%");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["change_size"] = {
   init: function () {
-    this.appendValueInput("AMOUNT").setCheck("Number").appendField("change size by");
+    this.appendValueInput("AMOUNT")
+      .setCheck("Number")
+      .appendField("change size by");
     this.appendDummyInput().appendField("%");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["get_costume_size"] = {
@@ -72,13 +78,13 @@ Blockly.Blocks["get_costume_size"] = {
       .appendField(
         new Blockly.FieldDropdown([
           ["width", "width"],
-          ["height", "height"],
+          ["height", "height"]
         ]),
-        "MENU",
+        "MENU"
       );
     this.setOutput(true, "Number");
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["get_sprite_scale"] = {
@@ -86,7 +92,7 @@ Blockly.Blocks["get_sprite_scale"] = {
     this.appendDummyInput().appendField("size");
     this.setOutput(true, "Number");
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["looks_hide_sprite"] = {
@@ -95,7 +101,7 @@ Blockly.Blocks["looks_hide_sprite"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["looks_show_sprite"] = {
@@ -104,16 +110,18 @@ Blockly.Blocks["looks_show_sprite"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["looks_setVisibility_sprite"] = {
   init: function () {
-    this.appendValueInput("VISIBLE").setCheck("Boolean").appendField("set visibility to");
+    this.appendValueInput("VISIBLE")
+      .setCheck("Boolean")
+      .appendField("set visibility to");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["looks_isVisible"] = {
@@ -121,73 +129,80 @@ Blockly.Blocks["looks_isVisible"] = {
     this.appendDummyInput().appendField("is visible");
     this.setOutput(true, "Boolean");
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["say_message"] = function (block, generator) {
   const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
 
-  return `sayMessage(${message});\nyield;\n`;
+  return `runtime.sayMessage(${message});\nyield;\n`;
 };
 
-javascriptGenerator.forBlock["say_message_duration"] = function (block, generator) {
-  const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
-  const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
-
-  return `sayMessage(${message}, ${duration});\nyield;\n`;
-};
-
-javascriptGenerator.forBlock["say_message_duration_waiting"] = function (
+javascriptGenerator.forBlock["say_message_duration"] = function (
   block,
-  generator,
+  generator
 ) {
   const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
   const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
 
-  return `sayMessage(${message}, ${duration});\nyield* wait(${duration} * 1000);\n`;
+  return `runtime.sayMessage(${message}, ${duration});\nyield;\n`;
+};
+
+javascriptGenerator.forBlock["say_message_duration_waiting"] = function (
+  block,
+  generator
+) {
+  const message = generator.valueToCode(block, "MESSAGE", Order.NONE) || "";
+  const duration = generator.valueToCode(block, "DURATION", Order.ATOMIC) || 2;
+
+  return `runtime.sayMessage(${message}, ${duration});\nyield* runtime.wait(${duration} * 1000);\n`;
 };
 
 javascriptGenerator.forBlock["switch_costume"] = function (block, generator) {
   var costume = generator.valueToCode(block, "COSTUME", Order.ATOMIC);
-  return `switchCostume(${costume});\nyield;\n`;
+  return `runtime.switchCostume(${costume});\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["set_size"] = function (block, generator) {
   const amount = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
-  return `setSize(${amount}, false);\nyield;\n`;
+  return `runtime.setSize(${amount}, false);\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["change_size"] = function (block, generator) {
   const amount = generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 100;
-  return `setSize(${amount}, true);\nyield;\n`;
+  return `runtime.setSize(${amount}, true);\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["get_costume_size"] = function (block) {
   const menu = block.getFieldValue("MENU");
-  return [`getCostumeSize("${menu}")`, Order.NONE];
+  return [`runtime.getCostumeSize("${menu}")`, Order.NONE];
 };
 
 javascriptGenerator.forBlock["get_sprite_scale"] = function () {
-  return [`getSpriteScale()`, Order.NONE];
+  return [`runtime.getSpriteScale()`, Order.NONE];
 };
 
 javascriptGenerator.forBlock["looks_hide_sprite"] = function () {
-  return "toggleVisibility(false);\nyield;\n";
+  return "runtime.toggleVisibility(false);\nyield;\n";
 };
 
 javascriptGenerator.forBlock["looks_show_sprite"] = function () {
-  return "toggleVisibility(true);\nyield;\n";
+  return "runtime.toggleVisibility(true);\nyield;\n";
 };
 
-javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (block, generator) {
-  const visible = generator.valueToCode(block, "VISIBLE", Order.ATOMIC) ?? "false";
+javascriptGenerator.forBlock["looks_setVisibility_sprite"] = function (
+  block,
+  generator
+) {
+  const visible =
+    generator.valueToCode(block, "VISIBLE", Order.ATOMIC) ?? "false";
 
-  return `toggleVisibility(${visible});\nyield;\n`;
+  return `runtime.toggleVisibility(${visible});\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["looks_isVisible"] = () => [
-  "getTarget().visible",
-  Order.NONE,
+  "runtime.getTarget().visible",
+  Order.NONE
 ];
 
 Blockly.Blocks["looks_costumes_menu"] = {
@@ -196,16 +211,21 @@ Blockly.Blocks["looks_costumes_menu"] = {
       new Blockly.FieldDropdown(function () {
         const costumes = getActiveSpriteStuff().costumes;
         const options =
-          costumes.length < 1 ? [["...", ""]] : costumes.map(i => [i.name, i.id]);
+          costumes.length < 1
+            ? [["...", ""]]
+            : costumes.map((i) => [i.name, i.id]);
         return options;
       }),
-      "MENU",
+      "MENU"
     );
     this.setOutput(true, "String");
     this.setStyle("looks_blocks");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["looks_costumes_menu"] = function (block, generator) {
+javascriptGenerator.forBlock["looks_costumes_menu"] = function (
+  block,
+  generator
+) {
   return [generator.quote_(block.getFieldValue("MENU")), Order.ATOMIC];
 };

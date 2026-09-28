@@ -686,7 +686,7 @@ javascriptGenerator.forBlock["functions_definition"] = function (block, generato
     .filter(Boolean);
 
   const body = javascriptGenerator.statementToCode(block, "BODY");
-  return `__MyFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) {\n${body}};\n`;
+  return `runtime.myFunctions[${generator.quote_(String(block.functionId_))}] = function* (${params.join(", ")}) {\n${body}};\n`;
 };
 
 javascriptGenerator.forBlock["functions_call"] = function (block, generator) {
@@ -704,7 +704,7 @@ javascriptGenerator.forBlock["functions_call"] = function (block, generator) {
     else args.push(generator.valueToCode(block, key, Order.NONE) || "null");
   }
 
-  const callExpr = `yield* __MyFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
+  const callExpr = `yield* runtime.myFunctions[${generator.quote_(String(block.functionId_))}](${args.join(
     ", "
   )})`;
 

@@ -48,7 +48,7 @@ Blockly.Blocks["text_join_extendable"] = {
         input = this.appendValueInput("ADD" + i);
         input.setAlign(Blockly.inputs.Align.RIGHT);
         input.connection.setShadowDom(
-          shadow("text", "TEXT", this.messageList[i] || ".."),
+          shadow("text", "TEXT", this.messageList[i] || "..")
         );
       }
 
@@ -71,8 +71,8 @@ Blockly.Blocks["text_join_extendable"] = {
           18,
           25,
           "remove an input",
-          this.decrease_.bind(this),
-        ),
+          this.decrease_.bind(this)
+        )
       )
       .appendField(
         new Blockly.FieldImage(
@@ -80,8 +80,8 @@ Blockly.Blocks["text_join_extendable"] = {
           18,
           25,
           "add an input",
-          this.increase_.bind(this),
-        ),
+          this.increase_.bind(this)
+        )
       );
   },
 
@@ -95,10 +95,13 @@ Blockly.Blocks["text_join_extendable"] = {
     if (this.itemCount_ < 2) return;
     this.itemCount_--;
     this.updateShape_();
-  },
+  }
 };
 
-javascriptGenerator.forBlock["text_join_extendable"] = function (block, generator) {
+javascriptGenerator.forBlock["text_join_extendable"] = function (
+  block,
+  generator
+) {
   const parts = [];
 
   for (let i = 0; i < block.itemCount_; i++) {
@@ -125,7 +128,7 @@ Blockly.Blocks["text_indexOf"] = {
       () =>
         `Returns the index of the first/last occurrence of first text in second text. Returns ${
           this.workspace.options.oneBasedIndex ? "0" : "-1"
-        } if text is not found.`,
+        } if text is not found.`
     );
 
     this.appendDummyInput()
@@ -133,9 +136,9 @@ Blockly.Blocks["text_indexOf"] = {
       .appendField(
         new Blockly.FieldDropdown([
           ["first", "FIRST"],
-          ["last", "LAST"],
+          ["last", "LAST"]
         ]),
-        "END",
+        "END"
       )
       .appendField("occurrence of");
 
@@ -148,11 +151,12 @@ Blockly.Blocks["text_indexOf"] = {
     this.appendValueInput("VALUE")
       .setCheck("String")
       .connection.setShadowDom(shadow("text", "TEXT", ""));
-  },
+  }
 };
 
 javascriptGenerator.forBlock["text_indexOf"] = function (block, generator) {
-  const operator = block.getFieldValue("END") === "FIRST" ? "indexOf" : "lastIndexOf";
+  const operator =
+    block.getFieldValue("END") === "FIRST" ? "indexOf" : "lastIndexOf";
   const substring = generator.valueToCode(block, "FIND", Order.NONE) || "''";
   const text = generator.valueToCode(block, "VALUE", Order.MEMBER) || "''";
   const code = `${text}.${operator}(${substring})`;
@@ -175,10 +179,10 @@ Blockly.Blocks["text_charAt"] = {
       ["letter # from end", "FROM_END"],
       ["first letter", "FIRST"],
       ["last letter", "LAST"],
-      ["random letter", "RANDOM"],
+      ["random letter", "RANDOM"]
     ]);
 
-    dropdown.setValidator(value => {
+    dropdown.setValidator((value) => {
       const newAt = value === "FROM_START" || value === "FROM_END";
       if (newAt !== this.isAt_) this.updateAt_(newAt);
       return undefined;
@@ -230,7 +234,7 @@ Blockly.Blocks["text_charAt"] = {
     }
 
     this.isAt_ = isAt;
-  },
+  }
 };
 
 javascriptGenerator.forBlock["text_charAt"] = function (block, generator) {
@@ -260,7 +264,10 @@ javascriptGenerator.forBlock["text_charAt"] = function (block, generator) {
     case "LAST":
       return [`${text}.slice(-1)`, Order.MEMBER];
     case "RANDOM":
-      return [`${text}.charAt(Math.floor(Math.random() * ${text}.length))`, Order.NONE];
+      return [
+        `${text}.charAt(Math.floor(Math.random() * ${text}.length))`,
+        Order.NONE
+      ];
     default:
       throw new Error(`Unknown WHERE value: ${where}`);
   }
@@ -274,12 +281,12 @@ Blockly.Blocks["text_getSubstring"] = {
     this.WHERE_OPTIONS_1 = [
       ["letter #", "FROM_START"],
       ["letter # from end", "FROM_END"],
-      ["first letter", "FIRST"],
+      ["first letter", "FIRST"]
     ];
     this.WHERE_OPTIONS_2 = [
       ["letter #", "FROM_START"],
       ["letter # from end", "FROM_END"],
-      ["last letter", "LAST"],
+      ["last letter", "LAST"]
     ];
 
     this.setStyle("text_blocks");
@@ -325,7 +332,8 @@ Blockly.Blocks["text_getSubstring"] = {
     const where1 = this.getFieldValue("WHERE1") || "FROM_START";
     const where2 = this.getFieldValue("WHERE2") || "FROM_START";
 
-    const stringConn = this.getInput("STRING")?.connection?.targetConnection || null;
+    const stringConn =
+      this.getInput("STRING")?.connection?.targetConnection || null;
     const at1Conn = this.getInput("AT1")?.connection?.targetConnection || null;
     const at2Conn = this.getInput("AT2")?.connection?.targetConnection || null;
 
@@ -374,10 +382,13 @@ Blockly.Blocks["text_getSubstring"] = {
     if (stringConn && this.getInput("STRING")?.connection) {
       this.getInput("STRING").connection.connect(stringConn);
     }
-  },
+  }
 };
 
-javascriptGenerator.forBlock["text_getSubstring"] = function (block, generator) {
+javascriptGenerator.forBlock["text_getSubstring"] = function (
+  block,
+  generator
+) {
   const text = generator.valueToCode(block, "STRING", Order.MEMBER) || "''";
   const where1 = block.getFieldValue("WHERE1");
   const where2 = block.getFieldValue("WHERE2");

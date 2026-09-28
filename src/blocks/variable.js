@@ -24,10 +24,10 @@ Blockly.Blocks["get_global_var"] = {
         callback: () => {
           const varName = this.getFieldValue("VAR");
           if (typeof varName === "string") deleteVariable(varName, true);
-        },
+        }
       });
     };
-  },
+  }
 };
 
 Blockly.Blocks["set_global_var"] = {
@@ -40,7 +40,7 @@ Blockly.Blocks["set_global_var"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setStyle("variable_blocks");
-  },
+  }
 };
 
 Blockly.Blocks["change_global_var"] = {
@@ -53,32 +53,30 @@ Blockly.Blocks["change_global_var"] = {
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
     this.setStyle("variable_blocks");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["get_global_var"] = function (block) {
+javascriptGenerator.forBlock["get_global_var"] = function (block, generator) {
   const name = block.getFieldValue("VAR");
-  return [`projectVariables["${name}"]`, Order.ATOMIC];
+  return [
+    `runtime.projectVariables[${generator.quote_(String(name))}]`,
+    Order.ATOMIC
+  ];
 };
 
-javascriptGenerator.forBlock["set_global_var"] = function (block) {
-  const name = block.getFieldValue("VAR");
-  const value =
-    javascriptGenerator.valueToCode(
-      block,
-      "VALUE",
-      Order.ASSIGNMENT
-    ) || "0";
-  return `projectVariables["${name}"] = ${value};\n`;
-};
-
-javascriptGenerator.forBlock["change_global_var"] = function (block) {
+javascriptGenerator.forBlock["set_global_var"] = function (block, generator) {
   const name = block.getFieldValue("VAR");
   const value =
-    javascriptGenerator.valueToCode(
-      block,
-      "VALUE",
-      Order.ATOMIC
-    ) || "0";
-  return `projectVariables["${name}"] += ${value};\n`;
+    javascriptGenerator.valueToCode(block, "VALUE", Order.ASSIGNMENT) || "0";
+  return `runtime.projectVariables[${generator.quote_(String(name))}] = ${value};\n`;
+};
+
+javascriptGenerator.forBlock["change_global_var"] = function (
+  block,
+  generator
+) {
+  const name = block.getFieldValue("VAR");
+  const value =
+    javascriptGenerator.valueToCode(block, "VALUE", Order.ATOMIC) || "0";
+  return `runtime.projectVariables[${generator.quote_(String(name))}] += ${value};\n`;
 };

@@ -149,7 +149,7 @@ javascriptGenerator.forBlock["move_steps"] = function (
 ) {
   const steps =
     generator.valueToCode(block, "STEPS", Order.ATOMIC) || 0;
-  return `moveSteps(${steps});\nyield;\n`;
+  return `runtime.moveSteps(${steps});\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["change_position"] = function (
@@ -159,8 +159,8 @@ javascriptGenerator.forBlock["change_position"] = function (
   const amount =
     generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
-  if (menu === "x") return `getTarget().${menu} += ${amount};\nyield;\n`;
-  else if (menu === "y") return `getTarget().${menu} -= ${amount};\nyield;\n`;
+  if (menu === "x") return `runtime.getTarget().${menu} += ${amount};\nyield;\n`;
+  else if (menu === "y") return `runtime.getTarget().${menu} -= ${amount};\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["set_position"] = function (
@@ -170,8 +170,8 @@ javascriptGenerator.forBlock["set_position"] = function (
   const amount =
     generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 0;
   const menu = block.getFieldValue("MENU");
-  if (menu === "y") return `getTarget().${menu} = -${amount};\n`;
-  else return `getTarget().${menu} = ${amount};\nyield;\n`;
+  if (menu === "y") return `runtime.getTarget().${menu} = -${amount};\n`;
+  else return `runtime.getTarget().${menu} = ${amount};\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["goto_position"] = function (
@@ -180,7 +180,7 @@ javascriptGenerator.forBlock["goto_position"] = function (
 ) {
   const x = generator.valueToCode(block, "x", Order.ATOMIC) || 0;
   const y = generator.valueToCode(block, "y", Order.ATOMIC) || 0;
-  return `getTarget().x = ${x};\ngetTarget().y = -${y};\nyield;\n`;
+  return `runtime.getTarget().x = ${x};\ngetTarget().y = -${y};\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["point_towards"] = function (
@@ -189,12 +189,12 @@ javascriptGenerator.forBlock["point_towards"] = function (
 ) {
   const x = generator.valueToCode(block, "x", Order.ATOMIC) || 0;
   const y = generator.valueToCode(block, "y", Order.ATOMIC) || 0;
-  return `pointsTowards(${x}, ${y});\nyield;\n`;
+  return `runtime.pointsTowards(${x}, ${y});\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["get_position"] = function (block) {
   const menu = block.getFieldValue("MENU");
-  return [`getTarget()["${menu}"]`, Order.NONE];
+  return [`runtime.getTarget()["${menu}"]`, Order.NONE];
 };
 
 javascriptGenerator.forBlock["angle_turn"] = function (
@@ -205,7 +205,7 @@ javascriptGenerator.forBlock["angle_turn"] = function (
   let amount =
     generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 0;
   if (direction === "left") amount = `-(${amount})`;
-  return `setAngle(${amount}, true);\nyield;\n`;
+  return `runtime.setAngle(${amount}, true);\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["angle_set"] = function (
@@ -214,10 +214,10 @@ javascriptGenerator.forBlock["angle_set"] = function (
 ) {
   const amount =
     generator.valueToCode(block, "AMOUNT", Order.ATOMIC) || 0;
-  return `setAngle(${amount}, false);\nyield;\n`;
+  return `runtime.setAngle(${amount}, false);\nyield;\n`;
 };
 
 javascriptGenerator.forBlock["get_angle"] = () => [
-  "getTarget().angle",
+  "runtime.getTarget().angle",
   Order.NONE,
 ];

@@ -2,24 +2,26 @@ import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { getActiveSpriteStuff } from "../scripts/editor";
 
-
 Blockly.Blocks["sound_sounds_menu"] = {
   init: function () {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown(function () {
         const sounds = getActiveSpriteStuff().sounds;
         const options =
-          sounds.length < 1 ? [["...", ""]] : sounds.map(i => [i.name, i.id]);
+          sounds.length < 1 ? [["...", ""]] : sounds.map((i) => [i.name, i.id]);
         return options;
       }),
-      "MENU",
+      "MENU"
     );
     this.setOutput(true, "String");
     this.setStyle("sound_blocks");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["sound_sounds_menu"] = function (block, generator) {
+javascriptGenerator.forBlock["sound_sounds_menu"] = function (
+  block,
+  generator
+) {
   return [generator.quote_(block.getFieldValue("MENU")), Order.ATOMIC];
 };
 
@@ -29,20 +31,20 @@ Blockly.Blocks["play_sound"] = {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown([
         ["until finished", "true"],
-        ["without waiting", "false"],
+        ["without waiting", "false"]
       ]),
-      "wait",
+      "wait"
     );
     this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["play_sound"] = function (block, generator) {
   var name = generator.valueToCode(block, "name", Order.ATOMIC);
   var wait = block.getFieldValue("wait");
-  return `yield* playSound(${name}, ${wait});\n`;
+  return `yield* runtime.playSound(${name}, ${wait});\n`;
 };
 
 Blockly.Blocks["stop_sound"] = {
@@ -51,12 +53,12 @@ Blockly.Blocks["stop_sound"] = {
     this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["stop_sound"] = function (block, generator) {
   var name = generator.valueToCode(block, "name", Order.ATOMIC);
-  return `stopSound(${name});\n`;
+  return `runtime.stopSound(${name});\n`;
 };
 
 Blockly.Blocks["stop_all_sounds"] = {
@@ -66,20 +68,20 @@ Blockly.Blocks["stop_all_sounds"] = {
       .appendField(
         new Blockly.FieldDropdown([
           ["all", "false"],
-          ["my", "true"],
+          ["my", "true"]
         ]),
-        "who",
+        "who"
       )
       .appendField("sounds");
     this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["stop_all_sounds"] = function (block) {
   var who = block.getFieldValue("who");
-  var code = `stopAllSounds(${who});\n`;
+  var code = `runtime.stopAllSounds(${who});\n`;
   return code;
 };
 
@@ -91,22 +93,25 @@ Blockly.Blocks["set_sound_property"] = {
       .appendField(
         new Blockly.FieldDropdown([
           ["volume", "volume"],
-          ["speed", "speed"],
+          ["speed", "speed"]
         ]),
-        "property",
+        "property"
       )
       .appendField("to");
     this.appendDummyInput().appendField("%");
     this.setStyle("sound_blocks");
     this.setPreviousStatement(true, "default");
     this.setNextStatement(true, "default");
-  },
+  }
 };
 
-javascriptGenerator.forBlock["set_sound_property"] = function (block, generator) {
+javascriptGenerator.forBlock["set_sound_property"] = function (
+  block,
+  generator
+) {
   var value = generator.valueToCode(block, "value", Order.ATOMIC);
   var property = block.getFieldValue("property");
-  return `setSoundProperty("${property}", ${value});\n`;
+  return `runtime.setSoundProperty("${property}", ${value});\n`;
 };
 
 Blockly.Blocks["get_sound_property"] = {
@@ -114,16 +119,16 @@ Blockly.Blocks["get_sound_property"] = {
     this.appendDummyInput().appendField(
       new Blockly.FieldDropdown([
         ["volume", "volume"],
-        ["speed", "speed"],
+        ["speed", "speed"]
       ]),
-      "property",
+      "property"
     );
     this.setStyle("sound_blocks");
     this.setOutput(true, "Number");
-  },
+  }
 };
 
 javascriptGenerator.forBlock["get_sound_property"] = function (block) {
   var property = block.getFieldValue("property");
-  return [`soundProperties["${property}"]`, Order.NONE];
+  return [`runtime.getSoundProperty("${property}")`, Order.NONE];
 };
