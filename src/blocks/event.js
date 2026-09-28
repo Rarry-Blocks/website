@@ -86,15 +86,15 @@ Blockly.Blocks["project_timer"] = {
   },
 };
 
-javascriptGenerator.forBlock["project_timer"] = function (block) {
-  return ["runtime.projectTime()", Order.NONE];
+javascriptGenerator.forBlock["project_timer"] = function () {
+  return ["(Date.now() - runtime.projectStartedTime) / 1000", Order.DIVISION];
 };
 
 Blockly.Blocks["when_timer_reaches"] = {
   init: function () {
     this.appendDummyInput()
       .appendField("when timer reaches")
-      .appendField(new Blockly.FieldNumber(2, 0), "VALUE")
+      .appendField(new Blockly.FieldNumber(2, 0.1), "VALUE")
       .appendField("seconds");
     this.appendStatementInput("DO").setCheck("default");
     this.setStyle("events_blocks");

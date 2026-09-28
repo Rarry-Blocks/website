@@ -24,7 +24,7 @@ export function createRuntime(ctx) {
   for (const path of Object.keys(installerModules).sort()) {
     const { install } = installerModules[path];
     if (typeof install !== "function") {
-      throw new Error(`Runtime installer ${path} must export an install() function`);
+      throw new Error(`Runtime installer ${path} is missing the install function`);
     }
 
     const added = Object.getOwnPropertyDescriptors(install(env));

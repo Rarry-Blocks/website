@@ -133,7 +133,8 @@ export function createCore({
     stopSprite,
     stopped,
     wait,
-    waitForPromise
+    waitForPromise,
+    projectStartedTime
   };
 }
 
