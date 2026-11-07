@@ -1133,8 +1133,7 @@ function addExtension(id, emit = false) {
     }
   }
 
-  // Shipped link extensions. The loader trusts them because they are same-origin
-  // paths under /extensions/, and registration records them by link.
+  // The loader trusts shipped link extensions because they are under /extensions/.
   if (typeof extension.url === "string") {
     loadExtensionFromSource({ url: extension.url, id })
       .then(() => finalize())
