@@ -67,6 +67,7 @@ export class Popup {
       this.element = document.createElement("div");
       this.element.className = "popup";
       if (this.options.noAnimation) this.element.classList.add("no-animation");
+      if (!this.options.tabs || this.options.tabs?.length === 0) this.element.classList.add("no-tabs");
 
       this.element.innerHTML = `
         <div class="popup-content">
@@ -570,7 +571,8 @@ export function escapeHtml(str) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export function prettyXml(node, level = 0) {
@@ -600,4 +602,13 @@ export function chunk(array, size) {
     result.push(array.slice(i, i + size));
   }
   return result;
+}
+
+export function isUrl(str) {
+  try {
+    const url = new URL(str);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
 }

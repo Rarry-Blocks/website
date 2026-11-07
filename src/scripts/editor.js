@@ -21,11 +21,17 @@ import {
   lightTheme,
   setupSettingsButton
 } from "../functions/theme.js";
-import { compressAudio, showNotification, Popup } from "../functions/utils.js";
+import {
+  compressAudio,
+  showNotification,
+  Popup,
+  escapeHtml,
+  isUrl
+} from "../functions/utils.js";
 
 import { Costume, Sound, Sprite, SpriteManager } from "../components/Sprite.js";
 import { SpriteChangeEvents } from "../functions/patches.js";
-import { registerExtension } from "../functions/extensionManager.js";
+import { loadExtensionFromSource } from "../functions/extensionLoader.js";
 import { runCodeWithFunctions } from "../functions/runCode.js";
 
 import builtInExtensions from "../functions/builtInExtensions.js";
@@ -821,11 +827,20 @@ function getProjectName() {
   );
 }
 
+function serializeExtensions() {
+  return activeExtensions.map((e) => {
+    // XMLs for stuff like pen and tween
+    if (typeof e === "string") return e;
+    if (e.url) return { id: e.id, url: e.url };
+    return { id: e.id, code: e.code };
+  });
+}
+
 function getProject() {
   return {
     projectName: getProjectName(),
     sprites: spriteManager.toJSON(),
-    extensions: activeExtensions,
+    extensions: serializeExtensions(),
     variables: projectVariables ?? {},
     settings: projectSettings
   };
@@ -870,11 +885,18 @@ async function handleProjectData(data) {
       for (const ext of toLoad) {
         try {
           if (typeof ext === "string") addExtension(ext);
-          else if (ext?.code) {
-            await registerExtension(ext.code, ext.trusted ?? false);
+          else if (ext?.url || ext?.code) {
+            await loadExtensionFromSource({
+              url: ext.url,
+              code: ext.code,
+              id: ext.id
+            });
           }
         } catch (err) {
           console.error("Failed to load extension", ext, err);
+          showNotification({
+            message: `Extension "${escapeHtml(String(ext?.id ?? "unnamed"))}" was not loaded: ${escapeHtml(String(err.message))}`
+          });
         }
       }
     }
@@ -1093,13 +1115,12 @@ function addExtensionButton() {
 }
 
 function addExtension(id, emit = false) {
-  if (activeExtensions.includes(id)) return;
+  if (activeExtensions.some((a) => (a?.id ?? a) === id)) return;
 
   const extension = builtInExtensions.find((e) => e?.id === id);
   if (!extension) return;
 
   function finalize() {
-    activeExtensions.push(id);
     document.querySelector(`button[data-extension-id="${id}"]`).disabled = true;
     setTimeout(() => extensionsPopup.classList.add("hidden"));
 
@@ -1112,17 +1133,14 @@ function addExtension(id, emit = false) {
     }
   }
 
+  // Shipped link extensions. The loader trusts them because they are same-origin
+  // paths under /extensions/, and registration records them by link.
   if (typeof extension.url === "string") {
-    fetch(extension.url)
-      .then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch extension: ${r.status}`);
-        return r.text();
-      })
-      .then((code) => registerExtension(code, true))
+    loadExtensionFromSource({ url: extension.url, id })
       .then(() => finalize())
       .catch((err) => {
-        console.error("Error fetching built-in extension:", err);
-        alert("Error fetching extension: " + err.message);
+        console.error("Error loading built-in extension:", err);
+        alert("Error loading extension: " + err.message);
       });
     return;
   }
@@ -1136,6 +1154,7 @@ function addExtension(id, emit = false) {
   toolbox.appendChild(category.cloneNode(true));
   workspace.updateToolbox(toolbox);
 
+  activeExtensions.push(id);
   finalize();
 }
 
@@ -1169,60 +1188,98 @@ document
   .getElementById("extensions-custom-button")
   .addEventListener("click", () => {
     const isSharing = currentSocket && currentRoom;
+    const warning =
+      "⚠ Extensions run code on your device, only load ones you trust. Anything that isn't built in asks for your approval first.";
+    const sharingNote = isSharing
+      ? "You can't add custom extensions while live sharing the project."
+      : "";
+
+    const goodbye = () => {
+      document.getElementById("extensions-popup")?.classList.add("hidden");
+    };
+
     new Popup({
       title: "Custom Extensions",
-      rows: [
-        [
-          "⚠ Warning: Only use custom extensions from people you trust! Do not run custom extensions you don't know about."
-        ],
-        [
-          "Insert extension code:",
-          {
-            type: "textarea",
-            placeholder: "Rarry.registerExtension({ ... })",
-            className: "resize-code"
-          }
-        ],
-        [
-          "Run as trusted extension:",
-          {
-            type: "checkbox",
-            checked: false
-          }
-        ],
-        [
-          {
-            type: "button",
-            label: '<i class="fa-solid fa-plus"></i> Add',
-            className: "primary",
-            disabled: isSharing,
-            onClick: async (popup) => {
-              const input = popup.element.querySelector(
-                '[data-row="1"][data-col="1"]'
-              );
-              const trusted =
-                popup.element.querySelector('[data-row="2"][data-col="1"]')
-                  ?.checked ?? false;
-              const userCode = input ? input.value : "";
-
-              try {
-                await registerExtension(userCode, trusted);
-                console.log("extension registered.");
-
-                popup.hide();
-                document
-                  .getElementById("extensions-popup")
-                  ?.classList.add("hidden");
-              } catch (error) {
-                console.error("Error in extension:", error);
-                alert("Error in extension: " + error);
+      tabs: [
+        {
+          label: '<i class="fa-solid fa-link"></i> From link',
+          rows: [
+            [warning],
+            [
+              "Link to the extension file:",
+              {
+                type: "input",
+                inputType: "url",
+                placeholder: "https://example.com/my-extension.js",
+                className: "resize-code extension-link-input"
               }
-            }
-          },
-          isSharing
-            ? "You can't add custom extensions while live sharing the project."
-            : ""
-        ]
+            ],
+            [
+              {
+                type: "button",
+                label: '<i class="fa-solid fa-plus"></i> Add',
+                className: "primary",
+                disabled: isSharing,
+                onClick: async (popup) => {
+                  const input = popup.element.querySelector(
+                    ".extension-link-input"
+                  );
+                  const url = (input?.value ?? "").trim();
+                  if (!url || !isUrl(url)) return window.alert("Please enter a valid URL.");
+
+                  try {
+                    popup.hide();
+                    await loadExtensionFromSource({ url });
+                    goodbye();
+                  } catch (error) {
+                    console.error("Error loading extension:", error);
+                    alert("Error loading extension: " + error.message);
+                  }
+                }
+              },
+              sharingNote
+            ]
+          ]
+        },
+        {
+          label: '<i class="fa-solid fa-code"></i> Paste code',
+          rows: [
+            [warning],
+            [
+              "Extension code:",
+              {
+                type: "textarea",
+                placeholder: "Rarry.registerExtension({ ... })",
+                className: "resize-code extension-code-input"
+              }
+            ],
+            [
+              {
+                type: "button",
+                label: '<i class="fa-solid fa-plus"></i> Add',
+                className: "primary",
+                disabled: isSharing,
+                onClick: async (popup) => {
+                  const input = popup.element.querySelector(
+                    ".extension-code-input"
+                  );
+                  const code = input ? input.value : "";
+                  if (!code.trim()) return;
+
+                  try {
+                    popup.hide();
+                    await loadExtensionFromSource({ code });
+                    goodbye();
+                  } catch (error) {
+                    console.error("Error in extension:", error);
+                    alert("Error in extension: " + error.message);
+                  }
+                }
+              },
+              sharingNote
+            ]
+          ]
+        }
       ]
     }).show();
   });

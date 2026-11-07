@@ -286,6 +286,10 @@ html.removeIcons button i:not(.stay) {
   z-index: 9999;
 }
 
+.popup.no-tabs .popup-content .popup-body {
+  padding: 1rem;
+}
+
 .popup-content {
   position: relative;
   display: flex;

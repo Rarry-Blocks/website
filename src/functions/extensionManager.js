@@ -269,7 +269,12 @@ function registerCodeGenerators(id, codeGen, blockDefs, isTrusted) {
   }
 }
 
-function registerExtensionFromDescriptor(descriptor, codeString, isTrusted) {
+function registerExtensionFromDescriptor(
+  descriptor,
+  codeString,
+  isTrusted,
+  meta = {}
+) {
   const id = descriptor.id;
 
   if (activeExtensions.some((i) => (i?.id ?? i) === id)) {
@@ -313,10 +318,20 @@ function registerExtensionFromDescriptor(descriptor, codeString, isTrusted) {
   const codeGen = descriptor.code ?? {};
   registerCodeGenerators(id, codeGen, blockDefs, isTrusted);
 
-  activeExtensions.push({ id, code: codeString, trusted: isTrusted });
+  activeExtensions.push({
+    id,
+    code: codeString,
+    trusted: isTrusted,
+    url: meta.url ?? null,
+    source: meta.source ?? "inline"
+  });
 }
 
-export async function registerExtension(codeString, trusted = false) {
+export async function registerExtension(
+  codeString,
+  trusted = false,
+  meta = {}
+) {
   if (trusted) {
     try {
       setPendingDescriptor(null);
@@ -324,7 +339,7 @@ export async function registerExtension(codeString, trusted = false) {
       const descriptor = consumePendingDescriptor();
 
       if (descriptor) {
-        registerExtensionFromDescriptor(descriptor, codeString, true);
+        registerExtensionFromDescriptor(descriptor, codeString, true, meta);
         return Promise.resolve();
       }
 
@@ -343,7 +358,7 @@ export async function registerExtension(codeString, trusted = false) {
           blocks: ext.registerBlocks?.(),
           code: ext.registerCode?.()
         };
-        registerExtensionFromDescriptor(descriptor, codeString, true);
+        registerExtensionFromDescriptor(descriptor, codeString, true, meta);
         return Promise.resolve();
       }
 
@@ -391,7 +406,13 @@ export async function registerExtension(codeString, trusted = false) {
         }
 
         registerCodeGenerators(id, mockCodeGen, blockDefs, false);
-        activeExtensions.push({ id, code: codeString, trusted: false });
+        activeExtensions.push({
+          id,
+          code: codeString,
+          trusted: false,
+          url: meta.url ?? null,
+          source: meta.source ?? "inline"
+        });
         resolve();
       });
 
