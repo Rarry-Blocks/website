@@ -1,5 +1,5 @@
+import { tweenEasing } from "../../../lib/utils";
 import { vm } from "../../../scripts/editor";
-import { tweenEasing } from "../../utils";
 
 export function install({ stopped, getTargetData }) {
   function* startTween({ from, to, duration, easing, onUpdate, wait = true }) {

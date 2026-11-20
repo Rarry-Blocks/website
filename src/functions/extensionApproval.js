@@ -1,4 +1,5 @@
-import { escapeHtml, Popup } from "./utils.js";
+import { Popup } from "../lib/popup";
+import { escapeHtml } from "../lib/utils";
 
 /** Resolves true if the user accepts, false on deny or close. */
 export function requestExtensionApproval({ source, code }) {

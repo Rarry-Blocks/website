@@ -21,13 +21,9 @@ import {
   lightTheme,
   setupSettingsButton
 } from "../functions/theme.js";
-import {
-  compressAudio,
-  showNotification,
-  Popup,
-  escapeHtml,
-  isUrl
-} from "../functions/utils.js";
+import { escapeHtml, isUrl } from "../lib/utils.js";
+import { compressAudio } from "../lib/compress.js";
+import { showNotification, Popup } from "../lib/popup.js";
 
 import { Costume, Sound, Sprite, SpriteManager } from "../components/Sprite.js";
 import { SpriteChangeEvents } from "../functions/patches.js";
@@ -58,20 +54,14 @@ import { setupSubscriptions } from "../store/subscriptions.js";
 
 const loadingScreen = document.getElementById("editor-loading");
 
-export function showLoading(message = "Loading...") {
+export function setLoading(message) {
   if (loadingScreen) {
-    loadingScreen.querySelector("p").textContent = message;
-    loadingScreen.classList.remove("hidden");
+    loadingScreen.querySelector("p").textContent = message || "Loading...";
+    loadingScreen.classList.toggle("hidden", !message);
   }
 }
 
-export function hideLoading() {
-  if (loadingScreen) {
-    loadingScreen.classList.add("hidden");
-  }
-}
-
-showLoading("Initializing editor...");
+setLoading("Initializing editor...");
 
 javascriptGenerator.addReservedWords(config.reservedWords.all.join(","));
 
@@ -855,8 +845,7 @@ async function loadProject(ev) {
   if (!file) return;
   await loadProjectFile(file, {
     handleProjectData,
-    showLoading,
-    hideLoading
+    setLoading
   });
 }
 
@@ -1188,7 +1177,7 @@ document
   .addEventListener("click", () => {
     const isSharing = currentSocket && currentRoom;
     const warning =
-      "⚠ Extensions run code on your device, only load ones you trust. Anything that isn't built in asks for your approval first.";
+      "⚠ Extensions run code on your device, only load ones you trust.";
     const sharingNote = isSharing
       ? "You can't add custom extensions while live sharing the project."
       : "";
@@ -1224,7 +1213,8 @@ document
                     ".extension-link-input"
                   );
                   const url = (input?.value ?? "").trim();
-                  if (!url || !isUrl(url)) return window.alert("Please enter a valid URL.");
+                  if (!url || !isUrl(url))
+                    return window.alert("Please enter a valid URL.");
 
                   try {
                     popup.hide();
@@ -1959,7 +1949,7 @@ workspace.updateAllFunctionCalls = () => {
   updateAllFunctionCalls(workspace);
 };
 
-hideLoading();
+setLoading(false);
 
 // tools for dev :3
 if (window.location.hostname === "localhost") {

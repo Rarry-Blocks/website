@@ -6,11 +6,10 @@ import {
   capitalizeFirstLetter,
   getLuminance,
   shadeColor,
-  Popup,
-  chunk,
-  showNotification
-} from "./utils";
+  chunk
+} from "../lib/utils";
 import { attachAvatarChanger } from "./avatar";
+import { Popup, showNotification } from "../lib/popup";
 
 const root = document.documentElement;
 

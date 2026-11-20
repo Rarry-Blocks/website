@@ -2,17 +2,19 @@ import JSZip from "jszip";
 import { Sprite as PixiSprite } from "pixi.js-legacy";
 import { save as tauriSave } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
-import { compressAudio, compressImage, showNotification } from "../../functions/utils.js";
-import { app, hideLoading, showLoading } from "../editor.js";
+import { compressAudio, compressImage } from "../../lib/compress.js";
+import { showNotification } from "../../lib/popup.js";
+import { app, setLoading } from "../editor.js";
 
 const isDesktop = window.__TAURI_INTERNALS__ !== undefined;
 
 const metadata = {
   version: 2,
-  platform: { name: "Rarry", url: "https://rarry.link" },
+  platform: { name: "Rarry", url: "https://rarry.link" }
 };
 
-const toUint8Array = base64 => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+const toUint8Array = (base64) =>
+  Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 
 export async function saveProject({
   projectName,
@@ -20,9 +22,9 @@ export async function saveProject({
   spriteManager,
   extensions,
   variables,
-  settings,
+  settings
 }) {
-  showLoading("Preparing to save...");
+  setLoading("Preparing to save...");
 
   const zip = new JSZip();
   const json = {
@@ -31,12 +33,12 @@ export async function saveProject({
     sprites: [],
     extensions,
     variables,
-    settings,
+    settings
   };
 
   let totalAssets = sprites.reduce(
     (acc, s) => acc + s.costumes.length + s.sounds.length,
-    0,
+    0
   );
   let processedAssets = 0;
 
@@ -47,7 +49,7 @@ export async function saveProject({
 
     const costumeEntries = [];
     for (const c of sprite.costumes) {
-      showLoading(`Processing Costumes: ${processedAssets++}/${totalAssets}`);
+      setLoading(`Processing Costumes: ${processedAssets++}/${totalAssets}`);
 
       let dataURL;
       const url = c.texture?.baseTexture?.resource?.url;
@@ -62,49 +64,53 @@ export async function saveProject({
         const filename = `costumes/${c.id}.webp`;
 
         if (!writtenAssets.has(filename)) {
-          zip.file(filename, toUint8Array(processed.split(",")[1]), { binary: true });
+          zip.file(filename, toUint8Array(processed.split(",")[1]), {
+            binary: true
+          });
           writtenAssets.add(filename);
         }
 
         costumeEntries.push({ id: c.id, name: c.name, texture: filename });
       }
 
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
     }
 
     const soundEntries = [];
     for (const s of sprite.sounds) {
-      showLoading(`Processing Sounds: ${processedAssets++}/${totalAssets}`);
+      setLoading(`Processing Sounds: ${processedAssets++}/${totalAssets}`);
 
       const processed = await compressAudio(s.dataURL);
       if (processed) {
         const filename = `sounds/${s.id}.ogg`;
 
         if (!writtenAssets.has(filename)) {
-          zip.file(filename, toUint8Array(processed.split(",")[1]), { binary: true });
+          zip.file(filename, toUint8Array(processed.split(",")[1]), {
+            binary: true
+          });
           writtenAssets.add(filename);
         }
 
         soundEntries.push({ id: s.id, name: s.name, path: filename });
       }
 
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
     }
 
     json.sprites.push({
       ...baseJSON,
       costumes: costumeEntries,
-      sounds: soundEntries,
+      sounds: soundEntries
     });
   }
 
   zip.file("project.json", JSON.stringify(json));
-  showLoading("Compressing bundle...");
+  setLoading("Compressing bundle...");
 
   const zipConfig = {
     type: isDesktop ? "uint8array" : "blob",
     compression: "DEFLATE",
-    compressionOptions: { level: 6 /*7*/ },
+    compressionOptions: { level: 6 /*7*/ }
   };
 
   const content = await zip.generateAsync(zipConfig);
@@ -113,7 +119,7 @@ export async function saveProject({
     const filePath = await tauriSave({
       title: "Save Rarry Project",
       defaultPath: json.projectName,
-      filters: [{ name: "Rarry Project", extensions: ["rarry", "rarryz"] }],
+      filters: [{ name: "Rarry Project", extensions: ["rarry", "rarryz"] }]
     });
     if (filePath) await writeFile(filePath, content);
   } else {
@@ -124,7 +130,7 @@ export async function saveProject({
     URL.revokeObjectURL(a.href);
   }
 
-  hideLoading();
+  setLoading(false);
   showNotification({ message: "Project saved successfully!" });
 }
 
@@ -139,14 +145,12 @@ async function resolveAsset(zip, src, mimeType) {
   return `data:${mimeType};base64,${base64}`;
 }
 
-export async function loadProjectFile(
-  file,
-  { handleProjectData, showLoading, hideLoading },
-) {
-  showLoading("Loading project...");
+export async function loadProjectFile(file, { handleProjectData, setLoading }) {
+  setLoading("Loading project...");
   try {
     const fileName = file.name;
-    const projectName = fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
+    const projectName =
+      fileName.substring(0, fileName.lastIndexOf(".")) || fileName;
     const arrayBuffer = await file.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
 
@@ -156,7 +160,7 @@ export async function loadProjectFile(
     const json = JSON.parse(await projectFile.async("string"));
 
     const sprites = await Promise.all(
-      json.sprites.map(async entry => {
+      json.sprites.map(async (entry) => {
         const sprite = { ...entry, costumes: [], sounds: [] };
 
         for (const c of entry.costumes || []) {
@@ -181,7 +185,7 @@ export async function loadProjectFile(
             : entry.currentCostume;
 
         return sprite;
-      }),
+      })
     );
 
     await handleProjectData({
@@ -195,7 +199,7 @@ export async function loadProjectFile(
     console.error(err);
     alert(err.message || "Failed to load project.");
   } finally {
-    hideLoading();
+    setLoading(false);
   }
 }
 
@@ -207,6 +211,8 @@ export async function compressData(data, format = "deflate") {
 
 export async function decompressData(data, format = "deflate") {
   const stream = new Blob([data]).stream();
-  const decompressedStream = stream.pipeThrough(new DecompressionStream(format));
+  const decompressedStream = stream.pipeThrough(
+    new DecompressionStream(format)
+  );
   return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
 }

@@ -1,5 +1,5 @@
 import config from "../config";
-import { Popup } from "./utils";
+import { Popup } from "../lib/popup";
 
 const allowedFileFormats = ["jpeg", "png", "webp", "avif", "gif", "tiff"];
 

@@ -1,7 +1,9 @@
 import * as Blockly from "blockly/core";
 import { javascriptGenerator, Order } from "blockly/javascript";
 import { Sprite, DisplayObject, ObservablePoint, utils } from "pixi.js-legacy";
-import { Popup, prettyXml, escapeHtml } from "./utils";
+import { prettyXml, escapeHtml } from "../lib/utils";
+import { Popup } from "../lib/popup";
+
 javascriptGenerator.INFINITE_LOOP_TRAP = `if (runtime.yield || (!runtime.fastExecution && runtime.isOverBudget())) {
   yield;
   runtime.yield = false;
