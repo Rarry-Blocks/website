@@ -467,6 +467,21 @@ Blockly.Blocks["functions_call"] = {
     this.updateShape_();
   },
 
+  customContextMenu: function(options) {
+    const option = {
+      text: 'Focus block definition',
+      enabled: typeof this.functionId_ === 'string',
+      callback: () => {
+        const workspace = this.workspace;
+        if (!workspace) return;
+
+        const funcBlock = workspace.getAllBlocks(false).find(i => i.functionId_ === this.functionId_);
+        if (funcBlock) workspace.centerOnBlock(funcBlock.id);
+      }
+    };
+    options.push(option);
+  },
+
   mutationToDom: function () {
     const container = Blockly.utils.xml.createElement("mutation");
     container.setAttribute("functionid", this.functionId_);
