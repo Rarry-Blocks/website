@@ -58,6 +58,15 @@ const settingsSchema = [
     render: { tab: "Editor", label: "Stage on left:" }
   },
   {
+    key: "fullscreenPage",
+    type: "boolean",
+    default: true,
+    render: {
+      tab: "Editor",
+      label: "Whole page stage fullscreen:"
+    }
+  },
+  {
     key: "toolboxPosition",
     type: "menu",
     default: "default",

@@ -1174,12 +1174,36 @@ builtInExtensions.forEach((e) => {
 
 const stageDiv = document.getElementById("stage-div");
 
-fullscreenButton.addEventListener("click", () => {
-  const isFull = stageDiv.classList.toggle("fullscreen");
+function setBrowserFullscreen(enable) {
+  if (enable && !document.fullscreenElement) {
+    const request = document.documentElement.requestFullscreen?.();
+    request?.catch(() => {});
+  } else if (!enable && document.fullscreenElement) {
+    const exit = document.exitFullscreen?.();
+    exit?.catch(() => {});
+  }
+}
+
+function setStageFullscreen(isFull) {
+  stageDiv.classList.toggle("fullscreen", isFull);
   fullscreenButton.innerHTML = `<img src="icons/${
     isFull ? "smallscreen.svg" : "fullscreen.svg"
   }">`;
+  if (getSetting("fullscreenPage")) setBrowserFullscreen(isFull);
   resizeCanvas();
+}
+
+fullscreenButton.addEventListener("click", () => {
+  setStageFullscreen(!stageDiv.classList.contains("fullscreen"));
+});
+
+document.addEventListener("fullscreenchange", () => {
+  if (
+    !document.fullscreenElement &&
+    stageDiv.classList.contains("fullscreen")
+  ) {
+    setStageFullscreen(false);
+  }
 });
 
 document
