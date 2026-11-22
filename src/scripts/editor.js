@@ -158,11 +158,21 @@ export function updateStageRatio() {
 function calculateWrapperDimensions() {
   const targetW = projectSettings.stageWidth;
   const targetH = projectSettings.stageHeight;
-  const maxHeight = window.innerHeight * 0.3;
 
-  const maxAvailableWidth =
-    wrapper.parentElement?.clientWidth || wrapper.clientWidth;
+  const parent = wrapper.parentElement;
+  const isFull = parent?.classList.contains("fullscreen");
+
+  const maxAvailableWidth = parent?.clientWidth || wrapper.clientWidth;
   if (maxAvailableWidth === 0) return null;
+
+  let maxHeight;
+  if (isFull) {
+    const controls = document.getElementById("stage-controls");
+    const controlsHeight = controls ? controls.offsetHeight : 0;
+    maxHeight = window.innerHeight - controlsHeight;
+  } else {
+    maxHeight = window.innerHeight * 0.3;
+  }
 
   let h = (maxAvailableWidth / targetW) * targetH;
   let w = maxAvailableWidth;
