@@ -23,6 +23,7 @@
     "@fortawesome/fontawesome-free": "^7.0.1",
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-fs": "^2.5.0",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "blockly": "^13.3.0",
     "js-md5": "^0.8.3",
     "jszip": "^3.10.1",

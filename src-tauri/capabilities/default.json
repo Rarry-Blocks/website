@@ -9,6 +9,7 @@
     "core:default",
     "dialog:default",
     "fs:default",
-    "fs:write-files"
+    "fs:write-files",
+    "updater:default"
   ]
 }
