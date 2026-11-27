@@ -56,6 +56,10 @@ input:focus {
   border-color: var(--dark) !important;
 }
 
+ul {
+  list-style-position: inside;
+}
+
 body,
 div#app {
   font-family: var(--font);
@@ -114,23 +118,17 @@ header div {
   gap: 0.5rem;
 }
 
-@media (max-width: 768px) {
-  .logo:not(.small) {
-    display: none;
-  }
-
-  .logo.small {
-    display: block;
-  }
+.logo.small {
+  display: none;
 }
 
-@media (min-width: 769px) {
+@media (max-width: 900px) {
   .logo.small {
-    display: none;
+    display: block;
   }
 
   .logo:not(.small) {
-    display: block;
+    display: none;
   }
 }
 
@@ -156,6 +154,7 @@ input[type="file"] {
 }
 
 input[type="text"],
+input[type="url"],
 input[type="password"],
 input[type="number"],
 select,
@@ -283,7 +282,7 @@ html.removeIcons button i:not(.stay) {
   justify-content: center;
   align-items: center;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
+  z-index: 10000;
 }
 
 .popup.no-tabs .popup-content .popup-body {

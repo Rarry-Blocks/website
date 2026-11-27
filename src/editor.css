@@ -313,6 +313,16 @@ html.dark #fullscreen-button img {
   padding: 0.7rem;
 }
 
+.extension-code {
+  overflow: scroll;
+  white-space: pre-wrap;
+  text-align: left;
+  width: 100%;
+  background-color: var(--color1);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
 .blocklyMainBackground {
   stroke-width: 0;
   stroke: none;

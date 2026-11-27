@@ -91,16 +91,25 @@ export async function prepareExtension(input, deps) {
     throw new Error("Extension is too large to load.");
   }
 
-  if (trusted) return { code, source, url, trusted: true };
+  if (trusted) return { code, source, url, trusted: true, unsandboxed: false };
+
+  if (input.unsandboxed === true) {
+    const choice = await deps.requestUnsandboxedDecision({ source, code });
+    if (choice === "deny") throw new ExtensionDeniedError(input.id);
+    return {
+      code,
+      source,
+      url,
+      trusted: false,
+      unsandboxed: choice === "unsandboxed"
+    };
+  }
 
   const fp = await fingerprint(code);
   if (!deps.approvals.has(fp)) {
-    const approved = await deps.requestApproval({
-      source,
-      code
-    });
+    const approved = await deps.requestApproval({ source, code });
     if (!approved) throw new ExtensionDeniedError(input.id);
     deps.approvals.add(fp);
   }
-  return { code, source, url, trusted: false };
+  return { code, source, url, trusted: false, unsandboxed: false };
 }

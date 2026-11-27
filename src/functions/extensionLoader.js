@@ -1,5 +1,8 @@
 import { MAX_EXTENSION_BYTES, prepareExtension } from "./extensionTrust.js";
-import { requestExtensionApproval } from "./extensionApproval.js";
+import {
+  requestExtensionApproval,
+  requestUnsandboxedExtensionDecision
+} from "./extensionApproval.js";
 import { registerExtension } from "./extensionManager.js";
 import builtInExtensions from "./builtInExtensions.js";
 
@@ -47,11 +50,14 @@ export async function loadExtensionFromSource(input) {
     fetchShipped,
     readShipped,
     requestApproval: requestExtensionApproval,
+    requestUnsandboxedDecision: requestUnsandboxedExtensionDecision,
     approvals
   });
 
   return registerExtension(prepared.code, prepared.trusted, {
     source: prepared.source,
-    url: prepared.url
+    url: prepared.url,
+    trusted: prepared.trusted,
+    unsandboxed: prepared.unsandboxed
   });
 }

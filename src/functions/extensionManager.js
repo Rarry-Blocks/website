@@ -321,7 +321,8 @@ function registerExtensionFromDescriptor(
   activeExtensions.push({
     id,
     code: codeString,
-    trusted: isTrusted,
+    trusted: meta.trusted === true,
+    unsandboxed: meta.unsandboxed === true,
     url: meta.url ?? null,
     source: meta.source ?? "inline"
   });
@@ -332,7 +333,7 @@ export async function registerExtension(
   trusted = false,
   meta = {}
 ) {
-  if (trusted) {
+  if (trusted || meta.unsandboxed === true) {
     try {
       setPendingDescriptor(null);
       eval(codeString);

@@ -831,8 +831,9 @@ function serializeExtensions() {
   return activeExtensions.map((e) => {
     // XMLs for stuff like pen and tween
     if (typeof e === "string") return e;
-    if (e.url) return { id: e.id, url: e.url };
-    return { id: e.id, code: e.code };
+    const flag = e.unsandboxed ? { unsandboxed: true } : {};
+    if (e.url) return { id: e.id, url: e.url, ...flag };
+    return { id: e.id, code: e.code, ...flag };
   });
 }
 
@@ -888,7 +889,8 @@ async function handleProjectData(data) {
             await loadExtensionFromSource({
               url: ext.url,
               code: ext.code,
-              id: ext.id
+              id: ext.id,
+              unsandboxed: ext.unsandboxed === true
             });
           }
         } catch (err) {
@@ -1238,6 +1240,13 @@ document
             ],
             [
               {
+                type: "checkbox",
+                className: "extension-unsandboxed-link"
+              },
+              "Run unsandboxed"
+            ],
+            [
+              {
                 type: "button",
                 label: '<i class="fa-solid fa-plus"></i> Add',
                 className: "primary",
@@ -1250,9 +1259,13 @@ document
                   if (!url || !isUrl(url))
                     return window.alert("Please enter a valid URL.");
 
+                  const unsandboxed =
+                    popup.element.querySelector(".extension-unsandboxed-link")
+                      ?.checked === true;
+
                   try {
                     popup.hide();
-                    await loadExtensionFromSource({ url });
+                    await loadExtensionFromSource({ url, unsandboxed });
                     goodbye();
                   } catch (error) {
                     console.error("Error loading extension:", error);
@@ -1278,6 +1291,13 @@ document
             ],
             [
               {
+                type: "checkbox",
+                className: "extension-unsandboxed-code"
+              },
+              "Run unsandboxed"
+            ],
+            [
+              {
                 type: "button",
                 label: '<i class="fa-solid fa-plus"></i> Add',
                 className: "primary",
@@ -1289,9 +1309,13 @@ document
                   const code = input ? input.value : "";
                   if (!code.trim()) return;
 
+                  const unsandboxed =
+                    popup.element.querySelector(".extension-unsandboxed-code")
+                      ?.checked === true;
+
                   try {
                     popup.hide();
-                    await loadExtensionFromSource({ code });
+                    await loadExtensionFromSource({ code, unsandboxed });
                     goodbye();
                   } catch (error) {
                     console.error("Error in extension:", error);
