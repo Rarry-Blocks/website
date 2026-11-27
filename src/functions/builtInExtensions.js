@@ -131,4 +131,9 @@ export default [
     name: "Big Numbers",
     url: "/extensions/big_numbers.js",
   },
+  {
+    id: "pointers",
+    name: "Pointers",
+    url: "/extensions/pointers.js",
+  },
 ];
